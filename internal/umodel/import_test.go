@@ -28,7 +28,7 @@ func TestValidateAcceptsValidUModelElements(t *testing.T) {
 		Kind:   "entity_set",
 		Domain: "devops",
 		Name:   "devops.service",
-		Spec:   map[string]any{"fields": []any{map[string]any{"name": "service_id"}}},
+		Spec:   map[string]any{"fields": []any{map[string]any{"name": "service_id", "type": "string"}}},
 	}})
 	if err != nil {
 		t.Fatalf("validate: %v", err)

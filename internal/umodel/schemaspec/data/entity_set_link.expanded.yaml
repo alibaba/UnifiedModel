@@ -1,0 +1,331 @@
+description:
+  zh_cn: >-
+    EntitySetLink 用于定义两个 EntitySet 之间的关系。EntitySetLink 必须包含源 EntitySet 、目标 EntitySet 和链接类型。
+  en_us: >-
+    EntitySetLink is used to define the relationship between two EntitySet. EntitySetLink must contain the source EntitySet,
+    destination EntitySet and link type.
+name: entity_set_link
+versions:
+- name: v1.0.0
+  spec:
+    type: object
+    properties:
+      kind:
+        type: string
+        constraint:
+          required: true
+          enum:
+            values:
+            - entity_set_link
+      schema:
+        type: object
+        properties:
+          url:
+            description:
+              zh_cn: Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
+              en_us: The url of the schema. The Core part is "umodel.aliyun.com"
+            type: string
+            constraint:
+              required: true
+          version:
+            description:
+              zh_cn: Schema 的版本。命名格式为 "v1.2.3"。
+              en_us: The version of the schema. The format is "v1.2.3".
+            type: string
+            constraint:
+              required: true
+        constraint:
+          required: true
+      metadata:
+        type: object
+        properties:
+          name:
+            description:
+              zh_cn: 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+              en_us: >-
+                The name of the Element in UModel System. The value cannot be empty.The value format is lowercase alphanumeric
+                characters.
+            type: string
+            constraint:
+              pattern: ^[a-zA-Z][a-zA-Z0-9-_\.]{0,127}$
+              required: true
+              min_len: 0
+              max_len: 128
+          display_name:
+            description:
+              zh_cn: 元素在 UModel 系统中的显示名称。值不能为空。
+              en_us: The display name of the Element in UModel System. The value cannot be empty.
+            type: object
+            properties:
+              zh_cn:
+                description:
+                  zh_cn: 中文描述
+                  en_us: Chinese description
+                type: string
+              en_us:
+                description:
+                  zh_cn: 英文描述
+                  en_us: English description
+                type: string
+          description:
+            description:
+              zh_cn: 元素在 UModel 系统中的描述。
+              en_us: The description of the Element in UModel System.
+            type: object
+            properties:
+              zh_cn:
+                description:
+                  zh_cn: 中文描述
+                  en_us: Chinese description
+                type: string
+              en_us:
+                description:
+                  zh_cn: 英文描述
+                  en_us: English description
+                type: string
+          short_description:
+            description:
+              zh_cn: 元素在 UModel系统中的简短描述。
+              en_us: The short description of the Element in UModel System.
+            type: object
+            properties:
+              zh_cn:
+                description:
+                  zh_cn: 中文描述
+                  en_us: Chinese description
+                type: string
+              en_us:
+                description:
+                  zh_cn: 英文描述
+                  en_us: English description
+                type: string
+          domain:
+            description:
+              zh_cn: 域。值格式为'domain.domain'。可以以点连接。
+              en_us: >-
+                The domain of the Field. The value format is 'domain.domain'. it can be connected in the form of a dot.
+            type: string
+            constraint:
+              pattern: ^[A-Za-z][a-zA-Z0-9-_\\.]*$
+              required: true
+              min_len: 0
+              max_len: 128
+          launch_stage:
+            description:
+              zh_cn: 元素的发布阶段。默认值为 preview。
+              en_us: The launch stage of the Element. The default value is preview.
+            type: string
+            constraint:
+              enum:
+                values:
+                - preview
+                - beta
+                - ga
+                - deprecated
+              default_value: preview
+          icon:
+            description:
+              zh_cn: 元素在UModel系统中的图标。值格式为'url'。
+              en_us: The icon of the Element in UModel System. The value format is 'url'.
+            type: string
+            release_stage: experimental
+            constraint: null
+          uri:
+            description:
+              zh_cn: 用于表示该元素唯一标识。
+              en_us: This field is used to represent the unique identifier of the Element.
+            type: string
+            release_stage: experimental
+            constraint: null
+          tags:
+            description:
+              zh_cn: 用于表示该元素的标签。
+              en_us: This field is used to represent the tags of the Element.
+            type: map
+            constraint:
+              map:
+                min_size: 1
+                key:
+                  type: string
+                  constraint: null
+                value:
+                  type: string
+          properties:
+            description:
+              zh_cn: 用于表示该元素的附加属性。
+              en_us: This field is used to represent the additional properties of the Element.
+            type: map
+            constraint:
+              map:
+                key:
+                  type: string
+                  constraint: null
+                value:
+                  type: string
+          common_schema_info:
+            type: object
+            description:
+              zh_cn: >
+                背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外说明。
+                使用方式：该字段不需要手动配置，仅供查看。若存在该字段，则说明对应的UModel实例只可查看，不支持编辑或删除；若不存在该字段，则可根据业务需求按需编辑。
+              en_us: >
+                Background: In the use of Alibaba Cloud Observability business, the built-in UModel data will be defaulted
+                as a common UModel (CommonSchema), and the common UModel data will be configured as a reference (CommonSchemaRef)
+                in the UModel. When querying, a UModel instance will be dynamically generated and the field will be added
+                as an additional description.  Usage: This field does not need to be manually configured, and is only for
+                viewing. If this field exists, it means that the corresponding UModel instance can only be viewed, and editing
+                or deletion is not supported; if this field does not exist, it can be edited according to business needs.
+            properties:
+              group:
+                type: string
+                description:
+                  zh_cn: CommonSchema的Group信息
+                  en_us: The group of the common schema
+              version:
+                type: string
+                description:
+                  zh_cn: CommonSchema的版本号
+                  en_us: The version of the common schema
+        constraint:
+          required: true
+      spec:
+        type: object
+        properties:
+          src:
+            description:
+              zh_cn: 源 Set 的标识。值不能为空。
+              en_us: The identify of source Set. The value cannot be empty.
+            type: object
+            properties:
+              domain:
+                description:
+                  zh_cn: 源 Set 的域。
+                  en_us: >
+                    The domain of the source Set.
+                type: string
+                constraint:
+                  required: true
+              kind:
+                description:
+                  zh_cn: 源 Set 的类型。值不能为空。
+                  en_us: The type of the source Set. The value cannot be empty.
+                type: string
+                constraint:
+                  required: true
+              name:
+                description:
+                  zh_cn: 源 Set 的名称。值不能为空。
+                  en_us: The name of the source Set. The value cannot be empty.
+                type: string
+                constraint:
+                  required: true
+                  min_len: 0
+                  max_len: 127
+              filter:
+                description:
+                  zh_cn: >-
+                    对于源 Set 的过滤器，用于部分 Link 的场景，例如 EntitySet 中只有"region=cn-beijing"的实体存在此关联。该方式已废弃，请使用 filter_by_entity 替代。
+                  en_us: >-
+                    The filter of the source Set. It is used for some Link scenarios, such as only entities with "region=cn-beijing"
+                    in the EntitySet have this association. This method is deprecated, please use filter_by_entity instead.
+                type: string
+          dest:
+            description:
+              zh_cn: 目标 Set 的标识。值不能为空。
+              en_us: The identify of the destination Set. The value cannot be empty.
+            type: object
+            properties:
+              domain:
+                description:
+                  zh_cn: 目标 Set 的域。
+                  en_us: The domain of the destination Set.
+                type: string
+                constraint:
+                  required: true
+              kind:
+                description:
+                  zh_cn: 目标 Set 的类型。值不能为空。
+                  en_us: The type of the destination Set. The value cannot be empty.
+                type: string
+                constraint:
+                  required: true
+              name:
+                description:
+                  zh_cn: 目标 Set 的名称。值不能为空。
+                  en_us: The name of the destination Set. The value cannot be empty.
+                type: string
+                constraint:
+                  required: true
+                  min_len: 0
+                  max_len: 127
+          filter_by_entity:
+            description:
+              zh_cn: 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
+              en_us: >-
+                In the Link that is only for some entities, used to identify the filtering conditions for these entities.
+            type: string
+          priority:
+            description:
+              zh_cn: Link 的优先级。值可以为空。默认值为5。
+              en_us: The priority of the Link. The value can be empty. The default value is 5.
+            type: integer
+            constraint:
+              default_value: 5
+            release_stage: experimental
+          fields_mapping:
+            description:
+              zh_cn: EntitySetLink 的目标 EntitySet 字段映射。
+              en_us: The destination EntitySet fields mapping of the EntitySetLink.
+            type: map
+            constraint:
+              map:
+                key:
+                  description:
+                    zh_cn: 源 EntitySet 的字段名称。
+                    en_us: The field name of the source EntitySet.
+                  type: string
+                value:
+                  description:
+                    zh_cn: 目标 EntitySet 的字段名称。
+                    en_us: The field name of the destination EntitySet.
+                  type: string
+          constructor:
+            type: object
+            description:
+              zh_cn: EntitySetLink 的自动化生成配置。若配置了此字段，则后台会自动创建并维护任务，自动生成 EntitySetLink。
+              en_us: >-
+                The constructor configuration for EntitySetLink. If this field is configured, the background will automatically
+                create and maintain tasks to automatically generate EntitySetLink.
+          entity_link_type:
+            description:
+              zh_cn: >
+                EntityLinkSet 的链接类型。值不能为空。建议的取值有： - calls (调用) - runs (运行) - instance_of (实例) - parent_of (父级) - contains
+                (包含) - balances (平衡) - can_access (可访问) - clustered_by (集群化) - manages (管理) - monitors (监控) - sends_to (发送到)
+                - affects (影响) - related_to (关联到) - same_as (相同) - propagates_to (传播到) - indirectly_sends_to (间接发送到) - groups
+                (分组) - consists_of (组成) - serves (服务) - hosted_by (托管于) - use (使用) - exec (执行) - access (访问) - login (登录)
+              en_us: >
+                The type of the EntityLinkSet. The value cannot be empty. The recommended values are: - calls - runs - instance_of
+                - parent_of - contains - balances - can_access - clustered_by - manages - monitors - sends_to - affects -
+                related_to - same_as - propagates_to - indirectly_sends_to - groups - consists_of - serves - hosted_by - use
+                - exec - access - login
+            type: string
+            constraint:
+              required: true
+          dynamic:
+            description:
+              zh_cn: >-
+                是否为动态生成，默认为false。为true时表示该 EntitySetLink 为动态 Link，会绑定 Storage，每次 Link 的内容由Storage 处获取，而非存储在 EntityStore 中。
+              en_us: >-
+                Whether the EntitySetLink is dynamically generated, default is false. If true, the EntitySetLink is a dynamic
+                Link, which will be bound to a Storage, and the content of the Link will be obtained from the Storage, rather
+                than being stored in the EntityStore.
+            type: bool
+            constraint:
+              default_value: false
+        constraint:
+          required: true
+        description:
+          zh_cn: EntitySetLink 的核心配置部分，定义 EntitySet 之间的映射和关联规则。
+          en_us: >-
+            The specification section containing EntitySetLink configuration, which defines the mapping and association rules
+            between EntitySet.

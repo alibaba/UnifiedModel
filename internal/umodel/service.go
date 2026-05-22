@@ -2,8 +2,10 @@ package umodel
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
+	"github.com/alibaba/UnifiedModel/internal/umodel/schemaspec"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
@@ -13,18 +15,40 @@ type graphStore interface {
 	GetUModelSnapshot(ctx context.Context, req model.UModelSnapshotRequest) (model.UModelSnapshot, error)
 }
 
+// SchemaValidator is the contract Service uses to enforce schema-driven
+// validation on UModel elements. schemaspec.Validator implements it.
+type SchemaValidator interface {
+	Validate(element model.UModelElement) (schemaspec.Result, error)
+}
+
 type Service struct {
 	graph              graphStore
+	validator          SchemaValidator
 	mu                 sync.RWMutex
 	indexes            map[string]*schemaIndex
 	commonSchemaLoader CommonSchemaLoader
 }
 
-func NewService(graph graphStore) *Service {
-	return &Service{
-		graph:   graph,
-		indexes: make(map[string]*schemaIndex),
+// Option configures Service.
+type Option func(*Service)
+
+// WithValidator overrides the schema validator. Pass
+// schemaspec.NewNoopValidator() in tests that intentionally exercise specs
+// outside the schema (e.g. graphstore round-trip tests).
+func WithValidator(v SchemaValidator) Option {
+	return func(s *Service) { s.validator = v }
+}
+
+func NewService(graph graphStore, opts ...Option) *Service {
+	s := &Service{
+		graph:     graph,
+		validator: schemaspec.DefaultValidator(),
+		indexes:   make(map[string]*schemaIndex),
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 type CommonSchemaLoader interface {
@@ -38,18 +62,44 @@ func (s *Service) SetCommonSchemaLoader(loader CommonSchemaLoader) {
 }
 
 func (s *Service) Validate(ctx context.Context, workspace string, elements []model.UModelElement) (model.ValidationResult, error) {
-	for _, element := range elements {
+	var errors, warnings []model.ErrorDetail
+	for i, element := range elements {
 		if element.Kind == "" || element.Domain == "" || element.Name == "" {
-			return model.ValidationResult{
-				Valid: false,
-				Errors: []model.ErrorDetail{{
-					Field:  "kind/domain/name",
-					Reason: "umodel element kind, domain, and name are required",
-				}},
-			}, nil
+			errors = append(errors, model.ErrorDetail{
+				Field:  fmt.Sprintf("elements[%d].kind/domain/name", i),
+				Reason: "umodel element kind, domain, and name are required",
+			})
+			continue
+		}
+		if s.validator == nil {
+			continue
+		}
+		res, err := s.validator.Validate(element)
+		if err != nil {
+			errors = append(errors, model.ErrorDetail{
+				Field:  fmt.Sprintf("elements[%d].kind", i),
+				Reason: err.Error(),
+			})
+			continue
+		}
+		for _, e := range res.Errors {
+			errors = append(errors, model.ErrorDetail{
+				Field:  fmt.Sprintf("elements[%d].%s", i, e.Path),
+				Reason: e.Reason,
+			})
+		}
+		for _, w := range res.Warnings {
+			warnings = append(warnings, model.ErrorDetail{
+				Field:  fmt.Sprintf("elements[%d].%s", i, w.Path),
+				Reason: w.Reason,
+			})
 		}
 	}
-	return model.ValidationResult{Valid: true}, nil
+	return model.ValidationResult{
+		Valid:    len(errors) == 0,
+		Errors:   errors,
+		Warnings: warnings,
+	}, nil
 }
 
 func (s *Service) PutElements(ctx context.Context, batch model.UModelElementBatch) (model.WriteResult, error) {
@@ -61,15 +111,21 @@ func (s *Service) PutElements(ctx context.Context, batch model.UModelElementBatc
 		return model.WriteResult{}, err
 	}
 	if !validation.Valid {
-		return model.WriteResult{}, apperrors.WithDetails(apperrors.CodeValidationFailed, "umodel validation failed", map[string]string{
-			"field": validation.Errors[0].Field,
-		})
+		details := map[string]string{
+			"field":  validation.Errors[0].Field,
+			"reason": validation.Errors[0].Reason,
+		}
+		if len(validation.Errors) > 1 {
+			details["additional_errors"] = fmt.Sprintf("%d", len(validation.Errors)-1)
+		}
+		return model.WriteResult{}, apperrors.WithDetails(apperrors.CodeValidationFailed, "umodel validation failed", details)
 	}
 	result, err := s.graph.PutUModelElements(ctx, batch)
 	if err != nil {
 		return model.WriteResult{}, err
 	}
 	s.mergeIndex(batch.Workspace, batch.Elements)
+	result.Warnings = append(result.Warnings, validation.Warnings...)
 	return result, nil
 }
 

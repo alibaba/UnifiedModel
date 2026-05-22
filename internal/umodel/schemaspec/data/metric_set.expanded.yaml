@@ -1,0 +1,1803 @@
+description:
+  zh_cn: MetricSet 用于定义指标，指标集是具有相同属性的指标的集合，一般用于描述某类可观测实体的一类指标，例如主机的CPU、内存、磁盘等指标。
+  en_us: >-
+    MetricSet is used to define metrics. A metric set is a collection of metrics with the same attributes, generally used
+    to describe a class of metrics for a certain type of observable entity, such as CPU, memory, disk and other metrics of
+    a host.
+name: metric_set
+versions:
+- name: v1.0.0
+  spec:
+    type: object
+    properties:
+      kind:
+        type: string
+        constraint:
+          required: true
+          enum:
+            values:
+            - metric_set
+      schema:
+        type: object
+        properties:
+          url:
+            description:
+              zh_cn: Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
+              en_us: The url of the schema. The Core part is "umodel.aliyun.com"
+            type: string
+            constraint:
+              required: true
+          version:
+            description:
+              zh_cn: Schema 的版本。命名格式为 "v1.2.3"。
+              en_us: The version of the schema. The format is "v1.2.3".
+            type: string
+            constraint:
+              required: true
+        constraint:
+          required: true
+      metadata:
+        type: object
+        properties:
+          name:
+            description:
+              zh_cn: 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+              en_us: >-
+                The name of the Element in UModel System. The value cannot be empty.The value format is lowercase alphanumeric
+                characters.
+            type: string
+            constraint:
+              pattern: ^[a-zA-Z][a-zA-Z0-9-_\.]{0,127}$
+              required: true
+              min_len: 0
+              max_len: 128
+          display_name:
+            description:
+              zh_cn: 元素在 UModel 系统中的显示名称。值不能为空。
+              en_us: The display name of the Element in UModel System. The value cannot be empty.
+            type: object
+            properties:
+              zh_cn:
+                description:
+                  zh_cn: 中文描述
+                  en_us: Chinese description
+                type: string
+              en_us:
+                description:
+                  zh_cn: 英文描述
+                  en_us: English description
+                type: string
+          description:
+            description:
+              zh_cn: 元素在 UModel 系统中的描述。
+              en_us: The description of the Element in UModel System.
+            type: object
+            properties:
+              zh_cn:
+                description:
+                  zh_cn: 中文描述
+                  en_us: Chinese description
+                type: string
+              en_us:
+                description:
+                  zh_cn: 英文描述
+                  en_us: English description
+                type: string
+          short_description:
+            description:
+              zh_cn: 元素在 UModel系统中的简短描述。
+              en_us: The short description of the Element in UModel System.
+            type: object
+            properties:
+              zh_cn:
+                description:
+                  zh_cn: 中文描述
+                  en_us: Chinese description
+                type: string
+              en_us:
+                description:
+                  zh_cn: 英文描述
+                  en_us: English description
+                type: string
+          domain:
+            description:
+              zh_cn: 域。值格式为'domain.domain'。可以以点连接。
+              en_us: >-
+                The domain of the Field. The value format is 'domain.domain'. it can be connected in the form of a dot.
+            type: string
+            constraint:
+              pattern: ^[A-Za-z][a-zA-Z0-9-_\\.]*$
+              required: true
+              min_len: 0
+              max_len: 128
+          launch_stage:
+            description:
+              zh_cn: 元素的发布阶段。默认值为 preview。
+              en_us: The launch stage of the Element. The default value is preview.
+            type: string
+            constraint:
+              enum:
+                values:
+                - preview
+                - beta
+                - ga
+                - deprecated
+              default_value: preview
+          icon:
+            description:
+              zh_cn: 元素在UModel系统中的图标。值格式为'url'。
+              en_us: The icon of the Element in UModel System. The value format is 'url'.
+            type: string
+            release_stage: experimental
+            constraint: null
+          uri:
+            description:
+              zh_cn: 用于表示该元素唯一标识。
+              en_us: This field is used to represent the unique identifier of the Element.
+            type: string
+            release_stage: experimental
+            constraint: null
+          tags:
+            description:
+              zh_cn: 用于表示该元素的标签。
+              en_us: This field is used to represent the tags of the Element.
+            type: map
+            constraint:
+              map:
+                min_size: 1
+                key:
+                  type: string
+                  constraint: null
+                value:
+                  type: string
+          properties:
+            description:
+              zh_cn: 用于表示该元素的附加属性。
+              en_us: This field is used to represent the additional properties of the Element.
+            type: map
+            constraint:
+              map:
+                key:
+                  type: string
+                  constraint: null
+                value:
+                  type: string
+          common_schema_info:
+            type: object
+            description:
+              zh_cn: >
+                背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外说明。
+                使用方式：该字段不需要手动配置，仅供查看。若存在该字段，则说明对应的UModel实例只可查看，不支持编辑或删除；若不存在该字段，则可根据业务需求按需编辑。
+              en_us: >
+                Background: In the use of Alibaba Cloud Observability business, the built-in UModel data will be defaulted
+                as a common UModel (CommonSchema), and the common UModel data will be configured as a reference (CommonSchemaRef)
+                in the UModel. When querying, a UModel instance will be dynamically generated and the field will be added
+                as an additional description.  Usage: This field does not need to be manually configured, and is only for
+                viewing. If this field exists, it means that the corresponding UModel instance can only be viewed, and editing
+                or deletion is not supported; if this field does not exist, it can be edited according to business needs.
+            properties:
+              group:
+                type: string
+                description:
+                  zh_cn: CommonSchema的Group信息
+                  en_us: The group of the common schema
+              version:
+                type: string
+                description:
+                  zh_cn: CommonSchema的版本号
+                  en_us: The version of the common schema
+        constraint:
+          required: true
+      spec:
+        type: object
+        constraint:
+          required: true
+        description:
+          zh_cn: MetricSet 的核心配置部分，定义监控指标的数据结构和采集规则。
+          en_us: The specification section containing MetricSet configuration.
+        properties:
+          labels:
+            description:
+              zh_cn: >-
+                指标集的标签列表，建议标签通过 dynamic 方式自动生成。注意：此处的标签是 MetricSet 的通用标签，一般建议 MetricSet 只定义通用标签，不在 Metric 下定义额外的标签。
+              en_us: >-
+                The list of labels for the MetricSet. It is recommended to use dynamic to automatically generate labels. Note:
+                The labels here are the general labels of the MetricSet. It is generally recommended that the MetricSet only
+                define general labels, and not define additional labels under the Metric.
+            type: object
+            properties:
+              keys:
+                description:
+                  zh_cn: 标签列表，值格式参考 field 定义。
+                  en_us: The list of labels. The value format is reference to the field definition.
+                type: array
+                constraint:
+                  array:
+                    item:
+                      type: object
+                      properties:
+                        name:
+                          description:
+                            zh_cn: Field 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+                            en_us: >
+                              The name of the Field in UModel System. The value cannot be empty.The value format is lowercase
+                              alphanumeric characters.
+                          type: string
+                          constraint:
+                            pattern: ^[a-zA-Z0-9_][a-zA-Z0-9-_\.:]{0,127}$
+                            required: true
+                            min_len: 0
+                            max_len: 127
+                        display_name:
+                          description:
+                            zh_cn: Field 在 UModel 系统中的显示名称。值不能为空。
+                            en_us: The display name of the Element in UModel System. The value cannot be empty.
+                          type: object
+                          properties:
+                            zh_cn:
+                              description:
+                                zh_cn: 中文描述
+                                en_us: Chinese description
+                              type: string
+                            en_us:
+                              description:
+                                zh_cn: 英文描述
+                                en_us: English description
+                              type: string
+                        description:
+                          description:
+                            zh_cn: Field 在 UModel 系统中的描述。
+                            en_us: The description of the Element in UModel System.
+                          type: object
+                          properties:
+                            zh_cn:
+                              description:
+                                zh_cn: 中文描述
+                                en_us: Chinese description
+                              type: string
+                            en_us:
+                              description:
+                                zh_cn: 英文描述
+                                en_us: English description
+                              type: string
+                        short_description:
+                          description:
+                            zh_cn: Field 在 UModel 系统中的简短描述。
+                            en_us: The short description of the Element in UModel System.
+                          type: object
+                          properties:
+                            zh_cn:
+                              description:
+                                zh_cn: 中文描述
+                                en_us: Chinese description
+                              type: string
+                            en_us:
+                              description:
+                                zh_cn: 英文描述
+                                en_us: English description
+                              type: string
+                        launch_stage:
+                          description:
+                            zh_cn: 元素的发布阶段。默认值为 preview。
+                            en_us: The launch stage of the Element. The default value is preview.
+                          type: string
+                          constraint:
+                            enum:
+                              values:
+                              - preview
+                              - beta
+                              - ga
+                              - deprecated
+                            default_value: preview
+                        type:
+                          description:
+                            zh_cn: 字段的类型。值必须是以下之一：string、integer、float、boolean、time、json_object、json_array。值不能为空。
+                            en_us: >
+                              The type of the Field. The value must be one of the following: string, integer, float, boolean,
+                              time, json_object, json_array.  The value cannot be empty.
+                          type: enum
+                          constraint:
+                            enum:
+                              values:
+                              - string
+                              - integer
+                              - float
+                              - boolean
+                              - time
+                              - json_object
+                              - json_array
+                            required: true
+                        value_mapping:
+                          description:
+                            zh_cn: >-
+                              对于枚举值的映射和解释，为了更好的展示映射值含义，对于 mapping 的 value 字段单独定义，value 包含4个字段："name"、"display_name"、"description"和"short_description"。例如，"status"字段的值是"1"，映射为
+                              ：name 为 "running" ，display_name 为"运行中"，description 为"运行中......"，short_description 为"运行中..."。
+                            en_us: >
+                              For the mapping and interpretation of enumeration values, in order to better display the meaning
+                              of the mapping value, the value field of the mapping is defined separately. The value contains
+                              4 fields: "name", "display_name", "description", and "short_description". For example, the value
+                              of the "status" field is "1", the mapping is: name is "running", display_name is "running",
+                              description is "running...", and short_description is "running...".
+                          type: map
+                          constraint:
+                            map:
+                              key:
+                                type: string
+                              value:
+                                type: object
+                                properties:
+                                  name:
+                                    description:
+                                      zh_cn: 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+                                      en_us: >
+                                        The name of the Element in UModel System. The value cannot be empty.The value format
+                                        is lowercase alphanumeric characters.
+                                    type: string
+                                    constraint:
+                                      pattern: ^[a-zA-Z][a-zA-Z0-9-_\.]{0,127}$
+                                      required: true
+                                      min_len: 0
+                                      max_len: 127
+                                  display_name:
+                                    description:
+                                      zh_cn: 在 UModel 系统中的显示名称。值不能为空。
+                                      en_us: The display name of the Element in UModel System. The value cannot be empty.
+                                    type: object
+                                    properties:
+                                      zh_cn:
+                                        description:
+                                          zh_cn: 中文描述
+                                          en_us: Chinese description
+                                        type: string
+                                      en_us:
+                                        description:
+                                          zh_cn: 英文描述
+                                          en_us: English description
+                                        type: string
+                                  description:
+                                    description:
+                                      zh_cn: 在 UModel 系统中的描述。
+                                      en_us: The description of the Element in UModel System.
+                                    type: object
+                                    properties:
+                                      zh_cn:
+                                        description:
+                                          zh_cn: 中文描述
+                                          en_us: Chinese description
+                                        type: string
+                                      en_us:
+                                        description:
+                                          zh_cn: 英文描述
+                                          en_us: English description
+                                        type: string
+                                  short_description:
+                                    description:
+                                      zh_cn: 在 UModel 系统中的简短描述。
+                                      en_us: The short description of the Element in UModel System.
+                                    type: object
+                                    properties:
+                                      zh_cn:
+                                        description:
+                                          zh_cn: 中文描述
+                                          en_us: Chinese description
+                                        type: string
+                                      en_us:
+                                        description:
+                                          zh_cn: 英文描述
+                                          en_us: English description
+                                        type: string
+                        unit:
+                          description:
+                            zh_cn: >
+                              指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format
+                              即可满足需求，unit 填写为空即可。
+                                      若不满足需求，一般建议 data_format 配置通用的 KMB， 并配置 unit 为特定类型。比如温度，可以配置 data_format 为 KMB， 并配置 unit
+                              为 °C。
+                            en_us: >
+                              The unit of the Metric. The value format is a string. Note: The unit is only used for display
+                              and will not be converted, such as ms will not be automatically converted to s. Best practice:
+                              First configure data_format, in most observable scenarios, data_format can meet the needs, and
+                              unit can be filled in as empty. If it does not meet the needs, it is generally recommended to
+                              configure data_format to a common KMB, and configure unit to a specific type. For example, for
+                              temperature, you can configure data_format to KMB and configure unit to °C.
+                          type: string
+                        data_format:
+                          description:
+                            zh_cn: >
+                              指标的格式化方式，值格式为字符串。支持的格式化选项：
+
+                              数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000
+
+                              存储格式化： - byte: 处理为字节格式，样例：B/KB/MB - bit: 处理为位格式，样例：b/Kb/Mb
+
+                              速率格式化： - byte_ies_sec: 每秒字节（byte per second）格式化，样例：B/s/KB/s/MB/s - bit_ies_sec: 每秒位（bit per
+                              second）格式化，样例：bps/Kbps/Mbps - iops: 输入输出操作每秒格式化，样例：io/s - reqps: 请求每秒格式化，样例：req/s
+
+                              百分比格式化： - percent: 百分比格式化，取值为1-100，样例：10% - percent_decimal: 百分比格式化，取值为0-1，样例：10%
+
+                              时间格式化： - localtime: 将时间戳转换为本地时间格式 - localtimems: 毫秒时间转换为本地时间格式 - localtimeus: 微秒时间转换为本地时间格式
+                              - localtimens: 纳秒时间转换为本地时间格式 - UTC±n: 将时间戳转换为特定时区的时间
+
+                              持续时间（Duration）格式化： - dtdhms: 持续时间格式化为天、小时、分、秒，样例：d hh:mm:ss - dthms: 持续时间格式化为小时、分、秒，样例：hh:mm:ss
+                              - d: 按天格式化时间 - h: 按小时格式化时间 - m: 按分钟格式化时间 - s: 按秒格式化时间 - ms: 按毫秒格式化时间 - us: 按微秒格式化时间 - ns: 按纳秒格式化时间
+                            en_us: >
+                              The formatting method for metrics, value format is string. Supported formatting options:
+
+                              Numeric formatting: - KMB: Thousands, millions, billions formatting, example: K,Mil,Bil - milli:
+                              Process as millisecond format, example: 1,000,000
+
+                              Storage formatting: - byte: Process as byte format, example: B/KB/MB - bit: Process as bit format,
+                              example: b/Kb/Mb
+
+                              Rate formatting: - byte_ies_sec: Bytes per second formatting, example: B/s/KB/s/MB/s - bit_ies_sec:
+                              Bits per second formatting, example: bps/Kbps/Mbps - iops: Input/output operations per second
+                              formatting, example: io/s - reqps: Requests per second formatting, example: req/s
+
+                              Percentage formatting: - percent: Percentage formatting, value range is 1-100, example: 10%
+                              - percent_decimal: Percentage formatting, value range is 0-1, example: 10%
+
+                              Time formatting: - localtime: Convert timestamp to local time format - localtimems: Convert
+                              millisecond time to local time format - localtimeus: Convert microsecond time to local time
+                              format - localtimens: Convert nanosecond time to local time format - UTC±n: Convert timestamp
+                              to specific timezone time
+
+                              Duration formatting: - dtdhms: Format duration as days, hours, minutes, seconds, example: d
+                              hh:mm:ss - dthms: Format duration as hours, minutes, seconds, example: hh:mm:ss - d: Format
+                              time by days - h: Format time by hours - m: Format time by minutes - s: Format time by seconds
+                              - ms: Format time by milliseconds - us: Format time by microseconds - ns: Format time by nanoseconds
+                          type: string
+                          constraint:
+                            enum:
+                              values:
+                              - KMB
+                              - milli
+                              - byte
+                              - bit
+                              - byte_ies_sec
+                              - bit_ies_sec
+                              - iops
+                              - reqps
+                              - percent
+                              - percent_decimal
+                              - localtime
+                              - localtimems
+                              - localtimeus
+                              - localtimens
+                              - UTC-11
+                              - UTC-10
+                              - UTC-9
+                              - UTC-8
+                              - UTC-7
+                              - UTC-6
+                              - UTC-5
+                              - UTC-4
+                              - UTC-3
+                              - UTC-2
+                              - UTC-1
+                              - UTC+0
+                              - UTC+1
+                              - UTC+2
+                              - UTC+3
+                              - UTC+4
+                              - UTC+5
+                              - UTC+6
+                              - UTC+7
+                              - UTC+8
+                              - UTC+9
+                              - UTC+10
+                              - UTC+11
+                              - UTC+12
+                              - dtdhms
+                              - dthms
+                              - d
+                              - h
+                              - m
+                              - s
+                              - ms
+                              - us
+                              - ns
+                            default_value: KMB
+                        analysable:
+                          description:
+                            zh_cn: 用于表示字段是否可分析，即作为Group By的列。默认值为false。
+                            en_us: >-
+                              Used to denote whether the field is analyzable, i.e., serving as a column for Group By. default
+                              value is false.
+                          type: bool
+                          constraint:
+                            default_value: false
+                        filterable:
+                          description:
+                            zh_cn: 用于表示字段是否可过滤，即支持索引过滤。默认值为false。
+                            en_us: >-
+                              Used to indicate whether this field can support filtering, i.e., it supports indexed filtering.
+                              default value is false.
+                          type: bool
+                          constraint:
+                            default_value: false
+                        orderable:
+                          description:
+                            zh_cn: 用于表示字段是否可排序。默认值为false。
+                            en_us: Used to indicate whether the field is sortable. default value is false.
+                          type: bool
+                          constraint:
+                            default_value: false
+                        default_order:
+                          description:
+                            zh_cn: 用于表示字段的默认排序顺序。值必须是以下之一：asc、desc。默认值为asc。
+                            en_us: >
+                              Used to indicate the default sorting order of the field. The value must be one of the following:
+                              asc, desc. default value is asc.
+                          type: enum
+                          constraint:
+                            enum:
+                              values:
+                              - asc
+                              - desc
+                              default_value: asc
+                        pattern:
+                          description:
+                            zh_cn: 正则表达式，用于定义字段的值范围（字符串）。
+                            en_us: Regular expression, used to define the range of values for this field (String).
+                          type: string
+                        max_length:
+                          description:
+                            zh_cn: 字符串值的最大长度。仅适用于字符串类型。
+                            en_us: The max length of string value. Only valid for string type.
+                          type: integer
+                        example:
+                          description:
+                            zh_cn: 字段值的示例。值可以为空。
+                            en_us: examples of the field value. The value can be empty.
+                          type: any
+                        max_value:
+                          description:
+                            zh_cn: 字段的最大值。值可以为空。仅适用于整数和浮点类型。
+                            en_us: >-
+                              The maximum value of the field. The value can be empty. Only valid for integer and float types.
+                          type: number
+                        min_value:
+                          description:
+                            zh_cn: 字段的最小值。值可以为空。仅适用于整数和浮点类型。
+                            en_us: >-
+                              The minimum value of the field. The value can be empty. Only valid for integer and float types.
+                          type: number
+                        default_value:
+                          description:
+                            zh_cn: 字段的默认值。值可以为空。
+                            en_us: The default value of the field. The value can be empty.
+                          type: any
+                        icon:
+                          description:
+                            zh_cn: Field 在 UModel 系统中的图标。值格式为'url'。
+                            en_us: The icon of the Element in UModel System. The value format is 'url'.
+                          type: string
+                          release_stage: experimental
+                          constraint: null
+                        uri:
+                          description:
+                            zh_cn: 用于表示该字段唯一标识。
+                            en_us: This field is used to represent the unique identifier of the field.
+                          type: string
+                          release_stage: experimental
+                          constraint: null
+                        tags:
+                          description:
+                            zh_cn: 用于表示该 Field 的标签。
+                            en_us: This field is used to represent the tags of the Field.
+                          type: map
+                          constraint:
+                            map:
+                              key:
+                                type: string
+                                constraint: null
+                              value:
+                                type: string
+                        properties:
+                          description:
+                            zh_cn: 用于表示该 Field 的附加属性。
+                            en_us: This field is used to represent the additional properties of the Field.
+                          type: map
+                          constraint:
+                            map:
+                              key:
+                                type: string
+                                constraint: null
+                              value:
+                                type: string
+              dynamic:
+                description:
+                  zh_cn: 是否动态生成，一般建议设置为 true。
+                  en_us: Whether the key is dynamic. It is generally recommended to set it to true.
+                type: boolean
+                constraint:
+                  default_value: false
+              filter:
+                description:
+                  zh_cn: 标签的过滤器，在 dynamic 为 true 时，会根据此过滤器进行过滤。
+                  en_us: >-
+                    The filter of the label. When dynamic is true, it will be filtered according to this filter.
+                type: string
+          label_keys:
+            description:
+              zh_cn: 指标集的标签键。当前已废弃，待删除，请使用 labels 字段代替。
+              en_us: >-
+                The label keys of the MetricSet. It is currently deprecated and will be deleted. Please use the labels field
+                instead.
+            type: array
+            constraint:
+              array:
+                item:
+                  type: object
+                  properties:
+                    name:
+                      description:
+                        zh_cn: Field 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+                        en_us: >
+                          The name of the Field in UModel System. The value cannot be empty.The value format is lowercase
+                          alphanumeric characters.
+                      type: string
+                      constraint:
+                        pattern: ^[a-zA-Z0-9_][a-zA-Z0-9-_\.:]{0,127}$
+                        required: true
+                        min_len: 0
+                        max_len: 127
+                    display_name:
+                      description:
+                        zh_cn: Field 在 UModel 系统中的显示名称。值不能为空。
+                        en_us: The display name of the Element in UModel System. The value cannot be empty.
+                      type: object
+                      properties:
+                        zh_cn:
+                          description:
+                            zh_cn: 中文描述
+                            en_us: Chinese description
+                          type: string
+                        en_us:
+                          description:
+                            zh_cn: 英文描述
+                            en_us: English description
+                          type: string
+                    description:
+                      description:
+                        zh_cn: Field 在 UModel 系统中的描述。
+                        en_us: The description of the Element in UModel System.
+                      type: object
+                      properties:
+                        zh_cn:
+                          description:
+                            zh_cn: 中文描述
+                            en_us: Chinese description
+                          type: string
+                        en_us:
+                          description:
+                            zh_cn: 英文描述
+                            en_us: English description
+                          type: string
+                    short_description:
+                      description:
+                        zh_cn: Field 在 UModel 系统中的简短描述。
+                        en_us: The short description of the Element in UModel System.
+                      type: object
+                      properties:
+                        zh_cn:
+                          description:
+                            zh_cn: 中文描述
+                            en_us: Chinese description
+                          type: string
+                        en_us:
+                          description:
+                            zh_cn: 英文描述
+                            en_us: English description
+                          type: string
+                    launch_stage:
+                      description:
+                        zh_cn: 元素的发布阶段。默认值为 preview。
+                        en_us: The launch stage of the Element. The default value is preview.
+                      type: string
+                      constraint:
+                        enum:
+                          values:
+                          - preview
+                          - beta
+                          - ga
+                          - deprecated
+                        default_value: preview
+                    type:
+                      description:
+                        zh_cn: 字段的类型。值必须是以下之一：string、integer、float、boolean、time、json_object、json_array。值不能为空。
+                        en_us: >
+                          The type of the Field. The value must be one of the following: string, integer, float, boolean,
+                          time, json_object, json_array.  The value cannot be empty.
+                      type: enum
+                      constraint:
+                        enum:
+                          values:
+                          - string
+                          - integer
+                          - float
+                          - boolean
+                          - time
+                          - json_object
+                          - json_array
+                        required: true
+                    value_mapping:
+                      description:
+                        zh_cn: >-
+                          对于枚举值的映射和解释，为了更好的展示映射值含义，对于 mapping 的 value 字段单独定义，value 包含4个字段："name"、"display_name"、"description"和"short_description"。例如，"status"字段的值是"1"，映射为
+                          ：name 为 "running" ，display_name 为"运行中"，description 为"运行中......"，short_description 为"运行中..."。
+                        en_us: >
+                          For the mapping and interpretation of enumeration values, in order to better display the meaning
+                          of the mapping value, the value field of the mapping is defined separately. The value contains 4
+                          fields: "name", "display_name", "description", and "short_description". For example, the value of
+                          the "status" field is "1", the mapping is: name is "running", display_name is "running", description
+                          is "running...", and short_description is "running...".
+                      type: map
+                      constraint:
+                        map:
+                          key:
+                            type: string
+                          value:
+                            type: object
+                            properties:
+                              name:
+                                description:
+                                  zh_cn: 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+                                  en_us: >
+                                    The name of the Element in UModel System. The value cannot be empty.The value format is
+                                    lowercase alphanumeric characters.
+                                type: string
+                                constraint:
+                                  pattern: ^[a-zA-Z][a-zA-Z0-9-_\.]{0,127}$
+                                  required: true
+                                  min_len: 0
+                                  max_len: 127
+                              display_name:
+                                description:
+                                  zh_cn: 在 UModel 系统中的显示名称。值不能为空。
+                                  en_us: The display name of the Element in UModel System. The value cannot be empty.
+                                type: object
+                                properties:
+                                  zh_cn:
+                                    description:
+                                      zh_cn: 中文描述
+                                      en_us: Chinese description
+                                    type: string
+                                  en_us:
+                                    description:
+                                      zh_cn: 英文描述
+                                      en_us: English description
+                                    type: string
+                              description:
+                                description:
+                                  zh_cn: 在 UModel 系统中的描述。
+                                  en_us: The description of the Element in UModel System.
+                                type: object
+                                properties:
+                                  zh_cn:
+                                    description:
+                                      zh_cn: 中文描述
+                                      en_us: Chinese description
+                                    type: string
+                                  en_us:
+                                    description:
+                                      zh_cn: 英文描述
+                                      en_us: English description
+                                    type: string
+                              short_description:
+                                description:
+                                  zh_cn: 在 UModel 系统中的简短描述。
+                                  en_us: The short description of the Element in UModel System.
+                                type: object
+                                properties:
+                                  zh_cn:
+                                    description:
+                                      zh_cn: 中文描述
+                                      en_us: Chinese description
+                                    type: string
+                                  en_us:
+                                    description:
+                                      zh_cn: 英文描述
+                                      en_us: English description
+                                    type: string
+                    unit:
+                      description:
+                        zh_cn: >
+                          指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format
+                          即可满足需求，unit 填写为空即可。
+                                  若不满足需求，一般建议 data_format 配置通用的 KMB， 并配置 unit 为特定类型。比如温度，可以配置 data_format 为 KMB， 并配置 unit
+                          为 °C。
+                        en_us: >
+                          The unit of the Metric. The value format is a string. Note: The unit is only used for display and
+                          will not be converted, such as ms will not be automatically converted to s. Best practice: First
+                          configure data_format, in most observable scenarios, data_format can meet the needs, and unit can
+                          be filled in as empty. If it does not meet the needs, it is generally recommended to configure data_format
+                          to a common KMB, and configure unit to a specific type. For example, for temperature, you can configure
+                          data_format to KMB and configure unit to °C.
+                      type: string
+                    data_format:
+                      description:
+                        zh_cn: >
+                          指标的格式化方式，值格式为字符串。支持的格式化选项：
+
+                          数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000
+
+                          存储格式化： - byte: 处理为字节格式，样例：B/KB/MB - bit: 处理为位格式，样例：b/Kb/Mb
+
+                          速率格式化： - byte_ies_sec: 每秒字节（byte per second）格式化，样例：B/s/KB/s/MB/s - bit_ies_sec: 每秒位（bit per second）格式化，样例：bps/Kbps/Mbps
+                          - iops: 输入输出操作每秒格式化，样例：io/s - reqps: 请求每秒格式化，样例：req/s
+
+                          百分比格式化： - percent: 百分比格式化，取值为1-100，样例：10% - percent_decimal: 百分比格式化，取值为0-1，样例：10%
+
+                          时间格式化： - localtime: 将时间戳转换为本地时间格式 - localtimems: 毫秒时间转换为本地时间格式 - localtimeus: 微秒时间转换为本地时间格式 - localtimens:
+                          纳秒时间转换为本地时间格式 - UTC±n: 将时间戳转换为特定时区的时间
+
+                          持续时间（Duration）格式化： - dtdhms: 持续时间格式化为天、小时、分、秒，样例：d hh:mm:ss - dthms: 持续时间格式化为小时、分、秒，样例：hh:mm:ss
+                          - d: 按天格式化时间 - h: 按小时格式化时间 - m: 按分钟格式化时间 - s: 按秒格式化时间 - ms: 按毫秒格式化时间 - us: 按微秒格式化时间 - ns: 按纳秒格式化时间
+                        en_us: >
+                          The formatting method for metrics, value format is string. Supported formatting options:
+
+                          Numeric formatting: - KMB: Thousands, millions, billions formatting, example: K,Mil,Bil - milli:
+                          Process as millisecond format, example: 1,000,000
+
+                          Storage formatting: - byte: Process as byte format, example: B/KB/MB - bit: Process as bit format,
+                          example: b/Kb/Mb
+
+                          Rate formatting: - byte_ies_sec: Bytes per second formatting, example: B/s/KB/s/MB/s - bit_ies_sec:
+                          Bits per second formatting, example: bps/Kbps/Mbps - iops: Input/output operations per second formatting,
+                          example: io/s - reqps: Requests per second formatting, example: req/s
+
+                          Percentage formatting: - percent: Percentage formatting, value range is 1-100, example: 10% - percent_decimal:
+                          Percentage formatting, value range is 0-1, example: 10%
+
+                          Time formatting: - localtime: Convert timestamp to local time format - localtimems: Convert millisecond
+                          time to local time format - localtimeus: Convert microsecond time to local time format - localtimens:
+                          Convert nanosecond time to local time format - UTC±n: Convert timestamp to specific timezone time
+
+                          Duration formatting: - dtdhms: Format duration as days, hours, minutes, seconds, example: d hh:mm:ss
+                          - dthms: Format duration as hours, minutes, seconds, example: hh:mm:ss - d: Format time by days
+                          - h: Format time by hours - m: Format time by minutes - s: Format time by seconds - ms: Format time
+                          by milliseconds - us: Format time by microseconds - ns: Format time by nanoseconds
+                      type: string
+                      constraint:
+                        enum:
+                          values:
+                          - KMB
+                          - milli
+                          - byte
+                          - bit
+                          - byte_ies_sec
+                          - bit_ies_sec
+                          - iops
+                          - reqps
+                          - percent
+                          - percent_decimal
+                          - localtime
+                          - localtimems
+                          - localtimeus
+                          - localtimens
+                          - UTC-11
+                          - UTC-10
+                          - UTC-9
+                          - UTC-8
+                          - UTC-7
+                          - UTC-6
+                          - UTC-5
+                          - UTC-4
+                          - UTC-3
+                          - UTC-2
+                          - UTC-1
+                          - UTC+0
+                          - UTC+1
+                          - UTC+2
+                          - UTC+3
+                          - UTC+4
+                          - UTC+5
+                          - UTC+6
+                          - UTC+7
+                          - UTC+8
+                          - UTC+9
+                          - UTC+10
+                          - UTC+11
+                          - UTC+12
+                          - dtdhms
+                          - dthms
+                          - d
+                          - h
+                          - m
+                          - s
+                          - ms
+                          - us
+                          - ns
+                        default_value: KMB
+                    analysable:
+                      description:
+                        zh_cn: 用于表示字段是否可分析，即作为Group By的列。默认值为false。
+                        en_us: >-
+                          Used to denote whether the field is analyzable, i.e., serving as a column for Group By. default
+                          value is false.
+                      type: bool
+                      constraint:
+                        default_value: false
+                    filterable:
+                      description:
+                        zh_cn: 用于表示字段是否可过滤，即支持索引过滤。默认值为false。
+                        en_us: >-
+                          Used to indicate whether this field can support filtering, i.e., it supports indexed filtering.
+                          default value is false.
+                      type: bool
+                      constraint:
+                        default_value: false
+                    orderable:
+                      description:
+                        zh_cn: 用于表示字段是否可排序。默认值为false。
+                        en_us: Used to indicate whether the field is sortable. default value is false.
+                      type: bool
+                      constraint:
+                        default_value: false
+                    default_order:
+                      description:
+                        zh_cn: 用于表示字段的默认排序顺序。值必须是以下之一：asc、desc。默认值为asc。
+                        en_us: >
+                          Used to indicate the default sorting order of the field. The value must be one of the following:
+                          asc, desc. default value is asc.
+                      type: enum
+                      constraint:
+                        enum:
+                          values:
+                          - asc
+                          - desc
+                          default_value: asc
+                    pattern:
+                      description:
+                        zh_cn: 正则表达式，用于定义字段的值范围（字符串）。
+                        en_us: Regular expression, used to define the range of values for this field (String).
+                      type: string
+                    max_length:
+                      description:
+                        zh_cn: 字符串值的最大长度。仅适用于字符串类型。
+                        en_us: The max length of string value. Only valid for string type.
+                      type: integer
+                    example:
+                      description:
+                        zh_cn: 字段值的示例。值可以为空。
+                        en_us: examples of the field value. The value can be empty.
+                      type: any
+                    max_value:
+                      description:
+                        zh_cn: 字段的最大值。值可以为空。仅适用于整数和浮点类型。
+                        en_us: >-
+                          The maximum value of the field. The value can be empty. Only valid for integer and float types.
+                      type: number
+                    min_value:
+                      description:
+                        zh_cn: 字段的最小值。值可以为空。仅适用于整数和浮点类型。
+                        en_us: >-
+                          The minimum value of the field. The value can be empty. Only valid for integer and float types.
+                      type: number
+                    default_value:
+                      description:
+                        zh_cn: 字段的默认值。值可以为空。
+                        en_us: The default value of the field. The value can be empty.
+                      type: any
+                    icon:
+                      description:
+                        zh_cn: Field 在 UModel 系统中的图标。值格式为'url'。
+                        en_us: The icon of the Element in UModel System. The value format is 'url'.
+                      type: string
+                      release_stage: experimental
+                      constraint: null
+                    uri:
+                      description:
+                        zh_cn: 用于表示该字段唯一标识。
+                        en_us: This field is used to represent the unique identifier of the field.
+                      type: string
+                      release_stage: experimental
+                      constraint: null
+                    tags:
+                      description:
+                        zh_cn: 用于表示该 Field 的标签。
+                        en_us: This field is used to represent the tags of the Field.
+                      type: map
+                      constraint:
+                        map:
+                          key:
+                            type: string
+                            constraint: null
+                          value:
+                            type: string
+                    properties:
+                      description:
+                        zh_cn: 用于表示该 Field 的附加属性。
+                        en_us: This field is used to represent the additional properties of the Field.
+                      type: map
+                      constraint:
+                        map:
+                          key:
+                            type: string
+                            constraint: null
+                          value:
+                            type: string
+                min_size: 1
+            release_stage: deprecated
+          metrics:
+            description:
+              zh_cn: 详细的指标列表。
+              en_us: The detailed list of metrics.
+            type: array
+            constraint:
+              array:
+                item:
+                  type: object
+                  properties:
+                    name:
+                      description:
+                        zh_cn: 指标的名称。值不能为空。
+                        en_us: The name of the Metric. The value cannot be empty.
+                      type: string
+                      constraint:
+                        required: true
+                        min_len: 1
+                        max_len: 127
+                    display_name:
+                      description:
+                        zh_cn: 指标的显示名称。
+                        en_us: The display name of the Metric. The value cannot be empty.
+                      type: object
+                      properties:
+                        zh_cn:
+                          description:
+                            zh_cn: 中文描述
+                            en_us: Chinese description
+                          type: string
+                        en_us:
+                          description:
+                            zh_cn: 英文描述
+                            en_us: English description
+                          type: string
+                    description:
+                      description:
+                        zh_cn: 指标的描述。值格式为语义字符串。
+                        en_us: The description of the Metric.
+                      type: object
+                      properties:
+                        zh_cn:
+                          description:
+                            zh_cn: 中文描述
+                            en_us: Chinese description
+                          type: string
+                        en_us:
+                          description:
+                            zh_cn: 英文描述
+                            en_us: English description
+                          type: string
+                    short_description:
+                      description:
+                        zh_cn: 指标的简短描述。值格式为语义字符串。
+                        en_us: The short description of the Metric.
+                      type: object
+                      properties:
+                        zh_cn:
+                          description:
+                            zh_cn: 中文描述
+                            en_us: Chinese description
+                          type: string
+                        en_us:
+                          description:
+                            zh_cn: 英文描述
+                            en_us: English description
+                          type: string
+                    launch_stage:
+                      description:
+                        zh_cn: 元素的发布阶段。默认值为 preview。
+                        en_us: The launch stage of the Element. The default value is preview.
+                      type: string
+                      constraint:
+                        enum:
+                          values:
+                          - preview
+                          - beta
+                          - ga
+                          - deprecated
+                        default_value: preview
+                    unit:
+                      description:
+                        zh_cn: >
+                          指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format
+                          即可满足需求，unit 填写为空即可。
+                                  若不满足需求，一般建议 data_format 配置通用的 KMB， 并配置 unit 为特定类型。比如温度，可以配置 data_format 为 KMB， 并配置 unit
+                          为 °C。
+                        en_us: >
+                          The unit of the Metric. The value format is a string. Note: The unit is only used for display and
+                          will not be converted, such as ms will not be automatically converted to s. Best practice: First
+                          configure data_format, in most observable scenarios, data_format can meet the needs, and unit can
+                          be filled in as empty. If it does not meet the needs, it is generally recommended to configure data_format
+                          to a common KMB, and configure unit to a specific type. For example, for temperature, you can configure
+                          data_format to KMB and configure unit to °C.
+                      type: string
+                    data_format:
+                      description:
+                        zh_cn: >
+                          指标的格式化方式，值格式为字符串。支持的格式化选项：
+
+                          数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000
+
+                          存储格式化： - byte: 处理为字节格式，样例：B/KB/MB - bit: 处理为位格式，样例：b/Kb/Mb
+
+                          速率格式化： - byte_ies_sec: 每秒字节（byte per second）格式化，样例：B/s/KB/s/MB/s - bit_ies_sec: 每秒位（bit per second）格式化，样例：bps/Kbps/Mbps
+                          - iops: 输入输出操作每秒格式化，样例：io/s - reqps: 请求每秒格式化，样例：req/s
+
+                          百分比格式化： - percent: 百分比格式化，取值为1-100，样例：10% - percent_decimal: 百分比格式化，取值为0-1，样例：10%
+
+                          时间格式化： - localtime: 将时间戳转换为本地时间格式 - localtimems: 毫秒时间转换为本地时间格式 - localtimeus: 微秒时间转换为本地时间格式 - localtimens:
+                          纳秒时间转换为本地时间格式 - UTC±n: 将时间戳转换为特定时区的时间
+
+                          持续时间（Duration）格式化： - dtdhms: 持续时间格式化为天、小时、分、秒，样例：d hh:mm:ss - dthms: 持续时间格式化为小时、分、秒，样例：hh:mm:ss
+                          - d: 按天格式化时间 - h: 按小时格式化时间 - m: 按分钟格式化时间 - s: 按秒格式化时间 - ms: 按毫秒格式化时间 - us: 按微秒格式化时间 - ns: 按纳秒格式化时间
+                        en_us: >
+                          The formatting method for metrics, value format is string. Supported formatting options:
+
+                          Numeric formatting: - KMB: Thousands, millions, billions formatting, example: K,Mil,Bil - milli:
+                          Process as millisecond format, example: 1,000,000
+
+                          Storage formatting: - byte: Process as byte format, example: B/KB/MB - bit: Process as bit format,
+                          example: b/Kb/Mb
+
+                          Rate formatting: - byte_ies_sec: Bytes per second formatting, example: B/s/KB/s/MB/s - bit_ies_sec:
+                          Bits per second formatting, example: bps/Kbps/Mbps - iops: Input/output operations per second formatting,
+                          example: io/s - reqps: Requests per second formatting, example: req/s
+
+                          Percentage formatting: - percent: Percentage formatting, value range is 1-100, example: 10% - percent_decimal:
+                          Percentage formatting, value range is 0-1, example: 10%
+
+                          Time formatting: - localtime: Convert timestamp to local time format - localtimems: Convert millisecond
+                          time to local time format - localtimeus: Convert microsecond time to local time format - localtimens:
+                          Convert nanosecond time to local time format - UTC±n: Convert timestamp to specific timezone time
+
+                          Duration formatting: - dtdhms: Format duration as days, hours, minutes, seconds, example: d hh:mm:ss
+                          - dthms: Format duration as hours, minutes, seconds, example: hh:mm:ss - d: Format time by days
+                          - h: Format time by hours - m: Format time by minutes - s: Format time by seconds - ms: Format time
+                          by milliseconds - us: Format time by microseconds - ns: Format time by nanoseconds
+                      type: string
+                      constraint:
+                        enum:
+                          values:
+                          - KMB
+                          - milli
+                          - byte
+                          - bit
+                          - byte_ies_sec
+                          - bit_ies_sec
+                          - iops
+                          - reqps
+                          - percent
+                          - percent_decimal
+                          - localtime
+                          - localtimems
+                          - localtimeus
+                          - localtimens
+                          - UTC-11
+                          - UTC-10
+                          - UTC-9
+                          - UTC-8
+                          - UTC-7
+                          - UTC-6
+                          - UTC-5
+                          - UTC-4
+                          - UTC-3
+                          - UTC-2
+                          - UTC-1
+                          - UTC+0
+                          - UTC+1
+                          - UTC+2
+                          - UTC+3
+                          - UTC+4
+                          - UTC+5
+                          - UTC+6
+                          - UTC+7
+                          - UTC+8
+                          - UTC+9
+                          - UTC+10
+                          - UTC+11
+                          - UTC+12
+                          - dtdhms
+                          - dthms
+                          - d
+                          - h
+                          - m
+                          - s
+                          - ms
+                          - us
+                          - ns
+                        default_value: KMB
+                    max_value:
+                      description:
+                        zh_cn: 字段的最大值。值可以为空。仅适用于整数和浮点类型。
+                        en_us: >-
+                          The maximum value of the field. The value can be empty. Only valid for integer and float types.
+                      type: number
+                    min_value:
+                      description:
+                        zh_cn: 字段的最小值。值可以为空。仅适用于整数和浮点类型。
+                        en_us: >-
+                          The minimum value of the field. The value can be empty. Only valid for integer and float types.
+                      type: number
+                    default_value:
+                      description:
+                        zh_cn: 字段的默认值。值可以为空。
+                        en_us: The default value of the field. The value can be empty.
+                      type: any
+                    icon:
+                      description:
+                        zh_cn: 用于表示该指标的图标。
+                        en_us: This field is used to represent the icon of the Metric.
+                      type: string
+                      release_stage: experimental
+                      constraint: null
+                    labels:
+                      description:
+                        zh_cn: 用于表示该指标自身额外的标签。即在 MetricSet 的标签基础上，该指标还具有的额外标签。
+                        en_us: >-
+                          This field is used to represent the labels of the Metric. It is the additional labels of the Metric
+                          on top of the labels in the MetricSet.
+                      type: array
+                      constraint:
+                        array:
+                          item:
+                            type: object
+                            properties:
+                              name:
+                                description:
+                                  zh_cn: Field 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+                                  en_us: >
+                                    The name of the Field in UModel System. The value cannot be empty.The value format is
+                                    lowercase alphanumeric characters.
+                                type: string
+                                constraint:
+                                  pattern: ^[a-zA-Z0-9_][a-zA-Z0-9-_\.:]{0,127}$
+                                  required: true
+                                  min_len: 0
+                                  max_len: 127
+                              display_name:
+                                description:
+                                  zh_cn: Field 在 UModel 系统中的显示名称。值不能为空。
+                                  en_us: The display name of the Element in UModel System. The value cannot be empty.
+                                type: object
+                                properties:
+                                  zh_cn:
+                                    description:
+                                      zh_cn: 中文描述
+                                      en_us: Chinese description
+                                    type: string
+                                  en_us:
+                                    description:
+                                      zh_cn: 英文描述
+                                      en_us: English description
+                                    type: string
+                              description:
+                                description:
+                                  zh_cn: Field 在 UModel 系统中的描述。
+                                  en_us: The description of the Element in UModel System.
+                                type: object
+                                properties:
+                                  zh_cn:
+                                    description:
+                                      zh_cn: 中文描述
+                                      en_us: Chinese description
+                                    type: string
+                                  en_us:
+                                    description:
+                                      zh_cn: 英文描述
+                                      en_us: English description
+                                    type: string
+                              short_description:
+                                description:
+                                  zh_cn: Field 在 UModel 系统中的简短描述。
+                                  en_us: The short description of the Element in UModel System.
+                                type: object
+                                properties:
+                                  zh_cn:
+                                    description:
+                                      zh_cn: 中文描述
+                                      en_us: Chinese description
+                                    type: string
+                                  en_us:
+                                    description:
+                                      zh_cn: 英文描述
+                                      en_us: English description
+                                    type: string
+                              launch_stage:
+                                description:
+                                  zh_cn: 元素的发布阶段。默认值为 preview。
+                                  en_us: The launch stage of the Element. The default value is preview.
+                                type: string
+                                constraint:
+                                  enum:
+                                    values:
+                                    - preview
+                                    - beta
+                                    - ga
+                                    - deprecated
+                                  default_value: preview
+                              type:
+                                description:
+                                  zh_cn: 字段的类型。值必须是以下之一：string、integer、float、boolean、time、json_object、json_array。值不能为空。
+                                  en_us: >
+                                    The type of the Field. The value must be one of the following: string, integer, float,
+                                    boolean, time, json_object, json_array.  The value cannot be empty.
+                                type: enum
+                                constraint:
+                                  enum:
+                                    values:
+                                    - string
+                                    - integer
+                                    - float
+                                    - boolean
+                                    - time
+                                    - json_object
+                                    - json_array
+                                  required: true
+                              value_mapping:
+                                description:
+                                  zh_cn: >-
+                                    对于枚举值的映射和解释，为了更好的展示映射值含义，对于 mapping 的 value 字段单独定义，value 包含4个字段："name"、"display_name"、"description"和"short_description"。例如，"status"字段的值是"1"，映射为
+                                    ：name 为 "running" ，display_name 为"运行中"，description 为"运行中......"，short_description 为"运行中..."。
+                                  en_us: >
+                                    For the mapping and interpretation of enumeration values, in order to better display the
+                                    meaning of the mapping value, the value field of the mapping is defined separately. The
+                                    value contains 4 fields: "name", "display_name", "description", and "short_description".
+                                    For example, the value of the "status" field is "1", the mapping is: name is "running",
+                                    display_name is "running", description is "running...", and short_description is "running...".
+                                type: map
+                                constraint:
+                                  map:
+                                    key:
+                                      type: string
+                                    value:
+                                      type: object
+                                      properties:
+                                        name:
+                                          description:
+                                            zh_cn: 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+                                            en_us: >
+                                              The name of the Element in UModel System. The value cannot be empty.The value
+                                              format is lowercase alphanumeric characters.
+                                          type: string
+                                          constraint:
+                                            pattern: ^[a-zA-Z][a-zA-Z0-9-_\.]{0,127}$
+                                            required: true
+                                            min_len: 0
+                                            max_len: 127
+                                        display_name:
+                                          description:
+                                            zh_cn: 在 UModel 系统中的显示名称。值不能为空。
+                                            en_us: The display name of the Element in UModel System. The value cannot be empty.
+                                          type: object
+                                          properties:
+                                            zh_cn:
+                                              description:
+                                                zh_cn: 中文描述
+                                                en_us: Chinese description
+                                              type: string
+                                            en_us:
+                                              description:
+                                                zh_cn: 英文描述
+                                                en_us: English description
+                                              type: string
+                                        description:
+                                          description:
+                                            zh_cn: 在 UModel 系统中的描述。
+                                            en_us: The description of the Element in UModel System.
+                                          type: object
+                                          properties:
+                                            zh_cn:
+                                              description:
+                                                zh_cn: 中文描述
+                                                en_us: Chinese description
+                                              type: string
+                                            en_us:
+                                              description:
+                                                zh_cn: 英文描述
+                                                en_us: English description
+                                              type: string
+                                        short_description:
+                                          description:
+                                            zh_cn: 在 UModel 系统中的简短描述。
+                                            en_us: The short description of the Element in UModel System.
+                                          type: object
+                                          properties:
+                                            zh_cn:
+                                              description:
+                                                zh_cn: 中文描述
+                                                en_us: Chinese description
+                                              type: string
+                                            en_us:
+                                              description:
+                                                zh_cn: 英文描述
+                                                en_us: English description
+                                              type: string
+                              unit:
+                                description:
+                                  zh_cn: >
+                                    指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format
+                                    即可满足需求，unit 填写为空即可。
+                                            若不满足需求，一般建议 data_format 配置通用的 KMB， 并配置 unit 为特定类型。比如温度，可以配置 data_format 为 KMB，
+                                    并配置 unit 为 °C。
+                                  en_us: >
+                                    The unit of the Metric. The value format is a string. Note: The unit is only used for
+                                    display and will not be converted, such as ms will not be automatically converted to s.
+                                    Best practice: First configure data_format, in most observable scenarios, data_format
+                                    can meet the needs, and unit can be filled in as empty. If it does not meet the needs,
+                                    it is generally recommended to configure data_format to a common KMB, and configure unit
+                                    to a specific type. For example, for temperature, you can configure data_format to KMB
+                                    and configure unit to °C.
+                                type: string
+                              data_format:
+                                description:
+                                  zh_cn: >
+                                    指标的格式化方式，值格式为字符串。支持的格式化选项：
+
+                                    数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000
+
+                                    存储格式化： - byte: 处理为字节格式，样例：B/KB/MB - bit: 处理为位格式，样例：b/Kb/Mb
+
+                                    速率格式化： - byte_ies_sec: 每秒字节（byte per second）格式化，样例：B/s/KB/s/MB/s - bit_ies_sec: 每秒位（bit
+                                    per second）格式化，样例：bps/Kbps/Mbps - iops: 输入输出操作每秒格式化，样例：io/s - reqps: 请求每秒格式化，样例：req/s
+
+                                    百分比格式化： - percent: 百分比格式化，取值为1-100，样例：10% - percent_decimal: 百分比格式化，取值为0-1，样例：10%
+
+                                    时间格式化： - localtime: 将时间戳转换为本地时间格式 - localtimems: 毫秒时间转换为本地时间格式 - localtimeus: 微秒时间转换为本地时间格式
+                                    - localtimens: 纳秒时间转换为本地时间格式 - UTC±n: 将时间戳转换为特定时区的时间
+
+                                    持续时间（Duration）格式化： - dtdhms: 持续时间格式化为天、小时、分、秒，样例：d hh:mm:ss - dthms: 持续时间格式化为小时、分、秒，样例：hh:mm:ss
+                                    - d: 按天格式化时间 - h: 按小时格式化时间 - m: 按分钟格式化时间 - s: 按秒格式化时间 - ms: 按毫秒格式化时间 - us: 按微秒格式化时间 -
+                                    ns: 按纳秒格式化时间
+                                  en_us: >
+                                    The formatting method for metrics, value format is string. Supported formatting options:
+
+                                    Numeric formatting: - KMB: Thousands, millions, billions formatting, example: K,Mil,Bil
+                                    - milli: Process as millisecond format, example: 1,000,000
+
+                                    Storage formatting: - byte: Process as byte format, example: B/KB/MB - bit: Process as
+                                    bit format, example: b/Kb/Mb
+
+                                    Rate formatting: - byte_ies_sec: Bytes per second formatting, example: B/s/KB/s/MB/s -
+                                    bit_ies_sec: Bits per second formatting, example: bps/Kbps/Mbps - iops: Input/output operations
+                                    per second formatting, example: io/s - reqps: Requests per second formatting, example:
+                                    req/s
+
+                                    Percentage formatting: - percent: Percentage formatting, value range is 1-100, example:
+                                    10% - percent_decimal: Percentage formatting, value range is 0-1, example: 10%
+
+                                    Time formatting: - localtime: Convert timestamp to local time format - localtimems: Convert
+                                    millisecond time to local time format - localtimeus: Convert microsecond time to local
+                                    time format - localtimens: Convert nanosecond time to local time format - UTC±n: Convert
+                                    timestamp to specific timezone time
+
+                                    Duration formatting: - dtdhms: Format duration as days, hours, minutes, seconds, example:
+                                    d hh:mm:ss - dthms: Format duration as hours, minutes, seconds, example: hh:mm:ss - d:
+                                    Format time by days - h: Format time by hours - m: Format time by minutes - s: Format
+                                    time by seconds - ms: Format time by milliseconds - us: Format time by microseconds -
+                                    ns: Format time by nanoseconds
+                                type: string
+                                constraint:
+                                  enum:
+                                    values:
+                                    - KMB
+                                    - milli
+                                    - byte
+                                    - bit
+                                    - byte_ies_sec
+                                    - bit_ies_sec
+                                    - iops
+                                    - reqps
+                                    - percent
+                                    - percent_decimal
+                                    - localtime
+                                    - localtimems
+                                    - localtimeus
+                                    - localtimens
+                                    - UTC-11
+                                    - UTC-10
+                                    - UTC-9
+                                    - UTC-8
+                                    - UTC-7
+                                    - UTC-6
+                                    - UTC-5
+                                    - UTC-4
+                                    - UTC-3
+                                    - UTC-2
+                                    - UTC-1
+                                    - UTC+0
+                                    - UTC+1
+                                    - UTC+2
+                                    - UTC+3
+                                    - UTC+4
+                                    - UTC+5
+                                    - UTC+6
+                                    - UTC+7
+                                    - UTC+8
+                                    - UTC+9
+                                    - UTC+10
+                                    - UTC+11
+                                    - UTC+12
+                                    - dtdhms
+                                    - dthms
+                                    - d
+                                    - h
+                                    - m
+                                    - s
+                                    - ms
+                                    - us
+                                    - ns
+                                  default_value: KMB
+                              analysable:
+                                description:
+                                  zh_cn: 用于表示字段是否可分析，即作为Group By的列。默认值为false。
+                                  en_us: >-
+                                    Used to denote whether the field is analyzable, i.e., serving as a column for Group By.
+                                    default value is false.
+                                type: bool
+                                constraint:
+                                  default_value: false
+                              filterable:
+                                description:
+                                  zh_cn: 用于表示字段是否可过滤，即支持索引过滤。默认值为false。
+                                  en_us: >-
+                                    Used to indicate whether this field can support filtering, i.e., it supports indexed filtering.
+                                    default value is false.
+                                type: bool
+                                constraint:
+                                  default_value: false
+                              orderable:
+                                description:
+                                  zh_cn: 用于表示字段是否可排序。默认值为false。
+                                  en_us: Used to indicate whether the field is sortable. default value is false.
+                                type: bool
+                                constraint:
+                                  default_value: false
+                              default_order:
+                                description:
+                                  zh_cn: 用于表示字段的默认排序顺序。值必须是以下之一：asc、desc。默认值为asc。
+                                  en_us: >
+                                    Used to indicate the default sorting order of the field. The value must be one of the
+                                    following: asc, desc. default value is asc.
+                                type: enum
+                                constraint:
+                                  enum:
+                                    values:
+                                    - asc
+                                    - desc
+                                    default_value: asc
+                              pattern:
+                                description:
+                                  zh_cn: 正则表达式，用于定义字段的值范围（字符串）。
+                                  en_us: Regular expression, used to define the range of values for this field (String).
+                                type: string
+                              max_length:
+                                description:
+                                  zh_cn: 字符串值的最大长度。仅适用于字符串类型。
+                                  en_us: The max length of string value. Only valid for string type.
+                                type: integer
+                              example:
+                                description:
+                                  zh_cn: 字段值的示例。值可以为空。
+                                  en_us: examples of the field value. The value can be empty.
+                                type: any
+                              max_value:
+                                description:
+                                  zh_cn: 字段的最大值。值可以为空。仅适用于整数和浮点类型。
+                                  en_us: >-
+                                    The maximum value of the field. The value can be empty. Only valid for integer and float
+                                    types.
+                                type: number
+                              min_value:
+                                description:
+                                  zh_cn: 字段的最小值。值可以为空。仅适用于整数和浮点类型。
+                                  en_us: >-
+                                    The minimum value of the field. The value can be empty. Only valid for integer and float
+                                    types.
+                                type: number
+                              default_value:
+                                description:
+                                  zh_cn: 字段的默认值。值可以为空。
+                                  en_us: The default value of the field. The value can be empty.
+                                type: any
+                              icon:
+                                description:
+                                  zh_cn: Field 在 UModel 系统中的图标。值格式为'url'。
+                                  en_us: The icon of the Element in UModel System. The value format is 'url'.
+                                type: string
+                                release_stage: experimental
+                                constraint: null
+                              uri:
+                                description:
+                                  zh_cn: 用于表示该字段唯一标识。
+                                  en_us: This field is used to represent the unique identifier of the field.
+                                type: string
+                                release_stage: experimental
+                                constraint: null
+                              tags:
+                                description:
+                                  zh_cn: 用于表示该 Field 的标签。
+                                  en_us: This field is used to represent the tags of the Field.
+                                type: map
+                                constraint:
+                                  map:
+                                    key:
+                                      type: string
+                                      constraint: null
+                                    value:
+                                      type: string
+                              properties:
+                                description:
+                                  zh_cn: 用于表示该 Field 的附加属性。
+                                  en_us: This field is used to represent the additional properties of the Field.
+                                type: map
+                                constraint:
+                                  map:
+                                    key:
+                                      type: string
+                                      constraint: null
+                                    value:
+                                      type: string
+                    golden_metric:
+                      type: boolean
+                      constraint:
+                        default_value: false
+                      description:
+                        zh_cn: 是否为黄金指标。
+                        en_us: Whether the metric is a golden metric.
+                    generator:
+                      type: string
+                      description:
+                        zh_cn: >
+                          指标的生成方式，如果是 PromMode，该字段为 PromQL语句，能够执行并得到一个可直接使用的 Measure 类型指标。 例如：rate(request_count{}[1m])，在一些场景下结合
+                          aggregator 字段，能够计算出聚合维度的指标，例如 sum(rate(request_count{}[1m])) by (label1, label2) 如果是 SQL/SPLMode，该字段为
+                          SQL/SPL语句的计算方式，能够组合并最终生成执行的语句。例如：count(1)，最终生成的SQL为 select label1, label2, count(1) as request_count
+                          from (${StorageQuery}) group by label1, label2
+                        en_us: >
+                          This field represents the generator of the Metric. If the mode is PromMode, this field is a PromQL
+                          statement that can be executed to get a Measure type metric directly. For example: rate(request_count{}[1m]).
+                          If the mode is SQL/SPLMode, this field is the calculation method of the SQL/SPL statement, which
+                          can be combined and finally generate the execution statement. For example: count(1), the final generated
+                          SQL is select label1, label2, count(1) as request_count from (${StorageQuery}) group by label1,
+                          label2
+                    aggregator:
+                      type: string
+                      description:
+                        zh_cn: >
+                          指标的聚合方式。如果指标本身是聚合的，且聚合方式在多种维度组合下均一致，则不需要配置次字段，其他情况需要配置。一些示例场景如下： 1. Prometheus指标和Metric从时间线维度相同
+                            1.1 rate(cpu_usage_seconds_total{}[1m]) 即可计算出单机指标，cpu_usage_seconds_total 代表主机级别的统计值，这时需要配置 Aggregator
+                          为 avg
+                            1.2 avg(rate(cpu_core_usage_seconds_total{}[1m]))， cpu_core_usage_seconds_total 代表主机上每个CPU的统计值，主机指标本身需要聚合计算，则不需要配置
+                          Aggregator
+                          2. 基础云监控场景全是聚合指标，一定需要配置 3. 基于日志聚合的指标，一般不需要配置
+                        en_us: >
+                          The aggregation method of the metric. If the metric is already aggregated, and the aggregation method
+                          is consistent in multiple dimension combinations, this field does not need to be configured, otherwise
+                          it needs to be configured. Some examples of scenarios that need to be configured are as follows:
+                          1. Prometheus metrics and Metric have the same time line dimension
+                            1.1 rate(cpu_usage_seconds_total{}[1m]) can calculate the single machine metric, cpu_usage_seconds_total
+                          represents the statistical value of the host level, then Aggregator needs to be configured as avg
+                            1.2 avg(rate(cpu_core_usage_seconds_total{}[1m])), cpu_core_usage_seconds_total represents the
+                          statistical value of each CPU on the host, the host metric itself needs to be aggregated, then Aggregator
+                          does not need to be configured
+                          2. All metrics in the cloud monitor scenario are aggregated metrics, so this field must be configured
+                          3. Based on log aggregation metrics, it is generally not required to configure
+                    interval_us:
+                      description:
+                        zh_cn: >
+                          指标的间隔，值格式为整数或整数数组，单位为微秒。 - 当为单个整数时：表示固定的采集间隔 - 当为整数数组时：表示多个采集间隔，用于支持不同精度的数据采集
+                        en_us: >
+                          The interval of the metric, value format is integer or array of integers, in microseconds. - When
+                          single integer: represents a fixed collection interval - When array of integers: represents multiple
+                          collection intervals for supporting different precision data collection
+                      constraint:
+                        oneOf:
+                        - type: integer
+                          description:
+                            zh_cn: 单个采集间隔，单位为微秒
+                            en_us: Single collection interval in microseconds
+                        - type: array
+                          description:
+                            zh_cn: 多个采集间隔的数组，单位为微秒
+                            en_us: Array of collection intervals in microseconds
+                          constraint:
+                            array:
+                              item:
+                                type: integer
+                              min_size: 1
+                    type:
+                      type: string
+                      description:
+                        zh_cn: 指标的类型。对于无需二次处理的指标，该字段应固定为 gauge。
+                        en_us: >-
+                          This field indicates the metric type. For metrics that do not need to be processed again, this field
+                          should be fixed to gauge.
+                      constraint:
+                        default_value: gauge
+                    query_mode:
+                      type: string
+                      constraint:
+                        enum:
+                          values:
+                          - range
+                          - instant
+                          - both
+                          default_value: instant
+                      description:
+                        zh_cn: 指标期望的查询模式。值必须是以下之一：range, instant, both。
+                        en_us: >
+                          This metric query mode. The value must be one of the following: range, instant, both.
+                      release_stage: experimental
+                    display_type:
+                      type: string
+                      description:
+                        zh_cn: 指标的显示类型。当前未使用。
+                        en_us: This metric display type.
+                      release_stage: experimental
+                    statistics:
+                      type: array
+                      description:
+                        zh_cn: 生成该指标时的统计方式，即该指标有多种生成方式。当前仅在基础云监控场景下使用。
+                        en_us: >-
+                          The statistics method when generating this metric, that is, the metric has multiple generation methods.
+                          It is currently only used in the cloud monitor service scenario.
+                      constraint:
+                        array:
+                          item:
+                            type: string
+                    tags:
+                      description:
+                        zh_cn: 用于表示该指标的标签。
+                        en_us: This field is used to represent the tags of the Metric.
+                      type: map
+                      constraint:
+                        map:
+                          min_size: 1
+                          key:
+                            type: string
+                            constraint: null
+                          value:
+                            type: string
+                    properties:
+                      description:
+                        zh_cn: 用于表示该指标的附加属性。
+                        en_us: This field is used to represent the additional properties of the Metric.
+                      type: map
+                      constraint:
+                        map:
+                          key:
+                            type: string
+                            constraint: null
+                          value:
+                            type: string
+                    default_fill_policy:
+                      type: string
+                      description:
+                        zh_cn: 指标的默认填充策略。 值可以是 null, 0, last, next。
+                        en_us: The default fill policy of the Metric. The value can be null, 0, last, next.
+                min_size: 1
+          query_type:
+            description:
+              zh_cn: 指标的查询语法，取值包括：prom、spl、cms 。
+              en_us: The query type of the metric. The value can be prom, spl or cms.
+            type: string
+            constraint:
+              enum:
+                values:
+                - prom
+                - spl
+                - cms
+          needs_processing:
+            type: boolean
+            description:
+              zh_cn: >-
+                是否需要二次处理，即该 MetricSet 中指标是否需要二次处理才能被使用。例如 Prometheus 中的 counter/summary/histogram 等指标需要二次处理才能被使用。
+              en_us: >-
+                Whether the MetricSet needs to be processed again. That is, whether the metrics in the MetricSet need to be
+                processed again to be used. For example, the counter/summary/histogram metrics in Prometheus need to be processed
+                again to be used.
+            constraint:
+              default_value: false

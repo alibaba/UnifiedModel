@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alibaba/UnifiedModel/internal/graphstore"
+	"github.com/alibaba/UnifiedModel/internal/umodel"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
@@ -133,6 +135,50 @@ func TestReadResourcesDoNotLeakRuntimeResults(t *testing.T) {
 				t.Fatalf("resource leaked runtime result marker %q in %s: %s", leaked, resource.URI, text)
 			}
 		}
+	}
+}
+
+func TestUModelValidateSurfacesSchemaErrorsAndWarnings(t *testing.T) {
+	graph := graphstore.NewMemoryStore()
+	umodelSvc := umodel.NewService(graph)
+	svc := NewService(fakeQuery{}, WithWriteServices(umodelSvc, &fakeEntityStore{}))
+
+	// entity_set_link with bad shape: wrong field names + missing required entity_link_type.
+	result, err := svc.ExecuteTool(context.Background(), "demo", model.AgentToolCallRequest{
+		Name: "umodel_validate",
+		Arguments: map[string]any{"elements": []map[string]any{{
+			"kind":   "entity_set_link",
+			"domain": "demo",
+			"name":   "demo.bad",
+			"spec": map[string]any{
+				"source":        map[string]any{"domain": "demo", "name": "a"},
+				"destination":   map[string]any{"domain": "demo", "name": "b"},
+				"relation_type": "depends_on",
+			},
+		}}},
+	})
+	if err != nil {
+		t.Fatalf("umodel_validate: %v", err)
+	}
+	if !result.OK {
+		t.Fatalf("expected ok envelope, got %+v", result)
+	}
+	body, err := json.Marshal(result.Output)
+	if err != nil {
+		t.Fatalf("marshal output: %v", err)
+	}
+	var validation model.ValidationResult
+	if err := json.Unmarshal(body, &validation); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if validation.Valid {
+		t.Fatalf("expected invalid, got %+v", validation)
+	}
+	if len(validation.Errors) == 0 || !strings.Contains(validation.Errors[0].Reason, "required") {
+		t.Fatalf("expected required-missing error, got %+v", validation.Errors)
+	}
+	if len(validation.Warnings) < 3 {
+		t.Fatalf("expected at least 3 warnings for unknown fields, got %+v", validation.Warnings)
 	}
 }
 

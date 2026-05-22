@@ -148,6 +148,19 @@ expand:
 	@$(PYTHON) ./tools/generators/schema_python_generator_v2.py
 	@echo "Generating Java model SDK..."
 	@$(PYTHON) ./tools/generators/schema_java_generator_v2.py
+	@$(MAKE) schemas-embed
+
+schemas-embed:
+	@echo "Mirroring expanded schemas into internal/umodel/schemaspec/data/..."
+	@mkdir -p internal/umodel/schemaspec/data
+	@cp expanded_schemas/*.expanded.yaml internal/umodel/schemaspec/data/
+
+schemas-embed-check:
+	@if ! diff -r expanded_schemas/ internal/umodel/schemaspec/data/ --exclude='*.md' >/dev/null 2>&1; then \
+		echo "Embedded schemas under internal/umodel/schemaspec/data/ differ from expanded_schemas/. Run 'make schemas-embed' and commit."; \
+		diff -r expanded_schemas/ internal/umodel/schemaspec/data/ --exclude='*.md' | head -40; \
+		exit 1; \
+	fi
 
 doc:
 	@bash ./tools/converters/batch_convert_html.sh
@@ -172,7 +185,7 @@ test: guard test-service verify
 check-manifest:
 	@$(PYTHON) ./tools/verify/check_manifest.py
 
-ci: guard build-service test-service test-capability test-quickstart-health verify check-manifest example-validate
+ci: guard schemas-embed-check build-service test-service test-capability test-quickstart-health verify check-manifest example-validate
 	@echo "Local CI passed."
 
 check-env:

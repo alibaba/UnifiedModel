@@ -91,6 +91,7 @@ type WriteResult struct {
 	Accepted int               `json:"accepted"`
 	Failed   int               `json:"failed"`
 	Items    []BatchItemResult `json:"items,omitempty"`
+	Warnings []ErrorDetail     `json:"warnings,omitempty"`
 }
 
 type UModelElement struct {
@@ -153,8 +154,9 @@ type UModelSnapshot struct {
 }
 
 type ValidationResult struct {
-	Valid  bool          `json:"valid"`
-	Errors []ErrorDetail `json:"errors,omitempty"`
+	Valid    bool          `json:"valid"`
+	Errors   []ErrorDetail `json:"errors,omitempty"`
+	Warnings []ErrorDetail `json:"warnings,omitempty"`
 }
 
 type EntityTypeRef struct {
