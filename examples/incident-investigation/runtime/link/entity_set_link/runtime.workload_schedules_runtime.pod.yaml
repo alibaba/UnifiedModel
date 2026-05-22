@@ -9,10 +9,12 @@ metadata:
     en_us: "Workload schedules Pod"
     zh_cn: "工作负载调度 Pod"
 spec:
-  source:
+  src:
     domain: runtime
+    kind: entity_set
     name: runtime.workload
-  destination:
+  dest:
     domain: runtime
+    kind: entity_set
     name: runtime.pod
-  relation_type: "schedules"
+  entity_link_type: schedules

@@ -12,10 +12,12 @@ metadata:
     en_us: "Synchronous call dependency between two services."
     zh_cn: "两个服务之间的同步调用依赖。"
 spec:
-  source:
+  src:
     domain: platform
+    kind: entity_set
     name: platform.service
-  destination:
+  dest:
     domain: platform
+    kind: entity_set
     name: platform.service
-  relation_type: "calls"
+  entity_link_type: calls

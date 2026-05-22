@@ -9,10 +9,12 @@ metadata:
     en_us: "Namespace contains Workload"
     zh_cn: "命名空间包含工作负载"
 spec:
-  source:
+  src:
     domain: runtime
+    kind: entity_set
     name: runtime.namespace
-  destination:
+  dest:
     domain: runtime
+    kind: entity_set
     name: runtime.workload
-  relation_type: "contains"
+  entity_link_type: contains

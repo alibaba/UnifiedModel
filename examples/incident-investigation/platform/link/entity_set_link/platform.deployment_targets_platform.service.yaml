@@ -9,10 +9,12 @@ metadata:
     en_us: "Deployment targets Service"
     zh_cn: "部署指向服务"
 spec:
-  source:
+  src:
     domain: platform
+    kind: entity_set
     name: platform.deployment
-  destination:
+  dest:
     domain: platform
+    kind: entity_set
     name: platform.service
-  relation_type: "targets"
+  entity_link_type: targets

@@ -9,10 +9,12 @@ metadata:
     en_us: "Incident impacts Service"
     zh_cn: "事件影响服务"
 spec:
-  source:
+  src:
     domain: platform
+    kind: entity_set
     name: platform.incident
-  destination:
+  dest:
     domain: platform
+    kind: entity_set
     name: platform.service
-  relation_type: "impacts"
+  entity_link_type: impacts

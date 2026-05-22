@@ -12,11 +12,13 @@ metadata:
     en_us: "Links platform services to their operational runbook with field-to-parameter mapping."
     zh_cn: "将平台服务链接到其运维手册，并提供字段到参数的映射。"
 spec:
-  source:
+  src:
     domain: platform
+    kind: entity_set
     name: platform.service
-  destination:
+  dest:
     domain: platform
+    kind: runbook_set
     name: platform.service.ops
   token_replace:
     service_id: "${__entity_id__}"

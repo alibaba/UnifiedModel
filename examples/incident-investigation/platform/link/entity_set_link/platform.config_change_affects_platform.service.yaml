@@ -12,10 +12,12 @@ metadata:
     en_us: "A runtime config change that modifies the behavior of a service."
     zh_cn: "修改服务行为的运行时配置变更。"
 spec:
-  source:
+  src:
     domain: platform
+    kind: entity_set
     name: platform.config_change
-  destination:
+  dest:
     domain: platform
+    kind: entity_set
     name: platform.service
-  relation_type: "affects"
+  entity_link_type: affects

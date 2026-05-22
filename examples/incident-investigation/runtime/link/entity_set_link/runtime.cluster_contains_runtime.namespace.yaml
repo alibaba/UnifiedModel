@@ -9,10 +9,12 @@ metadata:
     en_us: "Cluster contains Namespace"
     zh_cn: "集群包含命名空间"
 spec:
-  source:
+  src:
     domain: runtime
+    kind: entity_set
     name: runtime.cluster
-  destination:
+  dest:
     domain: runtime
+    kind: entity_set
     name: runtime.namespace
-  relation_type: "contains"
+  entity_link_type: contains

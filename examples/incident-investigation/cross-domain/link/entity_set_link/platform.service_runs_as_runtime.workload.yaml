@@ -12,10 +12,12 @@ metadata:
     en_us: "Maps a platform service to its Kubernetes workload."
     zh_cn: "将平台服务映射到其 Kubernetes 工作负载。"
 spec:
-  source:
+  src:
     domain: platform
+    kind: entity_set
     name: platform.service
-  destination:
+  dest:
     domain: runtime
+    kind: entity_set
     name: runtime.workload
-  relation_type: "runs_as"
+  entity_link_type: runs_as
