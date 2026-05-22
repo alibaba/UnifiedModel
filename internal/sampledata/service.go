@@ -35,6 +35,13 @@ var sampleCatalog = []sampleDefinition{
 		EntityFile:   "examples/quickstart-multidomain/sample-data/entities.json",
 		RelationFile: "examples/quickstart-multidomain/sample-data/relations.json",
 	},
+	{
+		Name:         "incident-investigation",
+		Aliases:      []string{"incident-inv", "payment-gateway-demo", "examples/incident-investigation"},
+		SchemaRoot:   "examples/incident-investigation",
+		EntityFile:   "examples/incident-investigation/sample-data/entities.json",
+		RelationFile: "examples/incident-investigation/sample-data/relations.json",
+	},
 }
 
 type Service struct {

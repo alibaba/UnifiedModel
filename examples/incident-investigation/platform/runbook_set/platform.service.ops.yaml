@@ -1,0 +1,445 @@
+kind: runbook_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "platform.service.ops"
+  domain: platform
+  display_name:
+    en_us: "Service Operations Runbook"
+    zh_cn: "服务运维手册"
+  description:
+    en_us: "Diagnostic observations, remediation tools, and operational knowledge for platform services. Covers retry storm detection, deployment correlation, and traffic pressure analysis."
+    zh_cn: "平台服务的诊断观察、修复工具和运维知识。覆盖重试风暴检测、部署关联排查和流量压力分析。"
+spec:
+  observations:
+    - name: upstream_retry_amplification
+      display_name:
+        en_us: "Upstream Retry Amplification Check"
+        zh_cn: "上游重试放大检测"
+      short_description:
+        en_us: "Detect if upstream services are generating amplified traffic through retry config changes."
+        zh_cn: "检测上游服务是否因重试配置变更导致流量放大。"
+      phenomenon:
+        phenomenon_type: query
+        inputs:
+          - name: service_id
+            display_name: { en_us: "Service ID", zh_cn: "服务ID" }
+            type: string
+            required: true
+          - name: time_range
+            display_name: { en_us: "Lookback Window", zh_cn: "回溯时间窗口" }
+            type: string
+            required: false
+            default: "24h"
+        outputs:
+          - name: upstream_services
+            display_name: { en_us: "Upstream Services", zh_cn: "上游服务" }
+            type: json
+          - name: recent_config_changes
+            display_name: { en_us: "Recent Config Changes", zh_cn: "近期配置变更" }
+            type: json
+        properties:
+          step1_query: ".topo | graph-call getDirectRelations([(:\"platform@platform.service\" {__entity_id__: '${service_id}'})]) | with(__relation_type__='calls') | project __src_entity_id__, display_name"
+          step2_query: ".entity with(domain='platform', name='platform.config_change', query='target_service:${upstream_id}') | sort applied_at desc | limit 5"
+          description: "First find upstream callers via topology, then check each for recent config changes involving retry or timeout keywords."
+      conclusions:
+        - condition_type: expression
+          condition: "any(config_changes, change_detail contains 'retry' OR change_detail contains 'timeout')"
+          severity: error
+          display_name:
+            en_us: "Retry Storm Detected"
+            zh_cn: "检测到重试风暴"
+          short_description:
+            en_us: "Upstream service recently changed retry/timeout config, causing traffic amplification on target."
+            zh_cn: "上游服务近期修改了重试/超时配置，导致目标服务流量放大。"
+          group: "traffic_amplification"
+          properties:
+            next_action: "rollback_config_change"
+            escalation_path: "circuit_breaker → rate_limit"
+        - condition_type: expression
+          condition: "config_changes.count == 0 OR none(config_changes, change_detail contains 'retry')"
+          severity: info
+          display_name:
+            en_us: "No Retry Amplification"
+            zh_cn: "未检测到重试放大"
+          short_description:
+            en_us: "No upstream retry/timeout config changes found. Investigate other hypotheses."
+            zh_cn: "未发现上游重试/超时配置变更，排查其他假设。"
+          group: "traffic_amplification"
+
+    - name: recent_deployment_correlation
+      display_name:
+        en_us: "Recent Deployment Correlation"
+        zh_cn: "近期部署关联排查"
+      short_description:
+        en_us: "Check if a recent deployment correlates with degradation. Often a false positive."
+        zh_cn: "检查近期部署是否与性能退化相关。经常是误判。"
+      phenomenon:
+        phenomenon_type: query
+        inputs:
+          - name: service_id
+            display_name: { en_us: "Service ID", zh_cn: "服务ID" }
+            type: string
+            required: true
+        properties:
+          query: ".entity with(domain='platform', name='platform.deployment', query='target_service:${service_id}') | sort deployed_at desc | limit 3"
+          note: "Check change_summary content. Trivial changes (logging, docs, formatting) should be deprioritized."
+      conclusions:
+        - condition_type: prompt
+          condition: "Evaluate deployment.change_summary: does it contain logic changes, dependency upgrades, connection handling modifications, or performance-affecting changes? If only trivial (logging, docs, format, header propagation), rule it out."
+          severity: warning
+          display_name:
+            en_us: "Suspicious Deployment"
+            zh_cn: "可疑部署"
+          short_description:
+            en_us: "Recent deployment contains non-trivial changes correlating with the incident timeline."
+            zh_cn: "近期部署包含非平凡变更，与事件时间线相关。"
+          group: "deployment"
+        - condition_type: prompt
+          condition: "Deployment change_summary is trivial (logging, format, docs only). Not the root cause."
+          severity: info
+          display_name:
+            en_us: "Deployment Ruled Out"
+            zh_cn: "部署已排除"
+          short_description:
+            en_us: "Recent deployment is trivial. Move to other hypotheses."
+            zh_cn: "近期部署为轻微变更，转向其他假设。"
+          group: "deployment"
+
+    - name: business_traffic_pressure
+      display_name:
+        en_us: "Business Traffic Pressure"
+        zh_cn: "业务流量压力检测"
+      short_description:
+        en_us: "Check if active promotions are driving traffic beyond capacity."
+        zh_cn: "检查活跃促销是否将流量推至超出容量。"
+      phenomenon:
+        phenomenon_type: query
+        inputs:
+          - name: service_id
+            display_name: { en_us: "Service ID", zh_cn: "服务ID" }
+            type: string
+            required: true
+        outputs:
+          - name: active_promotions
+            display_name: { en_us: "Active Promotions", zh_cn: "活跃促销" }
+            type: json
+        properties:
+          query: ".entity with(domain='business', name='business.promotion', query='status:active') | limit 5"
+          correlation_query: ".topo | graph-call getNeighborNodes('upstream', 2, [(:\"platform@platform.service\" {__entity_id__: '${service_id}'})]) | with(__domain__='business')"
+      conclusions:
+        - condition_type: expression
+          condition: "any(promotions, status == 'active' AND actual_peak_qps > expected_peak_qps * 2)"
+          severity: error
+          display_name:
+            en_us: "Promotion Traffic Exceeds Capacity Plan"
+            zh_cn: "促销流量超出容量规划"
+          short_description:
+            en_us: "Active promotion generating 2x+ forecasted traffic. Combined with retry amplification this overloads the service."
+            zh_cn: "活跃促销产生超出预期2倍以上流量。叠加重试放大后服务过载。"
+          group: "traffic_source"
+          properties:
+            amplification_formula: "effective_load = base_traffic × traffic_multiplier × (new_retries / old_retries)"
+        - condition_type: expression
+          condition: "no active promotions OR actual_peak_qps <= expected_peak_qps * 1.5"
+          severity: info
+          display_name:
+            en_us: "Traffic Within Expected Range"
+            zh_cn: "流量在预期范围内"
+          short_description:
+            en_us: "No abnormal business traffic detected."
+            zh_cn: "未检测到异常业务流量。"
+          group: "traffic_source"
+
+  toolkits:
+    - name: config_management
+      display_name:
+        en_us: "Configuration Management"
+        zh_cn: "配置管理"
+      short_description:
+        en_us: "Rollback and modify service runtime configurations."
+        zh_cn: "回滚和修改服务运行时配置。"
+      toolkit_type: api_call
+      configs:
+        base_url: "http://config-center.internal/api/v1"
+        timeout_ms: "5000"
+      tools:
+        - name: rollback_config_change
+          display_name:
+            en_us: "Rollback Config Change"
+            zh_cn: "回滚配置变更"
+          short_description:
+            en_us: "Revert a config change to previous value. Primary remediation for retry storms."
+            zh_cn: "将配置变更回滚到上一版本。重试风暴的首选修复手段。"
+          input_schema:
+            properties:
+              config_change_id:
+                type: string
+                description: "The config_change entity ID to rollback"
+              target_service:
+                type: string
+                description: "Service entity ID affected by the config"
+            required: ["config_change_id", "target_service"]
+          output_schema:
+            properties:
+              success:
+                type: boolean
+                description: "Whether rollback succeeded"
+              effective_in_seconds:
+                type: integer
+                description: "Seconds until rollback takes effect"
+            required: ["success"]
+          risk_level: medium
+          idempotent: true
+          confirmation_required: true
+          properties:
+            estimated_effect_time: "120-180 seconds"
+
+        - name: apply_rate_limit
+          display_name:
+            en_us: "Apply Emergency Rate Limit"
+            zh_cn: "应用紧急限流"
+          short_description:
+            en_us: "Limit QPS from a source service to a target service. Fallback when config rollback is insufficient."
+            zh_cn: "限制源服务到目标服务的QPS。当配置回滚不足时的后备手段。"
+          input_schema:
+            properties:
+              source_service:
+                type: string
+                description: "Calling service entity ID"
+              target_service:
+                type: string
+                description: "Target service entity ID"
+              max_qps:
+                type: integer
+                description: "Maximum allowed QPS on this path"
+            required: ["source_service", "target_service", "max_qps"]
+          risk_level: high
+          idempotent: true
+          confirmation_required: true
+
+    - name: k8s_operations
+      display_name:
+        en_us: "Kubernetes Operations"
+        zh_cn: "Kubernetes 操作"
+      short_description:
+        en_us: "Scale workloads and restart pods."
+        zh_cn: "扩缩容工作负载和重启 Pod。"
+      toolkit_type: script
+      configs:
+        kubeconfig: "/etc/k8s/prod.kubeconfig"
+      tools:
+        - name: scale_workload
+          display_name:
+            en_us: "Scale Workload"
+            zh_cn: "扩缩容工作负载"
+          short_description:
+            en_us: "Change replica count for a workload. Buys time but does not fix root cause."
+            zh_cn: "修改工作负载副本数。争取时间但不解决根因。"
+          input_schema:
+            properties:
+              workload_id:
+                type: string
+                description: "Workload entity ID from runtime domain"
+              target_replicas:
+                type: integer
+                description: "Desired replica count"
+            required: ["workload_id", "target_replicas"]
+          risk_level: medium
+          idempotent: true
+          confirmation_required: true
+
+        - name: restart_pods
+          display_name:
+            en_us: "Rolling Restart"
+            zh_cn: "滚动重启"
+          short_description:
+            en_us: "Rolling restart pods in a workload. Useful for clearing stuck connections or GC pressure."
+            zh_cn: "滚动重启工作负载中的 Pod。适用于清除卡死连接或 GC 压力。"
+          input_schema:
+            properties:
+              workload_id:
+                type: string
+                description: "Workload entity ID"
+              reason:
+                type: string
+                description: "Reason for restart (logged for audit)"
+            required: ["workload_id"]
+          risk_level: medium
+          idempotent: false
+          confirmation_required: true
+
+  knowledge:
+    - name: retry_storm_pattern
+      display_name:
+        en_us: "Retry Storm Failure Pattern"
+        zh_cn: "重试风暴故障模式"
+      short_description:
+        en_us: "How retry amplification causes cascading latency failures."
+        zh_cn: "重试放大如何导致级联延迟故障。"
+      apply_policy:
+        apply_type: auto
+      content_type: markdown
+      content: |
+        # Retry Storm Pattern
+
+        ## Mechanism
+        When upstream increases retry count for downstream calls:
+        - Each failed request generates N retries instead of M
+        - Under traffic spikes, amplification = traffic_multiplier × (new_retries / old_retries)
+        - Downstream saturates → more timeouts → more retries → positive feedback loop
+
+        ## Calculation
+        ```
+        effective_load = base_qps × promotion_multiplier × (new_max_retries / old_max_retries)
+        Example: 4000 × 3.5 × (5/2) = 35,000 QPS (8.75x normal)
+        ```
+
+        ## Signals (ordered by diagnostic value)
+        1. Downstream CPU > 85% but upstream healthy
+        2. Upstream recently changed retry/timeout config (check platform.config_change)
+        3. Active promotion amplifying base traffic (check business.promotion)
+        4. Connection pool metrics near saturation
+
+        ## Resolution Priority
+        1. **Rollback config change** — fastest, lowest risk (2-3 min)
+        2. **Apply rate limit** — if rollback unavailable (1-2 min)
+        3. **Scale downstream** — buys time, doesn't fix cause (3-5 min)
+        4. **Circuit breaker** — last resort, degrades upstream functionality
+
+        ## Historical Success Rate
+        Config rollback resolves 92% of retry storm incidents within 5 minutes.
+      priority: 1
+      last_updated: "2024-06-01T00:00:00Z"
+      tags:
+        category: "failure_pattern"
+        severity: "P1"
+
+    - name: deployment_triage_guide
+      display_name:
+        en_us: "Deployment vs Config Change Triage"
+        zh_cn: "部署 vs 配置变更鉴别指南"
+      short_description:
+        en_us: "How to avoid the common trap of blaming the most recent deployment."
+        zh_cn: "如何避免将问题归咎于最近部署的常见陷阱。"
+      apply_policy:
+        apply_type: auto
+      content_type: markdown
+      content: |
+        # Deployment vs Config Change Triage
+
+        ## The Trap
+        "A deployment happened recently" does NOT mean it caused the issue.
+        In our platform, 78% of "deployment suspected" investigations find the cause elsewhere.
+
+        ## Why Config Changes Are More Dangerous
+        - Config changes take effect immediately (no canary rollout)
+        - They affect runtime behavior: timeouts, retries, pool sizes, feature flags
+        - They can affect UPSTREAM services, not just the service where config was changed
+        - They are often approved with "low risk" labels because no code changes
+
+        ## Triage Steps
+        1. Read deployment.change_summary — trivial changes (logging, docs, format) → deprioritize
+        2. Check upstream config_changes (not just the degraded service's own changes)
+        3. If upstream retry/timeout changed within 48h → high probability root cause
+        4. If deployment is non-trivial AND no config changes → consider rollback
+
+        ## Key Insight
+        Config changes that affect **calling behavior** (retry, timeout, connection pool, circuit breaker)
+        are the most dangerous because their blast radius is the DOWNSTREAM service, not themselves.
+      priority: 2
+      last_updated: "2024-05-15T00:00:00Z"
+      tags:
+        category: "triage_guide"
+
+  automations:
+    - name: slo_breach_context_collector
+      display_name:
+        en_us: "SLO Breach Auto-Context"
+        zh_cn: "SLO 违规自动上下文收集"
+      short_description:
+        en_us: "When an SLO breach fires, automatically collect topology and recent changes context."
+        zh_cn: "SLO 违规触发时，自动收集拓扑和近期变更上下文。"
+      automation_type: script
+      trigger:
+        trigger_type: event
+        properties:
+          event_source: "alertmanager"
+          event_filter: "alert_name=SLOBreachP99 AND severity=P1|P2"
+      properties:
+        script_path: "scripts/collect_incident_context.sh"
+        output_destination: "incident_context_cache"
+        retention_hours: "72"
+
+  skills:
+    - name: incident-investigation
+      display_name:
+        en_us: "Incident Investigation"
+        zh_cn: "故障排查"
+      description:
+        en_us: "Systematic incident investigation using runbook observations. Walks through diagnostic steps in priority order, correlates findings across observations, calculates amplification factors, and recommends remediation tools with confidence scores."
+        zh_cn: "基于 Runbook 观察的系统化故障排查。按优先级执行诊断步骤，跨观察关联发现，计算放大因子，并带置信度推荐修复工具。"
+      priority: 1
+      allowed_tools: "rollback_config_change apply_rate_limit scale_workload restart_pods"
+      tags:
+        domain: "platform"
+        trigger: "incident"
+      files:
+        - name: SKILL.md
+          content: |
+            # Incident Investigation Skill
+
+            You are an SRE investigation agent. Use UModel's query surfaces (.entity, .topo, .umodel)
+            to systematically investigate service degradation.
+
+            ## Investigation Protocol
+
+            ### Phase 1: Identify
+            1. Query the incident entity to understand scope and timeline
+            2. Query the impacted service to get ownership, SLA tier, and current status
+            3. Load this runbook's observations list as your diagnostic plan
+
+            ### Phase 2: Observe (execute observations in order)
+            For each observation in priority order:
+            1. **upstream_retry_amplification** — Most common P1 cause (42% of latency incidents)
+               - Execute step1_query with token replacement
+               - For each upstream found, execute step2_query
+               - Check conclusions against results
+            2. **recent_deployment_correlation** — Common false positive (22% false alarm rate)
+               - Execute query
+               - Use LLM judgment on change_summary content
+               - IMPORTANT: trivial deployments should be ruled out quickly
+            3. **business_traffic_pressure** — Amplification factor
+               - Execute query for active promotions
+               - Calculate: actual_peak_qps vs expected_peak_qps
+
+            ### Phase 3: Correlate
+            Combine conclusions from all observations:
+            - If retry_storm=error AND traffic_pressure=error:
+              → amplification_factor = traffic_multiplier × (new_retries / old_retries)
+              → Confidence: HIGH (this pattern resolves 92% of cases)
+            - If retry_storm=error AND traffic_pressure=info:
+              → Root cause is config change alone (no business amplifier)
+              → Confidence: HIGH
+            - If deployment=warning AND retry_storm=info:
+              → Deployment may be the cause
+              → Confidence: MEDIUM (recommend rollback with monitoring)
+
+            ### Phase 4: Recommend
+            Based on correlation results, recommend tools from this runbook's toolkits:
+            1. Primary: rollback_config_change (if retry storm detected)
+            2. Fallback: apply_rate_limit (if rollback insufficient)
+            3. Supporting: scale_workload (buys time during resolution)
+
+            Always present:
+            - Evidence chain (which observations led to which conclusions)
+            - Amplification calculation (show the math)
+            - Tool recommendation with risk_level and confirmation_required flags
+            - Verification criteria (what metrics to watch post-remediation)
+
+            ### Phase 5: Verify (post-remediation)
+            After tool execution:
+            - Monitor target service P99 for 5 minutes
+            - Check if upstream error rate temporarily increases (expected for retry rollback)
+            - If no improvement in 5 min → escalate to next tool in priority

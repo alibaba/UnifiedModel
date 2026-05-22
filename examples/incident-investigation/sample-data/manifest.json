@@ -1,0 +1,55 @@
+{
+  "sample": "incident-investigation",
+  "title": "Incident Investigation Demo",
+  "description": "A scenario-driven demo showing how UModel enables AI Agent-assisted incident investigation. Features a payment gateway SLO breach caused by upstream retry storm during a promotion, with runbook-guided diagnostics.",
+  "schema_pack": "examples/incident-investigation",
+  "domains": [
+    "platform",
+    "runtime",
+    "business"
+  ],
+  "entities": "entities.json",
+  "relations": "relations.json",
+  "scenario": {
+    "title": "Payment Gateway P99 Latency SLO Breach",
+    "timeline": "T-24h: checkout retry config change → T-4h: promotion goes active → T-7min: SLO breach detected → T-0: investigation begins",
+    "root_cause": "Upstream retry amplification (2→5 retries) × promotion traffic (3.5x) = 8.75x effective load on payment-gateway",
+    "red_herring": "payment-gw v3.2.1 deployment 12h ago (trivial logging change)",
+    "resolution": "Rollback cfg-checkout-retry via runbook tool rollback_config_change"
+  },
+  "seed_entities_note": "display_name values for documentation; actual __entity_id__ values are 32-char MD5 hex of these semantic names",
+  "seed_entities": {
+    "incident": "inc-0042",
+    "victim_service": "svc-pay-gw",
+    "root_cause_config": "cfg-checkout-retry",
+    "root_cause_service": "svc-checkout",
+    "red_herring_deploy": "deploy-pay-gw-v321",
+    "amplifier_promotion": "promo-618-flash"
+  },
+  "counts": {
+    "entity_sets": 11,
+    "entity_set_links": 11,
+    "runbook_sets": 1,
+    "runbook_links": 1,
+    "data_sets": 0,
+    "data_links": 0,
+    "storage_links": 0,
+    "entities": 65,
+    "relations": 83
+  },
+  "included_kinds": [
+    "entity_set",
+    "entity_set_link",
+    "runbook_set",
+    "runbook_link"
+  ],
+  "excluded_kinds": [
+    "metric_set",
+    "log_set",
+    "trace_set",
+    "event_set",
+    "profile_set",
+    "data_link",
+    "storage_link"
+  ]
+}

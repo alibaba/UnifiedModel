@@ -1,0 +1,50 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "platform.deployment"
+  domain: platform
+  display_name:
+    en_us: "Deployment"
+    zh_cn: "部署"
+  description:
+    en_us: "A versioned deployment event targeting a service."
+    zh_cn: "指向服务的版本部署事件。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: target_service
+      type: string
+      display_name: { en_us: "Target Service", zh_cn: "目标服务" }
+    - name: version
+      type: string
+      display_name: { en_us: "Version", zh_cn: "版本" }
+    - name: deployed_at
+      type: string
+      display_name: { en_us: "Deployed At", zh_cn: "部署时间" }
+    - name: change_summary
+      type: string
+      display_name: { en_us: "Change Summary", zh_cn: "变更摘要" }
+    - name: deploy_status
+      type: string
+      display_name: { en_us: "Deploy Status", zh_cn: "部署状态" }
+    - name: rollback_triggered
+      type: string
+      display_name: { en_us: "Rollback Triggered", zh_cn: "是否触发回滚" }
+    - name: deployer
+      type: string
+      display_name: { en_us: "Deployer", zh_cn: "部署人" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "target_service", "version", "deployed_at", "deploy_status"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

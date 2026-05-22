@@ -1,0 +1,18 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "runtime.cluster_contains_runtime.namespace"
+  domain: runtime
+  display_name:
+    en_us: "Cluster contains Namespace"
+    zh_cn: "集群包含命名空间"
+spec:
+  source:
+    domain: runtime
+    name: runtime.cluster
+  destination:
+    domain: runtime
+    name: runtime.namespace
+  relation_type: "contains"

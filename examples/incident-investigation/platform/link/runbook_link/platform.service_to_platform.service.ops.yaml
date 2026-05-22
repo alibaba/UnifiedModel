@@ -1,0 +1,30 @@
+kind: runbook_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "platform.service_to_platform.service.ops"
+  domain: platform
+  display_name:
+    en_us: "Service → Service Operations Runbook"
+    zh_cn: "服务 → 服务运维手册"
+  description:
+    en_us: "Links platform services to their operational runbook with field-to-parameter mapping."
+    zh_cn: "将平台服务链接到其运维手册，并提供字段到参数的映射。"
+spec:
+  source:
+    domain: platform
+    name: platform.service
+  destination:
+    domain: platform
+    name: platform.service.ops
+  token_replace:
+    service_id: "${__entity_id__}"
+    service_name: "${display_name}"
+    service_owner: "${owner}"
+    service_sla: "${sla_tier}"
+  fields_mapping:
+    id: service_id
+    owner: oncall_team
+    sla_tier: priority_context
+    contact_channel: escalation_channel

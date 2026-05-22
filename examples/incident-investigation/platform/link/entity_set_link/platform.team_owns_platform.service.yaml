@@ -1,0 +1,18 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "platform.team_owns_platform.service"
+  domain: platform
+  display_name:
+    en_us: "Team owns Service"
+    zh_cn: "团队拥有服务"
+spec:
+  source:
+    domain: platform
+    name: platform.team
+  destination:
+    domain: platform
+    name: platform.service
+  relation_type: "owns"

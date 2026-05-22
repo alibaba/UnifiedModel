@@ -1,0 +1,21 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "platform.service_runs_as_runtime.workload"
+  domain: platform
+  display_name:
+    en_us: "Service runs as Workload"
+    zh_cn: "服务运行为工作负载"
+  description:
+    en_us: "Maps a platform service to its Kubernetes workload."
+    zh_cn: "将平台服务映射到其 Kubernetes 工作负载。"
+spec:
+  source:
+    domain: platform
+    name: platform.service
+  destination:
+    domain: runtime
+    name: runtime.workload
+  relation_type: "runs_as"

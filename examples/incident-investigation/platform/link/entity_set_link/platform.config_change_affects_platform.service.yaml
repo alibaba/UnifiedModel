@@ -1,0 +1,21 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "platform.config_change_affects_platform.service"
+  domain: platform
+  display_name:
+    en_us: "Config Change affects Service"
+    zh_cn: "配置变更影响服务"
+  description:
+    en_us: "A runtime config change that modifies the behavior of a service."
+    zh_cn: "修改服务行为的运行时配置变更。"
+spec:
+  source:
+    domain: platform
+    name: platform.config_change
+  destination:
+    domain: platform
+    name: platform.service
+  relation_type: "affects"

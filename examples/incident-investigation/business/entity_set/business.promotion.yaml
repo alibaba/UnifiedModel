@@ -1,0 +1,56 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "business.promotion"
+  domain: business
+  display_name:
+    en_us: "Promotion"
+    zh_cn: "促销活动"
+  description:
+    en_us: "A business promotion event that drives traffic spikes."
+    zh_cn: "驱动流量高峰的业务促销活动。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+      description:
+        en_us: "scheduled, active, completed."
+        zh_cn: "scheduled、active、completed。"
+    - name: start_time
+      type: string
+      display_name: { en_us: "Start Time", zh_cn: "开始时间" }
+    - name: end_time
+      type: string
+      display_name: { en_us: "End Time", zh_cn: "结束时间" }
+    - name: traffic_multiplier
+      type: string
+      display_name: { en_us: "Traffic Multiplier", zh_cn: "流量倍数" }
+    - name: expected_peak_qps
+      type: string
+      display_name: { en_us: "Expected Peak QPS", zh_cn: "预期峰值QPS" }
+    - name: actual_peak_qps
+      type: string
+      display_name: { en_us: "Actual Peak QPS", zh_cn: "实际峰值QPS" }
+    - name: owner
+      type: string
+      display_name: { en_us: "Owner", zh_cn: "负责人" }
+    - name: target_services
+      type: string
+      display_name: { en_us: "Target Services", zh_cn: "涉及服务" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "status", "traffic_multiplier", "expected_peak_qps", "actual_peak_qps"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

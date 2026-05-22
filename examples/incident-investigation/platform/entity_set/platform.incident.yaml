@@ -1,0 +1,59 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "platform.incident"
+  domain: platform
+  display_name:
+    en_us: "Incident"
+    zh_cn: "事件"
+  description:
+    en_us: "An operational incident impacting one or more services."
+    zh_cn: "影响一个或多个服务的运维事件。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Title", zh_cn: "标题" }
+    - name: severity
+      type: string
+      display_name: { en_us: "Severity", zh_cn: "严重级别" }
+      description:
+        en_us: "P1, P2, P3, P4."
+        zh_cn: "P1、P2、P3、P4。"
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+      description:
+        en_us: "investigating, mitigating, resolved."
+        zh_cn: "investigating、mitigating、resolved。"
+    - name: impacted_service
+      type: string
+      display_name: { en_us: "Impacted Service", zh_cn: "受影响服务" }
+    - name: detected_at
+      type: string
+      display_name: { en_us: "Detected At", zh_cn: "发现时间" }
+    - name: oncall_responder
+      type: string
+      display_name: { en_us: "Oncall Responder", zh_cn: "当班响应人" }
+    - name: escalation_channel
+      type: string
+      display_name: { en_us: "Escalation Channel", zh_cn: "升级渠道" }
+    - name: initial_hypothesis
+      type: string
+      display_name: { en_us: "Initial Hypothesis", zh_cn: "初始假设" }
+    - name: customer_impact
+      type: string
+      display_name: { en_us: "Customer Impact", zh_cn: "客户影响" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "severity", "status", "impacted_service", "detected_at"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

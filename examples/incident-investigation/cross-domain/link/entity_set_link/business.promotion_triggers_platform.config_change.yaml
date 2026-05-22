@@ -1,0 +1,21 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "business.promotion_triggers_platform.config_change"
+  domain: business
+  display_name:
+    en_us: "Promotion triggers Config Change"
+    zh_cn: "促销触发配置变更"
+  description:
+    en_us: "A promotion event that motivated a config change for capacity or behavior tuning."
+    zh_cn: "促销活动推动的容量或行为调优配置变更。"
+spec:
+  source:
+    domain: business
+    name: business.promotion
+  destination:
+    domain: platform
+    name: platform.config_change
+  relation_type: "triggers"

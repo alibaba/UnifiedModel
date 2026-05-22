@@ -1,0 +1,18 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "runtime.namespace_contains_runtime.workload"
+  domain: runtime
+  display_name:
+    en_us: "Namespace contains Workload"
+    zh_cn: "命名空间包含工作负载"
+spec:
+  source:
+    domain: runtime
+    name: runtime.namespace
+  destination:
+    domain: runtime
+    name: runtime.workload
+  relation_type: "contains"

@@ -1,0 +1,41 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "runtime.cluster"
+  domain: runtime
+  display_name:
+    en_us: "Cluster"
+    zh_cn: "集群"
+  description:
+    en_us: "A Kubernetes cluster hosting workloads."
+    zh_cn: "承载工作负载的 Kubernetes 集群。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: region
+      type: string
+      display_name: { en_us: "Region", zh_cn: "区域" }
+    - name: k8s_version
+      type: string
+      display_name: { en_us: "K8s Version", zh_cn: "K8s 版本" }
+    - name: node_count
+      type: string
+      display_name: { en_us: "Node Count", zh_cn: "节点数" }
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "region", "k8s_version", "node_count", "status"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

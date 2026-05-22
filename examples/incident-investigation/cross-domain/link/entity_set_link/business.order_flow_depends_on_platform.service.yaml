@@ -1,0 +1,21 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "business.order_flow_depends_on_platform.service"
+  domain: business
+  display_name:
+    en_us: "Order Flow depends on Service"
+    zh_cn: "订单流程依赖服务"
+  description:
+    en_us: "A business order flow that requires platform services to function."
+    zh_cn: "需要平台服务正常运行的业务订单流程。"
+spec:
+  source:
+    domain: business
+    name: business.order_flow
+  destination:
+    domain: platform
+    name: platform.service
+  relation_type: "depends_on"

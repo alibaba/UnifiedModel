@@ -1,0 +1,41 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "platform.team"
+  domain: platform
+  display_name:
+    en_us: "Team"
+    zh_cn: "团队"
+  description:
+    en_us: "An engineering team owning one or more services."
+    zh_cn: "拥有一个或多个服务的工程团队。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: department
+      type: string
+      display_name: { en_us: "Department", zh_cn: "部门" }
+    - name: oncall_channel
+      type: string
+      display_name: { en_us: "Oncall Channel", zh_cn: "Oncall 渠道" }
+    - name: member_count
+      type: string
+      display_name: { en_us: "Member Count", zh_cn: "成员数" }
+    - name: tier
+      type: string
+      display_name: { en_us: "Tier", zh_cn: "层级" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "department", "oncall_channel", "member_count"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"
