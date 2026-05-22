@@ -2,6 +2,7 @@ package sampledata
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/alibaba/UnifiedModel/internal/entitystore"
@@ -40,8 +41,8 @@ func TestImportUnknownSampleListsAvailableSamples(t *testing.T) {
 	if !ok || coded.Code != apperrors.CodeNotFound {
 		t.Fatalf("expected not found error, got %v", err)
 	}
-	if coded.Details["available"] != MultiDomainQuickStartSample {
-		t.Fatalf("expected available samples in error details, got %+v", coded.Details)
+	if !strings.Contains(coded.Details["available"], MultiDomainQuickStartSample) {
+		t.Fatalf("expected available samples to include %q, got %+v", MultiDomainQuickStartSample, coded.Details)
 	}
 }
 
