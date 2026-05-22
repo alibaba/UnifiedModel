@@ -1,12 +1,12 @@
-# OpenUModel Web UI Architecture
+# UModel Web UI Architecture
 
 中文：[Web UI 架构](../zh/ui-architecture.md)
 
 ## Product Shape
 
-OpenUModel Web: workspace-first local console. Flow: workspace chooser, workspace create/select, compact workbench. Workbench views: Explorer, Query, Imports & Writes, Agent, Settings, Data Store, and API Map.
+UModel Web: workspace-first local console. Flow: workspace chooser, workspace create/select, compact workbench. Workbench views: Explorer, Query, Imports & Writes, Agent, Settings, Data Store, and API Map.
 
-UI contract: public OpenUModel REST API only. No Aliyun internal packages, obviz libraries, cloud console SDKs, or Formily. Structured editing stays JSON-first for the open-source distribution.
+UI contract: public UModel REST API only. No Aliyun internal packages, obviz libraries, cloud console SDKs, or Formily. Structured editing stays JSON-first for the open-source distribution.
 
 ## Frontend Modules
 

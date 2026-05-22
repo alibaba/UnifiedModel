@@ -187,19 +187,19 @@ wait_for_api() {
   for ((attempt = 1; attempt <= attempts; attempt += 1)); do
     if ! kill -0 "${API_PID}" >/dev/null 2>&1; then
       wait "${API_PID}" || api_status="$?"
-      echo "OpenUModel API exited before becoming healthy (status ${api_status})." >&2
+      echo "UModel API exited before becoming healthy (status ${api_status})." >&2
       exit "${api_status}"
     fi
 
     if curl -fsS "${API_URL}/healthz" >/dev/null 2>&1; then
-      echo "OpenUModel API is healthy."
+      echo "UModel API is healthy."
       return
     fi
 
     sleep 0.5
   done
 
-  echo "OpenUModel API did not become healthy at ${API_URL}/healthz." >&2
+  echo "UModel API did not become healthy at ${API_URL}/healthz." >&2
   exit 1
 }
 
@@ -209,20 +209,20 @@ wait_for_web() {
 
   for ((attempt = 1; attempt <= attempts; attempt += 1)); do
     if ! kill -0 "${WEB_PID}" >/dev/null 2>&1; then
-      echo "OpenUModel Web exited before becoming reachable." >&2
+      echo "UModel Web exited before becoming reachable." >&2
       tail -n 40 "${WEB_LOG}" >&2 || true
       return 1
     fi
 
     if curl -fsS "${web_url}" >/dev/null 2>&1; then
-      echo "OpenUModel Web is reachable."
+      echo "UModel Web is reachable."
       return 0
     fi
 
     sleep 0.5
   done
 
-  echo "OpenUModel Web did not become reachable at ${web_url}." >&2
+  echo "UModel Web did not become reachable at ${web_url}." >&2
   tail -n 40 "${WEB_LOG}" >&2 || true
   return 1
 }
@@ -235,24 +235,24 @@ resolve_web_tooling
 ensure_port_free "API" "${API_PORT}"
 ensure_port_free "Web" "${WEB_PORT}"
 mkdir -p "${PID_DIR}" "${LOG_DIR}"
-assert_pid_file_stale_or_absent "OpenUModel API" "${API_PID_FILE}"
-assert_pid_file_stale_or_absent "OpenUModel Web" "${WEB_PID_FILE}"
+assert_pid_file_stale_or_absent "UModel API" "${API_PID_FILE}"
+assert_pid_file_stale_or_absent "UModel Web" "${WEB_PID_FILE}"
 
-echo "Installing OpenUModel Web dependencies..."
+echo "Installing UModel Web dependencies..."
 if ! (
   install_web_dependencies
 ); then
-  echo "OpenUModel Web dependency install failed. See ${WEB_LOG}." >&2
+  echo "UModel Web dependency install failed. See ${WEB_LOG}." >&2
   tail -n 40 "${WEB_LOG}" >&2 || true
   exit 1
 fi
 
 if is_enabled "${QUICKSTART}"; then
-  echo "Starting OpenUModel API at ${API_URL} (graphstore=${GRAPHSTORE}, data=${DATA_ROOT}, quickstart=${QUICKSTART_WORKSPACE}/${QUICKSTART_SAMPLE})"
+  echo "Starting UModel API at ${API_URL} (graphstore=${GRAPHSTORE}, data=${DATA_ROOT}, quickstart=${QUICKSTART_WORKSPACE}/${QUICKSTART_SAMPLE})"
 else
-  echo "Starting OpenUModel API at ${API_URL} (graphstore=${GRAPHSTORE}, data=${DATA_ROOT})"
+  echo "Starting UModel API at ${API_URL} (graphstore=${GRAPHSTORE}, data=${DATA_ROOT})"
 fi
-echo "Building OpenUModel API binary at ${API_BIN}"
+echo "Building UModel API binary at ${API_BIN}"
 mkdir -p "$(dirname "${API_BIN}")"
 (
   cd "${ROOT_DIR}"
@@ -279,7 +279,7 @@ if ! wait_for_api; then
   exit 1
 fi
 
-echo "Starting OpenUModel Web at http://localhost:${WEB_PORT}"
+echo "Starting UModel Web at http://localhost:${WEB_PORT}"
 (
   start_web_server
 ) &
@@ -292,7 +292,7 @@ if ! wait_for_web; then
 fi
 
 cat <<EOF
-OpenUModel dev is running in the background.
+UModel dev is running in the background.
   API: ${API_URL}
   Web: http://localhost:${WEB_PORT}
   API log: ${API_LOG}

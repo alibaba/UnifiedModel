@@ -79,7 +79,7 @@ public class KnowledgeConfigV1 implements UModelObject {
     }
 
     /**
-     * 内容类型，支持markdown、html、url、pdf等。UModel buildin 支持的类型为 markdown。
+     * 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
      */
     @JSONField(name = "content_type")
     private String contentType;

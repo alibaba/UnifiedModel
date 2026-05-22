@@ -1,8 +1,8 @@
-# OpenUModel Web UI
+# UModel Web UI
 
 English version: [README.md](README.md)
 
-OpenUModel Web 是面向公开 UModel REST API 的 React/Vite workspace UI。
+UModel Web 是面向公开 UModel REST API 的 React/Vite workspace UI。
 
 ## 开发
 

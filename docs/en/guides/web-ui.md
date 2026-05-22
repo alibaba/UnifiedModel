@@ -2,7 +2,7 @@
 
 中文：[Web UI 指南](../../zh/guides/web-ui.md)
 
-OpenUModel Web: local console for workspaces, model definitions, runtime data, Query Service behavior, and AgentGateway metadata.
+UModel Web: local console for workspaces, model definitions, runtime data, Query Service behavior, and AgentGateway metadata.
 
 
 ## Start

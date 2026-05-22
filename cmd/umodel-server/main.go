@@ -14,7 +14,7 @@ func main() {
 	addr := flag.String("addr", ":8080", "HTTP listen address")
 	dataRoot := flag.String("data", "data", "UModel data root")
 	provider := flag.String("graphstore", graphstore.DefaultProviderType, "GraphStore provider: local.ladybug, memory, or file.memory")
-	uiDir := flag.String("ui-dir", "", "Optional directory containing built OpenUModel web UI assets")
+	uiDir := flag.String("ui-dir", "", "Optional directory containing built UModel web UI assets")
 	quickStart := flag.Bool("quickstart", false, "Create a demo workspace and import bundled quickstart data before serving")
 	quickStartWorkspace := flag.String("quickstart-workspace", bootstrap.DefaultQuickStartWorkspaceID, "Workspace id used by --quickstart")
 	quickStartSample := flag.String("quickstart-sample", bootstrap.DefaultQuickStartSample, "Sample package imported by --quickstart")

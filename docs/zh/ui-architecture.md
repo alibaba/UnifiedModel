@@ -1,12 +1,12 @@
 # Web UI 架构
 
-English: [OpenUModel Web UI Architecture](../en/ui-architecture.md)
+English: [UModel Web UI Architecture](../en/ui-architecture.md)
 
 ## 产品形态
 
-OpenUModel Web 是 workspace-first 的本地控制台。流程：workspace chooser，workspace 创建或选择，紧凑工作台。工作台视图包含 Explorer、Query、Imports & Writes、Agent、Settings、Data Store 和 API Map。
+UModel Web 是 workspace-first 的本地控制台。流程：workspace chooser，workspace 创建或选择，紧凑工作台。工作台视图包含 Explorer、Query、Imports & Writes、Agent、Settings、Data Store 和 API Map。
 
-UI 契约：只使用公开 OpenUModel REST API。不导入 Aliyun 内部包、obviz libraries、云控制台 SDK 或 Formily。开源发行版的结构化编辑路径保持 JSON-first。
+UI 契约：只使用公开 UModel REST API。不导入 Aliyun 内部包、obviz libraries、云控制台 SDK 或 Formily。开源发行版的结构化编辑路径保持 JSON-first。
 
 ## 前端模块
 

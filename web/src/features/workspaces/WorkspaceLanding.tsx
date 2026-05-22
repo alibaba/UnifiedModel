@@ -162,7 +162,7 @@ export function WorkspaceLanding({
               Build the <span className="landing-gradient-text">world model</span> for digital twins.
             </h1>
             <p>
-              OpenUModel maps assets, systems, metrics, tools, and relationships into a living graph
+              UModel maps assets, systems, metrics, tools, and relationships into a living graph
               that agents can query, simulate, and evolve.
             </p>
           </div>
@@ -335,7 +335,7 @@ export function WorkspaceLanding({
           </div>
         </section>
 
-        <section className="landing-stage flow-stage" aria-label="OpenUModel product preview">
+        <section className="landing-stage flow-stage" aria-label="UModel product preview">
           <div className="flow-product-shell">
             <div className="flow-canvas-wrap">
               <ReactFlow
@@ -883,7 +883,7 @@ function CreateWorkspaceModal({
 }) {
   const [id, setId] = useState('demo')
   const [name, setName] = useState('Demo')
-  const [description, setDescription] = useState('Local OpenUModel workspace')
+  const [description, setDescription] = useState('Local UModel workspace')
   const [labels, setLabels] = useState('{\n  "env": "local"\n}')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')

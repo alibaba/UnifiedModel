@@ -359,7 +359,7 @@ class KnowledgeConfigV1(UModelObject):
     description: Optional['SemanticStringV1'] = None
     # 知识如何应用的配置。
     apply_policy: Optional['KnowledgeConfigV1ApplyPolicy'] = None
-    # 内容类型，支持markdown、html、url、pdf等。UModel buildin 支持的类型为 markdown。
+    # 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
     content_type: Optional[str] = None
     # 知识内容，根据content_type可以是文本内容或URL地址。
     content: Optional[str] = None

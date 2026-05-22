@@ -1,4 +1,4 @@
-# OpenUModel Web UI API Map
+# UModel Web UI API Map
 
 中文：[Web UI API 对照](../zh/ui-api.md)
 

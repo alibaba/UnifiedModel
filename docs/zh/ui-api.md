@@ -1,6 +1,6 @@
 # Web UI API 对照
 
-English: [OpenUModel Web UI API Map](../en/ui-api.md)
+English: [UModel Web UI API Map](../en/ui-api.md)
 
 Web UI 的每个界面只对应公开 REST 契约。
 

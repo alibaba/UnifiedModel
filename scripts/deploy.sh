@@ -73,7 +73,7 @@ assert_pid_file_stale_or_absent() {
   local pid
   pid="$(cat "${DEPLOY_PID_FILE}" 2>/dev/null || true)"
   if [[ -n "${pid}" ]] && kill -0 "${pid}" >/dev/null 2>&1; then
-    echo "OpenUModel deploy already appears to be running with pid ${pid}." >&2
+    echo "UModel deploy already appears to be running with pid ${pid}." >&2
     echo "Use make status to inspect it or make stop-all before starting again." >&2
     exit 1
   fi
@@ -86,20 +86,20 @@ wait_for_api() {
 
   for ((attempt = 1; attempt <= attempts; attempt += 1)); do
     if ! kill -0 "${DEPLOY_PID}" >/dev/null 2>&1; then
-      echo "OpenUModel deploy server exited before becoming healthy." >&2
+      echo "UModel deploy server exited before becoming healthy." >&2
       tail -n 60 "${DEPLOY_LOG}" >&2 || true
       return 1
     fi
 
     if curl -fsS "${API_URL}/healthz" >/dev/null 2>&1; then
-      echo "OpenUModel deploy server is healthy."
+      echo "UModel deploy server is healthy."
       return 0
     fi
 
     sleep 0.5
   done
 
-  echo "OpenUModel deploy server did not become healthy at ${API_URL}/healthz." >&2
+  echo "UModel deploy server did not become healthy at ${API_URL}/healthz." >&2
   tail -n 60 "${DEPLOY_LOG}" >&2 || true
   return 1
 }
@@ -119,9 +119,9 @@ mkdir -p "${PID_DIR}" "${LOG_DIR}"
 assert_pid_file_stale_or_absent
 
 if is_enabled "${QUICKSTART}"; then
-  echo "Starting OpenUModel production server at ${API_URL} (graphstore=${GRAPHSTORE}, data=${DATA_ROOT}, quickstart=${QUICKSTART_WORKSPACE}/${QUICKSTART_SAMPLE})"
+  echo "Starting UModel production server at ${API_URL} (graphstore=${GRAPHSTORE}, data=${DATA_ROOT}, quickstart=${QUICKSTART_WORKSPACE}/${QUICKSTART_SAMPLE})"
 else
-  echo "Starting OpenUModel production server at ${API_URL} (graphstore=${GRAPHSTORE}, data=${DATA_ROOT})"
+  echo "Starting UModel production server at ${API_URL} (graphstore=${GRAPHSTORE}, data=${DATA_ROOT})"
 fi
 (
   cd "${ROOT_DIR}"
@@ -145,7 +145,7 @@ if ! wait_for_api; then
 fi
 
 cat <<EOF
-OpenUModel deploy is running in the background.
+UModel deploy is running in the background.
   App: ${API_URL}
   Log: ${DEPLOY_LOG}
 Use make status to monitor it and make stop-all to stop it.

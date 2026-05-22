@@ -2,7 +2,7 @@
 
 English: [Web UI Guide](../../en/guides/web-ui.md)
 
-OpenUModel Web：面向 workspace、模型定义、运行时数据、Query Service 行为和 AgentGateway 元数据的本地控制台。
+UModel Web：面向 workspace、模型定义、运行时数据、Query Service 行为和 AgentGateway 元数据的本地控制台。
 
 
 ## 启动

@@ -101,7 +101,7 @@ if [[ -z "${API_PORT}" ]]; then
 fi
 
 cat <<EOF
-OpenUModel status
+UModel status
   graphstore: ${GRAPHSTORE}
   data root: ${DATA_ROOT}
   pid dir: ${PID_DIR}

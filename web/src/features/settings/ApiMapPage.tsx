@@ -32,7 +32,7 @@ export function ApiMapPage() {
       >
         <div className="stack">
           <p className="muted" style={{ marginTop: 0 }}>
-            The UI is implemented entirely on public OpenUModel REST contracts. No internal packages, obviz modules, or cloud console APIs are required.
+            The UI is implemented entirely on public UModel REST contracts. No internal packages, obviz modules, or cloud console APIs are required.
           </p>
           <div style={{ overflow: 'auto' }}>
             <table className="om-table">

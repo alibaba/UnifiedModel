@@ -1,6 +1,6 @@
-# OpenUModel Web UI
+# UModel Web UI
 
-OpenUModel Web is a small, open-source friendly React/Vite workspace UI for the public UModel REST API.
+UModel Web is a small, open-source friendly React/Vite workspace UI for the public UModel REST API.
 
 ## Development
 

@@ -199,7 +199,7 @@ func TestHTTPSampleImportThenQuery(t *testing.T) {
 
 func TestHTTPServesSPAWhenUIDirConfigured(t *testing.T) {
 	uiDir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(uiDir, "index.html"), []byte(`<html><body>OpenUModel UI</body></html>`), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(uiDir, "index.html"), []byte(`<html><body>UModel UI</body></html>`), 0o644); err != nil {
 		t.Fatalf("write index: %v", err)
 	}
 	if err := os.Mkdir(filepath.Join(uiDir, "assets"), 0o755); err != nil {

@@ -283,7 +283,7 @@ type KnowledgeConfigV1 struct {
 	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
 	// ApplyPolicy 知识如何应用的配置。
 	ApplyPolicy *KnowledgeConfigV1ApplyPolicy `json:"apply_policy" yaml:"apply_policy"`
-	// ContentType 内容类型，支持markdown、html、url、pdf等。UModel buildin 支持的类型为 markdown。
+	// ContentType 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
 	ContentType string `json:"content_type" yaml:"content_type"`
 	// Content 知识内容，根据content_type可以是文本内容或URL地址。
 	Content string `json:"content,omitempty" yaml:"content,omitempty"`

@@ -1538,7 +1538,7 @@ function DiffDialog({
         <header>
           <div>
             <strong>Submit Preview</strong>
-            <span>Review draft diff before writing to OpenUModel API.</span>
+            <span>Review draft diff before writing to UModel API.</span>
           </div>
           <button className="ume-icon-button subtle" onClick={onClose} type="button">
             <X size={15} />
