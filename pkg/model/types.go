@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -277,10 +278,87 @@ type QueryResult struct {
 	Explain *QueryExplain    `json:"explain,omitempty"`
 }
 
+type QueryExecuteResponse struct {
+	Code    string           `json:"code"`
+	Data    QueryExecuteData `json:"data"`
+	Message string           `json:"message"`
+	Success bool             `json:"success"`
+}
+
+type QueryExecuteData struct {
+	Data           [][]any             `json:"data"`
+	Header         []string            `json:"header"`
+	ResponseStatus QueryResponseStatus `json:"responseStatus"`
+}
+
+type QueryResponseStatus struct {
+	Result      string `json:"result"`
+	RetryPolicy string `json:"retryPolicy"`
+	Level       string `json:"level"`
+	StatusItem  []any  `json:"statusItem"`
+}
+
+func NewQueryExecuteResponse(result QueryResult) QueryExecuteResponse {
+	header := queryMatrixHeader(result.Columns, result.Rows)
+	return QueryExecuteResponse{
+		Code:    "200",
+		Message: "successful",
+		Success: true,
+		Data: QueryExecuteData{
+			Header: header,
+			Data:   queryRowsAsMatrix(header, result.Rows),
+			ResponseStatus: QueryResponseStatus{
+				Result:      "Success",
+				RetryPolicy: "None",
+				Level:       "Info",
+				StatusItem:  []any{},
+			},
+		},
+	}
+}
+
+func queryMatrixHeader(columns []string, rows []map[string]any) []string {
+	header := append([]string(nil), columns...)
+	seen := make(map[string]struct{}, len(header))
+	for _, column := range header {
+		seen[column] = struct{}{}
+	}
+	extras := map[string]struct{}{}
+	for _, row := range rows {
+		for column := range row {
+			if _, ok := seen[column]; ok {
+				continue
+			}
+			extras[column] = struct{}{}
+		}
+	}
+	extraColumns := make([]string, 0, len(extras))
+	for column := range extras {
+		extraColumns = append(extraColumns, column)
+	}
+	sort.Strings(extraColumns)
+	return append(header, extraColumns...)
+}
+
+func queryRowsAsMatrix(columns []string, rows []map[string]any) [][]any {
+	out := make([][]any, 0, len(rows))
+	for _, row := range rows {
+		values := make([]any, 0, len(columns))
+		for _, column := range columns {
+			values = append(values, row[column])
+		}
+		out = append(out, values)
+	}
+	return out
+}
+
 type QueryExplain struct {
 	Source           string   `json:"source"`
 	Provider         string   `json:"provider,omitempty"`
 	StorageProvider  string   `json:"storage_provider,omitempty"`
+	SearchProvider   string   `json:"search_provider,omitempty"`
+	EmbedModel       string   `json:"embed_model,omitempty"`
+	SearchMode       string   `json:"search_mode,omitempty"`
 	CypherDialect    string   `json:"cypher_dialect,omitempty"`
 	CypherEngine     string   `json:"cypher_engine,omitempty"`
 	Pushdown         []string `json:"pushdown,omitempty"`
@@ -366,6 +444,93 @@ type GraphStoreCapabilities struct {
 }
 
 type GraphStoreHealth struct {
+	Provider string `json:"provider"`
+	Status   string `json:"status"`
+	Message  string `json:"message,omitempty"`
+}
+
+// SearchRequest is the public input to SearchService.
+// It mirrors the SLS USearch SPL `with(...)` parameter set so the same SPL
+// can flow through both the open-source engine and the SLS backend.
+type SearchRequest struct {
+	Workspace  string             `json:"workspace,omitempty"`
+	Source     string             `json:"source"`
+	Domain     string             `json:"domain,omitempty"`
+	Kinds      []string           `json:"kinds,omitempty"`
+	Names      []string           `json:"names,omitempty"`
+	Query      string             `json:"query,omitempty"`
+	EmbedModel string             `json:"embed_model,omitempty"`
+	TopK       int                `json:"topk,omitempty"`
+	Origin     string             `json:"origin,omitempty"`
+	Filters    map[string]any     `json:"filters,omitempty"`
+	HybridK    int                `json:"hybrid_k,omitempty"`
+	Weights    map[string]float64 `json:"weights,omitempty"`
+}
+
+// SearchResult is the public output of SearchService.
+type SearchResult struct {
+	Rows []SearchRow `json:"rows"`
+}
+
+// SearchRow mirrors the SLS USearch result row shape. Field tags use the
+// `__field__` convention required by the SLS USearch contract.
+type SearchRow struct {
+	Type       string         `json:"__type__,omitempty"`
+	Domain     string         `json:"__domain__,omitempty"`
+	Kind       string         `json:"kind,omitempty"`
+	Name       string         `json:"name,omitempty"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+	Spec       map[string]any `json:"spec,omitempty"`
+	Score      float64        `json:"__score__"`
+	Provider   string         `json:"__provider__,omitempty"`
+	EmbedModel string         `json:"__embedding_model__,omitempty"`
+}
+
+// AsMap renders a SearchRow as a map for QueryResult.Rows.
+func (r SearchRow) AsMap() map[string]any {
+	m := map[string]any{
+		"__score__": r.Score,
+	}
+	if r.Type != "" {
+		m["__type__"] = r.Type
+	}
+	if r.Domain != "" {
+		m["__domain__"] = r.Domain
+	}
+	if r.Kind != "" {
+		m["kind"] = r.Kind
+	}
+	if r.Name != "" {
+		m["name"] = r.Name
+	}
+	if len(r.Metadata) > 0 {
+		m["metadata"] = r.Metadata
+	}
+	if len(r.Spec) > 0 {
+		m["spec"] = r.Spec
+	}
+	if r.Provider != "" {
+		m["__provider__"] = r.Provider
+	}
+	if r.EmbedModel != "" {
+		m["__embedding_model__"] = r.EmbedModel
+	}
+	return m
+}
+
+// SearchCapabilities advertises what a SearchService implementation supports.
+type SearchCapabilities struct {
+	VectorSearch         bool   `json:"vector_search"`
+	HybridSearch         bool   `json:"hybrid_search"`
+	FilteredVectorSearch bool   `json:"filtered_vector_search"`
+	RRF                  bool   `json:"rrf"`
+	ChunkChasing         bool   `json:"chunk_chasing"`
+	EmbedderType         string `json:"embedder_type,omitempty"`
+	MaxDim               int    `json:"max_dim,omitempty"`
+}
+
+// SearchHealth reports the runtime status of a SearchService implementation.
+type SearchHealth struct {
 	Provider string `json:"provider"`
 	Status   string `json:"status"`
 	Message  string `json:"message,omitempty"`

@@ -17,6 +17,7 @@ import (
 	_ "github.com/alibaba/UnifiedModel/internal/graphstore/provider/ladybug"
 	"github.com/alibaba/UnifiedModel/internal/query"
 	"github.com/alibaba/UnifiedModel/internal/sampledata"
+	"github.com/alibaba/UnifiedModel/internal/search"
 	"github.com/alibaba/UnifiedModel/internal/umodel"
 	"github.com/alibaba/UnifiedModel/internal/workspace"
 	"github.com/alibaba/UnifiedModel/pkg/contract"
@@ -31,6 +32,7 @@ type App struct {
 	EntityStore  *entitystore.Service
 	Samples      *sampledata.Service
 	Query        *query.Service
+	Search       *search.Service
 	AgentGateway *agentgateway.Service
 }
 
@@ -74,10 +76,15 @@ func NewAppWithGraphStore(dataRoot string, config graphstore.ProviderConfig) (*A
 	if err != nil {
 		return nil, fmt.Errorf("create graphstore provider: %w", err)
 	}
-	umodelSvc := umodel.NewService(graph)
-	entitySvc := entitystore.NewService(graph, umodelSvc)
+	searchProvider, err := search.NewProvider(search.ProviderConfig{Type: search.ProviderTypeMemory, DataRoot: dataRoot})
+	if err != nil {
+		return nil, fmt.Errorf("create search provider: %w", err)
+	}
+	searchSvc := search.NewService(searchProvider, nil, search.ProviderTypeMemory)
+	umodelSvc := umodel.NewService(graph, umodel.WithSearchIndexer(searchSvc))
+	entitySvc := entitystore.NewService(graph, umodelSvc, entitystore.WithSearchIndexer(searchSvc))
 	sampleSvc := sampledata.NewService(umodelSvc, entitySvc)
-	querySvc := query.NewService(graph)
+	querySvc := query.NewServiceWithSearch(graph, searchSvc)
 	agentSvc := agentgateway.NewService(querySvc, agentgateway.WithWriteServices(umodelSvc, entitySvc))
 
 	return &App{
@@ -87,6 +94,7 @@ func NewAppWithGraphStore(dataRoot string, config graphstore.ProviderConfig) (*A
 		EntityStore:  entitySvc,
 		Samples:      sampleSvc,
 		Query:        querySvc,
+		Search:       searchSvc,
 		AgentGateway: agentSvc,
 	}, nil
 }
@@ -336,7 +344,7 @@ func (a *App) handleQuery(w http.ResponseWriter, r *http.Request) {
 			writeError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, result)
+		writeJSON(w, http.StatusOK, model.NewQueryExecuteResponse(result))
 	case "explain":
 		explain, err := a.Query.Explain(r.Context(), workspaceID, req)
 		if err != nil {

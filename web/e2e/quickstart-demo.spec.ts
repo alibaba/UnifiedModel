@@ -2,6 +2,14 @@ import { test, expect } from '@playwright/test'
 
 const API = 'http://localhost:8080'
 
+type QueryRows = { rows: Record<string, unknown>[]; columns: string[] }
+type QueryExecuteEnvelope = {
+  data?: {
+    data?: unknown[][]
+    header?: string[]
+  }
+}
+
 async function queryAPI(query: string, parameters?: Record<string, unknown>) {
   const resp = await fetch(`${API}/api/v1/query/demo/execute`, {
     method: 'POST',
@@ -9,7 +17,24 @@ async function queryAPI(query: string, parameters?: Record<string, unknown>) {
     body: JSON.stringify({ query, parameters }),
   })
   if (!resp.ok) throw new Error(`query failed: ${resp.status} ${await resp.text()}`)
-  return resp.json() as Promise<{ rows: Record<string, unknown>[]; columns: string[] }>
+  return normalizeQueryResult(await resp.json())
+}
+
+function normalizeQueryResult(payload: unknown): QueryRows {
+  const result = payload as QueryRows
+  if (Array.isArray(result.rows) && Array.isArray(result.columns)) return result
+
+  const envelope = payload as QueryExecuteEnvelope
+  const header = envelope.data?.header
+  const data = envelope.data?.data
+  if (Array.isArray(header) && Array.isArray(data)) {
+    return {
+      columns: header,
+      rows: data.map((row) => Object.fromEntries(header.map((column, index) => [column, row[index]]))),
+    }
+  }
+
+  throw new Error(`unexpected query response: ${JSON.stringify(payload)}`)
 }
 
 test.describe('Quickstart demo data validation', () => {

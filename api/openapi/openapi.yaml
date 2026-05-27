@@ -290,7 +290,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/QueryResult"
+                $ref: "#/components/schemas/QueryExecuteResponse"
   /api/v1/query/{workspace}/explain:
     post:
       operationId: explainQuery
@@ -558,6 +558,48 @@ components:
               type: string
         explain:
           $ref: "#/components/schemas/QueryExplain"
+    QueryExecuteResponse:
+      type: object
+      required: [code, data, message, success]
+      properties:
+        code:
+          type: string
+          example: "200"
+        message:
+          type: string
+          example: successful
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required: [data, header, responseStatus]
+          properties:
+            data:
+              type: array
+              items:
+                type: array
+                items: {}
+            header:
+              type: array
+              items:
+                type: string
+            responseStatus:
+              type: object
+              required: [result, retryPolicy, level, statusItem]
+              properties:
+                result:
+                  type: string
+                  example: Success
+                retryPolicy:
+                  type: string
+                  example: None
+                level:
+                  type: string
+                  example: Info
+                statusItem:
+                  type: array
+                  items: {}
     QueryExplain:
       type: object
       properties:

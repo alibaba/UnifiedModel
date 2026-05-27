@@ -587,13 +587,41 @@ func entityMatches(payload model.EntityPayload, plan model.QueryPlan) bool {
 }
 
 func relationMatches(payload model.RelationPayload, plan model.QueryPlan) bool {
-	if asBool(payload["__deleted__"]) {
+	if asBool(payload["__deleted__"]) && !hasTimeRange(plan.TimeRange) {
 		return false
 	}
-	if !matchesFilter(asString(payload["__relation_type__"]), plan.Filters["relation_type"]) {
+	if !matchesFilter(asString(payload["__relation_type__"]), firstFilter(plan.Filters["relation_type"], plan.Filters["type"])) {
+		return false
+	}
+	if !matchesFilter(relationEndpointKey(payload, "src"), plan.Filters["src"]) {
+		return false
+	}
+	if !matchesFilter(relationEndpointKey(payload, "dest"), plan.Filters["dest"]) {
+		return false
+	}
+	if plan.GraphCall != nil && len(plan.GraphCall.SeedIDs) > 0 {
+		srcID := asString(payload["__src_entity_id__"])
+		destID := asString(payload["__dest_entity_id__"])
+		if !containsID(plan.GraphCall.SeedIDs, srcID) && !containsID(plan.GraphCall.SeedIDs, destID) {
+			return false
+		}
+	}
+	if !matchesSearch(map[string]any(payload), plan.Filters["query"]) {
 		return false
 	}
 	return visibleInRange(map[string]any(payload), plan.TimeRange)
+}
+
+func relationEndpointKey(payload model.RelationPayload, side string) string {
+	return strings.Join([]string{
+		asString(payload["__"+side+"_domain__"]),
+		asString(payload["__"+side+"_entity_type__"]),
+		asString(payload["__"+side+"_entity_id__"]),
+	}, "/")
+}
+
+func hasTimeRange(timeRange model.TimeRange) bool {
+	return timeRange.From != nil || timeRange.To != nil
 }
 
 func visibleInRange(payload map[string]any, timeRange model.TimeRange) bool {
@@ -618,6 +646,9 @@ func visibleInRange(payload map[string]any, timeRange model.TimeRange) bool {
 	}
 	if first >= to {
 		return false
+	}
+	if asBool(payload["__deleted__"]) {
+		return last > from
 	}
 	return last+keepAlive > from
 }
@@ -664,6 +695,24 @@ func matchesSearch(payload map[string]any, filter any) bool {
 	}
 	for _, value := range payload {
 		if strings.Contains(strings.ToLower(asString(value)), query) {
+			return true
+		}
+	}
+	return false
+}
+
+func firstFilter(values ...any) any {
+	for _, value := range values {
+		if asString(value) != "" {
+			return value
+		}
+	}
+	return nil
+}
+
+func containsID(ids []string, value string) bool {
+	for _, id := range ids {
+		if id == value {
 			return true
 		}
 	}

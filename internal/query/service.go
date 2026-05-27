@@ -16,13 +16,22 @@ type graphStore interface {
 
 type Service struct {
 	graph    graphStore
+	search   searchService
 	planner  Planner
 	executor *Executor
 }
 
 func NewService(graph graphStore) *Service {
+	return NewServiceWithSearch(graph, nil)
+}
+
+// NewServiceWithSearch builds a Service that can route .runbook_set and any
+// query carrying mode=keyword|vector|hyper to the supplied SearchService.
+// Pass nil for legacy graph-only behavior.
+func NewServiceWithSearch(graph graphStore, search searchService) *Service {
 	return &Service{
 		graph:    graph,
+		search:   search,
 		planner:  Planner{},
 		executor: NewExecutor(graph),
 	}
@@ -33,6 +42,19 @@ func (s *Service) Execute(ctx context.Context, workspace string, req model.Query
 	if err != nil {
 		return model.QueryResult{}, err
 	}
+
+	if shouldRouteToSearch(plan) {
+		searchRes, mode, err := dispatchSearch(ctx, s.search, workspace, plan)
+		if err != nil {
+			return model.QueryResult{}, err
+		}
+		result := searchResultToQueryResult(searchRes, plan.Source, plan.Limit)
+		explain := buildExplain(plan, caps, health)
+		s.annotateSearchExplain(ctx, &explain, mode)
+		result.Explain = &explain
+		return result, nil
+	}
+
 	result, err := s.executor.Execute(ctx, workspace, plan)
 	if err != nil {
 		return model.QueryResult{}, err
@@ -47,7 +69,15 @@ func (s *Service) Explain(ctx context.Context, workspace string, req model.Query
 	if err != nil {
 		return model.QueryExplain{}, err
 	}
-	return buildExplain(plan, caps, health), nil
+	explain := buildExplain(plan, caps, health)
+	if shouldRouteToSearch(plan) {
+		mode := normalizeSearchMode(plan.Filters["mode"])
+		if mode == "" {
+			mode = searchModeKeyword
+		}
+		s.annotateSearchExplain(ctx, &explain, mode)
+	}
+	return explain, nil
 }
 
 func (s *Service) Examples(ctx context.Context) ([]string, error) {
@@ -55,10 +85,27 @@ func (s *Service) Examples(ctx context.Context) ([]string, error) {
 		".umodel with(kind='entity_set') | project domain,name,kind | sort domain,name | limit 20",
 		".entity with(domain='devops', name='devops.service', query='checkout', topk=20)",
 		".entity with(domain='k8s', name='k8s.workload', query='checkout', topk=20)",
+		".entity with(domain='apm', name='apm.service', query='payment latency spikes', mode='vector', topk=20)",
+		".entity with(domain='apm', name='apm.service', query='checkout failure', mode='hyper', topk=20, hybrid_k=60)",
+		".runbook_set with(domain='apm', type='knowledge', query='how to mitigate slow request', mode='hyper', topk=5)",
+		".runbook_set with(domain='apm', type='observations', query='cache miss spike', mode='vector', topk=10)",
 		".topo | graph-call getNeighborNodes('full', 2, [(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 20",
 		".topo | graph-call getDirectRelations([(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 20",
 		".topo | graph-call cypher(`MATCH (src)-[r]->(dest) RETURN properties(src) AS src, properties(r) AS relation, properties(dest) AS dest LIMIT 20`)",
 	}, nil
+}
+
+func (s *Service) annotateSearchExplain(ctx context.Context, explain *model.QueryExplain, mode string) {
+	explain.SearchMode = mode
+	if s.search == nil {
+		return
+	}
+	if health, err := s.search.Health(ctx); err == nil {
+		explain.SearchProvider = health.Provider
+	}
+	if caps, err := s.search.Capabilities(ctx); err == nil {
+		explain.EmbedModel = caps.EmbedderType
+	}
 }
 
 func (s *Service) plan(ctx context.Context, workspace string, req model.QueryRequest) (model.QueryPlan, model.GraphStoreCapabilities, model.GraphStoreHealth, error) {

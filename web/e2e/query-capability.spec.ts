@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test'
 
-const TOPO_DIRECT = `.topo | graph-call getDirectRelations([(:"devops@devops.service" {__entity_id__: '10000000000000000000000000000101'})]) | project src,relation,dest | limit 20`
-
 test.describe('Query capability via UI', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
@@ -17,12 +15,10 @@ test.describe('Query capability via UI', () => {
   })
 
   test('umodel query returns rows', async ({ page }) => {
-    await page.locator('text=Query').click()
-    await expect(page.locator('text=Unified SPL Query')).toBeVisible()
-
-    const textarea = page.locator('textarea').first()
-    await textarea.fill(".umodel with(kind='entity_set') | project domain,name,kind | sort domain,name | limit 20")
-    await page.locator('button:has-text("Execute")').click()
+    await page.getByRole('button', { name: 'Query' }).click()
+    await expect(page.getByRole('button', { name: 'Execute' })).toBeVisible()
+    await page.getByRole('button', { name: '.umodel' }).click()
+    await page.getByRole('button', { name: 'Execute' }).click()
 
     await expect(page.locator('.om-table tbody tr').first()).toBeVisible({ timeout: 10_000 })
     const rowCount = await page.locator('.om-table tbody tr').count()
@@ -30,32 +26,26 @@ test.describe('Query capability via UI', () => {
   })
 
   test('entity query finds checkout service', async ({ page }) => {
-    await page.locator('text=Query').click()
-
-    const textarea = page.locator('textarea').first()
-    await textarea.fill(".entity with(domain='devops', name='devops.service', query='checkout', topk=20) | project __entity_id__,display_name,status,owner")
-    await page.locator('button:has-text("Execute")').click()
+    await page.getByRole('button', { name: 'Query' }).click()
+    await page.getByRole('button', { name: '.entity' }).click()
+    await page.getByRole('button', { name: 'Execute' }).click()
 
     await expect(page.locator('.om-table')).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.om-table').locator('text=checkout').first()).toBeVisible()
+    await expect(page.locator('.om-table').locator('text=checkout-service').first()).toBeVisible()
   })
 
   test('topo query returns direct relations', async ({ page }) => {
-    await page.locator('text=Query').click()
-
-    const textarea = page.locator('textarea').first()
-    await textarea.fill(TOPO_DIRECT)
-    await page.locator('button:has-text("Execute")').click()
+    await page.getByRole('button', { name: 'Query' }).click()
+    await page.getByRole('button', { name: 'direct' }).click()
+    await page.getByRole('button', { name: 'Execute' }).click()
 
     await expect(page.locator('.om-table tbody tr').first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('explain shows provider info', async ({ page }) => {
-    await page.locator('text=Query').click()
-
-    const textarea = page.locator('textarea').first()
-    await textarea.fill(".umodel with(kind='entity_set') | limit 5")
-    await page.locator('button:has-text("Explain")').click()
+    await page.getByRole('button', { name: 'Query' }).click()
+    await page.getByRole('button', { name: '.umodel' }).click()
+    await page.getByRole('button', { name: 'Explain' }).click()
 
     await expect(page.locator('text=memory')).toBeVisible({ timeout: 10_000 })
   })

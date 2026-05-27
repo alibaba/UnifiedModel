@@ -172,12 +172,12 @@ func paramName(value string) (string, bool) {
 }
 
 func detectSource(queryText string) (string, error) {
-	for _, source := range []string{".umodel", ".entity", ".topo"} {
+	for _, source := range []string{".umodel", ".entity", ".topo", ".runbook_set"} {
 		if strings.HasPrefix(queryText, source) && hasSourceBoundary(queryText, len(source)) {
 			return source, nil
 		}
 	}
-	return "", apperrors.New(apperrors.CodeQueryParseError, "query must start with .umodel, .entity, or .topo")
+	return "", apperrors.New(apperrors.CodeQueryParseError, "query must start with .umodel, .entity, .topo, or .runbook_set")
 }
 
 func hasSourceBoundary(queryText string, pos int) bool {

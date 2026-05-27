@@ -65,6 +65,18 @@ type QueryService interface {
 	Examples(ctx context.Context) ([]string, error)
 }
 
+// SearchService is the runtime-facing semantic search entrypoint for the
+// `.umodel`, `.entity`, and `.runbook_set` query sources. It mirrors the SLS
+// USearch SPL contract so the same `with(...)` invocation flows through both
+// the open-source engine and the SLS backend.
+type SearchService interface {
+	Keyword(ctx context.Context, workspace string, req model.SearchRequest) (model.SearchResult, error)
+	Vector(ctx context.Context, workspace string, req model.SearchRequest) (model.SearchResult, error)
+	Hybrid(ctx context.Context, workspace string, req model.SearchRequest) (model.SearchResult, error)
+	Capabilities(ctx context.Context) (model.SearchCapabilities, error)
+	Health(ctx context.Context) (model.SearchHealth, error)
+}
+
 type AgentGateway interface {
 	Discover(ctx context.Context, workspace string) (model.AgentDiscovery, error)
 	Tools(ctx context.Context) ([]model.AgentTool, error)

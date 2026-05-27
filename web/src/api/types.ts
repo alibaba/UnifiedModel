@@ -156,6 +156,22 @@ export interface QueryResult {
   explain?: QueryExplain
 }
 
+export interface QueryExecuteResponse {
+  code: string
+  message: string
+  success: boolean
+  data: {
+    data: unknown[][]
+    header: string[]
+    responseStatus: {
+      result: string
+      retryPolicy: string
+      level: string
+      statusItem: unknown[]
+    }
+  }
+}
+
 export interface EntityWriteBatch {
   workspace?: string
   idempotency_key?: string

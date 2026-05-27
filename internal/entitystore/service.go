@@ -2,11 +2,13 @@ package entitystore
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
+	searchcontract "github.com/alibaba/UnifiedModel/internal/search/contract"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
@@ -21,22 +23,38 @@ type schemaResolver interface {
 	ValidateRelationPayload(ctx context.Context, payload model.RelationPayload) (model.ValidationResult, error)
 }
 
+type searchIndexer interface {
+	Index(ctx context.Context, workspace string, chunks []searchcontract.Chunk) error
+	DeleteByDocID(ctx context.Context, workspace string, docIDs []string) error
+}
+
+type Option func(*Service)
+
+func WithSearchIndexer(indexer searchIndexer) Option {
+	return func(s *Service) { s.search = indexer }
+}
+
 type Service struct {
 	graph    graphStore
 	resolver schemaResolver
+	search   searchIndexer
 
 	mu                  sync.Mutex
 	entityIdempotency   map[string]model.WriteResult
 	relationIdempotency map[string]model.WriteResult
 }
 
-func NewService(graph graphStore, resolver schemaResolver) *Service {
-	return &Service{
+func NewService(graph graphStore, resolver schemaResolver, opts ...Option) *Service {
+	s := &Service{
 		graph:               graph,
 		resolver:            resolver,
 		entityIdempotency:   make(map[string]model.WriteResult),
 		relationIdempotency: make(map[string]model.WriteResult),
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 func (s *Service) WriteEntities(ctx context.Context, workspace string, batch model.EntityWriteBatch) (model.WriteResult, error) {
@@ -76,6 +94,7 @@ func (s *Service) WriteEntities(ctx context.Context, workspace string, batch mod
 		if err != nil {
 			return model.WriteResult{}, err
 		}
+		s.indexEntities(ctx, workspace, valid.Entities, &graphResult)
 	}
 	result := mergeWriteResults(graphResult, validationResult)
 	if result.Failed > 0 && !batch.PartialSuccess {
@@ -152,6 +171,7 @@ func (s *Service) ExpireEntities(ctx context.Context, workspace string, req mode
 		if err != nil {
 			return model.WriteResult{}, err
 		}
+		s.deleteEntitiesFromSearch(ctx, workspace, req.IDs, &graphResult)
 	}
 	return mergeWriteResults(graphResult, parseResult), nil
 }
@@ -248,12 +268,137 @@ func failedItem(id string, code apperrors.Code, message string, details []model.
 	}
 }
 
+func (s *Service) indexEntities(ctx context.Context, workspace string, payloads []model.EntityPayload, result *model.WriteResult) {
+	if s.search == nil {
+		return
+	}
+	chunks, deleteIDs := entitySearchIndexBatch(payloads)
+	if len(deleteIDs) > 0 {
+		s.deleteEntitiesFromSearch(ctx, workspace, deleteIDs, result)
+	}
+	if len(chunks) == 0 {
+		return
+	}
+	if err := s.search.Index(ctx, workspace, chunks); err != nil {
+		result.Warnings = append(result.Warnings, model.ErrorDetail{
+			Field:  "search_index",
+			Reason: err.Error(),
+		})
+	}
+}
+
+func (s *Service) deleteEntitiesFromSearch(ctx context.Context, workspace string, ids []string, result *model.WriteResult) {
+	if s.search == nil || len(ids) == 0 {
+		return
+	}
+	docIDs := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		docIDs = append(docIDs, "entity/"+id)
+	}
+	if len(docIDs) == 0 {
+		return
+	}
+	if err := s.search.DeleteByDocID(ctx, workspace, docIDs); err != nil {
+		result.Warnings = append(result.Warnings, model.ErrorDetail{
+			Field:  "search_index",
+			Reason: err.Error(),
+		})
+	}
+}
+
+func entitySearchIndexBatch(payloads []model.EntityPayload) ([]searchcontract.Chunk, []string) {
+	chunks := make([]searchcontract.Chunk, 0, len(payloads))
+	deleteIDs := make([]string, 0)
+	for _, payload := range payloads {
+		id := model.EntityStableKey(payload)
+		if id == "" {
+			continue
+		}
+		if entitySearchDeletes(payload) {
+			deleteIDs = append(deleteIDs, id)
+			continue
+		}
+		domain := entityPayloadString(payload["__domain__"])
+		entityType := entityPayloadString(payload["__entity_type__"])
+		entityID := entityPayloadString(payload["__entity_id__"])
+		method := entityPayloadString(payload["__method__"])
+		chunks = append(chunks, searchcontract.Chunk{
+			DocID:  "entity/" + id,
+			Source: ".entity",
+			Kind:   entityType,
+			Domain: domain,
+			Name:   entityType,
+			Text:   searchText(domain, entityType, entityID, method, payload),
+			Attrs: map[string]any{
+				"__entity_id__": entityID,
+				"__method__":    method,
+			},
+			Metadata: map[string]any{
+				"__entity_id__": entityID,
+				"__method__":    method,
+			},
+			Spec: payload,
+		})
+	}
+	return chunks, deleteIDs
+}
+
+func entitySearchDeletes(payload model.EntityPayload) bool {
+	switch strings.ToLower(entityPayloadString(payload["__method__"])) {
+	case "expire", "delete":
+		return true
+	default:
+		return false
+	}
+}
+
+func entityPayloadString(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case fmt.Stringer:
+		return typed.String()
+	case nil:
+		return ""
+	default:
+		return fmt.Sprint(typed)
+	}
+}
+
+func searchText(parts ...any) string {
+	var builder strings.Builder
+	for _, part := range parts {
+		if part == nil {
+			continue
+		}
+		if builder.Len() > 0 {
+			builder.WriteByte(' ')
+		}
+		switch typed := part.(type) {
+		case string:
+			builder.WriteString(typed)
+		default:
+			body, err := json.Marshal(typed)
+			if err != nil {
+				builder.WriteString(fmt.Sprint(typed))
+				continue
+			}
+			builder.Write(body)
+		}
+	}
+	return builder.String()
+}
+
 func mergeWriteResults(results ...model.WriteResult) model.WriteResult {
 	var merged model.WriteResult
 	for _, result := range results {
 		merged.Accepted += result.Accepted
 		merged.Failed += result.Failed
 		merged.Items = append(merged.Items, result.Items...)
+		merged.Warnings = append(merged.Warnings, result.Warnings...)
 	}
 	return merged
 }
@@ -313,6 +458,7 @@ func cloneWriteResult(result model.WriteResult) model.WriteResult {
 	for i := range result.Items {
 		result.Items[i].Details = cloneErrorDetails(result.Items[i].Details)
 	}
+	result.Warnings = cloneErrorDetails(result.Warnings)
 	return result
 }
 

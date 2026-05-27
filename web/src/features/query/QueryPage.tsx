@@ -43,7 +43,11 @@ const splMaxEditorHeight = 117
 
 const examples = [
   { label: '.umodel', query: ".umodel with(kind='entity_set') | project domain,name,kind | sort domain,name | limit 20" },
-  { label: '.entity', query: ".entity with(domain='devops', name='devops.service', query='checkout', topk=20) | project __entity_id__,display_name,status,owner" },
+  {
+    label: '.entity',
+    query:
+      ".entity with(domain='devops', name='devops.service', query='checkout', mode='vector', topk=20) | project __category__,__domain__,__entity_type__,__entity_id__,__method__,__first_observed_time__,__last_observed_time__,__keep_alive_seconds__,display_name,status,owner",
+  },
   { label: '.topo', query: '.topo | limit 20' },
   {
     label: 'direct',
@@ -90,11 +94,11 @@ export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: s
       if (from || to) request.time_range = { from, to }
 
       if (kind === 'execute') {
-        const next = await api.query(workspaceId, request)
+        const [next, nextExplain] = await Promise.all([api.query(workspaceId, request), api.explain(workspaceId, request)])
         const nextTopoEntityRows = await loadTopoEntityRows(api, workspaceId, next, request.time_range).catch(() => [])
         setResult(next)
         setTopoEntityRows(nextTopoEntityRows)
-        setExplain(next.explain || null)
+        setExplain(nextExplain)
         setExplainOpen(false)
         setResultView('table')
       } else {

@@ -2,9 +2,12 @@ package umodel
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
+	searchcontract "github.com/alibaba/UnifiedModel/internal/search/contract"
 	"github.com/alibaba/UnifiedModel/internal/umodel/schemaspec"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
@@ -13,6 +16,11 @@ import (
 type graphStore interface {
 	PutUModelElements(ctx context.Context, batch model.UModelElementBatch) (model.WriteResult, error)
 	GetUModelSnapshot(ctx context.Context, req model.UModelSnapshotRequest) (model.UModelSnapshot, error)
+}
+
+type searchIndexer interface {
+	Index(ctx context.Context, workspace string, chunks []searchcontract.Chunk) error
+	DeleteByDocID(ctx context.Context, workspace string, docIDs []string) error
 }
 
 // SchemaValidator is the contract Service uses to enforce schema-driven
@@ -27,6 +35,7 @@ type Service struct {
 	mu                 sync.RWMutex
 	indexes            map[string]*schemaIndex
 	commonSchemaLoader CommonSchemaLoader
+	search             searchIndexer
 }
 
 // Option configures Service.
@@ -37,6 +46,11 @@ type Option func(*Service)
 // outside the schema (e.g. graphstore round-trip tests).
 func WithValidator(v SchemaValidator) Option {
 	return func(s *Service) { s.validator = v }
+}
+
+// WithSearchIndexer connects UModel writes to the runtime search index.
+func WithSearchIndexer(indexer searchIndexer) Option {
+	return func(s *Service) { s.search = indexer }
 }
 
 func NewService(graph graphStore, opts ...Option) *Service {
@@ -126,6 +140,14 @@ func (s *Service) PutElements(ctx context.Context, batch model.UModelElementBatc
 	}
 	s.mergeIndex(batch.Workspace, batch.Elements)
 	result.Warnings = append(result.Warnings, validation.Warnings...)
+	if s.search != nil {
+		if err := s.search.Index(ctx, batch.Workspace, umodelSearchChunks(batch.Elements)); err != nil {
+			result.Warnings = append(result.Warnings, model.ErrorDetail{
+				Field:  "search_index",
+				Reason: err.Error(),
+			})
+		}
+	}
 	return result, nil
 }
 
@@ -245,4 +267,78 @@ func validWriteMethod(value any) bool {
 	default:
 		return false
 	}
+}
+
+func umodelSearchChunks(elements []model.UModelElement) []searchcontract.Chunk {
+	chunks := make([]searchcontract.Chunk, 0, len(elements))
+	for _, element := range elements {
+		key := model.UModelElementKey(element)
+		if key == "" {
+			continue
+		}
+		chunks = append(chunks, searchcontract.Chunk{
+			DocID:  "umodel/" + key,
+			Source: ".umodel",
+			Kind:   element.Kind,
+			Domain: element.Domain,
+			Name:   element.Name,
+			Text:   searchText(element.Kind, element.Domain, element.Name, element.Version, element.Spec),
+			Metadata: map[string]any{
+				"version": element.Version,
+			},
+			Spec: element.Spec,
+		})
+		if element.Kind != "runbook_set" {
+			continue
+		}
+		for _, section := range []string{"knowledge", "observations", "actions", "automations", "skills"} {
+			value, ok := element.Spec[section]
+			if !ok || value == nil {
+				continue
+			}
+			chunks = append(chunks, searchcontract.Chunk{
+				DocID:  "runbook_set/" + key + "/" + section,
+				Source: ".runbook_set",
+				Kind:   element.Kind,
+				Domain: element.Domain,
+				Name:   element.Name,
+				Text:   searchText(element.Kind, element.Domain, element.Name, section, value),
+				Attrs: map[string]any{
+					"type": section,
+				},
+				Metadata: map[string]any{
+					"type":    section,
+					"version": element.Version,
+				},
+				Spec: map[string]any{
+					section: value,
+				},
+			})
+		}
+	}
+	return chunks
+}
+
+func searchText(parts ...any) string {
+	var builder strings.Builder
+	for _, part := range parts {
+		if part == nil {
+			continue
+		}
+		if builder.Len() > 0 {
+			builder.WriteByte(' ')
+		}
+		switch typed := part.(type) {
+		case string:
+			builder.WriteString(typed)
+		default:
+			body, err := json.Marshal(typed)
+			if err != nil {
+				builder.WriteString(fmt.Sprint(typed))
+				continue
+			}
+			builder.Write(body)
+		}
+	}
+	return builder.String()
 }

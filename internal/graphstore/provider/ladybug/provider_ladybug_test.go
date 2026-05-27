@@ -125,6 +125,26 @@ func TestLadybugProviderConformance(t *testing.T) {
 	if topoRows.Rows[0]["src"] != "apm/apm.service/54013ba69c196820e56801f1ef5aad54" || topoRows.Rows[0]["dest"] != "apm/apm.service/177627f91af678a9b03e993f1a91917f" || topoRows.Rows[0]["relation"] != "calls" {
 		t.Fatalf("unexpected topo row: %+v", topoRows.Rows[0])
 	}
+	if _, err := provider.WriteRelations(ctx, model.RelationWriteBatch{
+		Workspace: "demo",
+		Relations: []model.RelationPayload{relation("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "177627f91af678a9b03e993f1a91917f")},
+	}); err != nil {
+		t.Fatalf("write unrelated relation: %v", err)
+	}
+	seedTopoRows, err := provider.QueryTopo(ctx, model.TopoQueryPlan{
+		Workspace: "demo",
+		GraphCall: &model.GraphCallPlan{
+			Name:    "getDirectRelations",
+			SeedIDs: []string{"54013ba69c196820e56801f1ef5aad54"},
+		},
+		Limit: 10,
+	})
+	if err != nil {
+		t.Fatalf("query topo graph-call seed: %v", err)
+	}
+	if len(seedTopoRows.Rows) != 1 || seedTopoRows.Rows[0]["src"] != "apm/apm.service/54013ba69c196820e56801f1ef5aad54" {
+		t.Fatalf("expected graph-call seed to filter unrelated relations, got %+v", seedTopoRows.Rows)
+	}
 	cypherRows, err := provider.QueryTopo(ctx, model.TopoQueryPlan{
 		Workspace: "demo",
 		GraphCall: &model.GraphCallPlan{

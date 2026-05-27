@@ -39,6 +39,55 @@ func TestLoadQuickStartCreatesWorkspaceAndImportsSample(t *testing.T) {
 	if len(rows.Rows) == 0 {
 		t.Fatalf("expected quickstart sample entity rows, got %+v", rows)
 	}
+
+	entitySearch, err := app.Query.Execute(ctx, DefaultQuickStartWorkspaceID, model.QueryRequest{
+		Query: ".entity with(domain='devops', name='devops.service', query='checkout', mode='vector', topk=5)",
+	})
+	if err != nil {
+		t.Fatalf("search quickstart entities: %v", err)
+	}
+	assertSearchResult(t, entitySearch, "vector")
+
+	umodelSearch, err := app.Query.Execute(ctx, DefaultQuickStartWorkspaceID, model.QueryRequest{
+		Query: ".umodel with(kind='entity_set', query='service', mode='keyword', topk=5)",
+	})
+	if err != nil {
+		t.Fatalf("search quickstart umodel: %v", err)
+	}
+	assertSearchResult(t, umodelSearch, "keyword")
+}
+
+func TestRunbookSetSearchIsConfigured(t *testing.T) {
+	ctx := context.Background()
+	app := NewMemoryApp(t.TempDir())
+
+	if _, err := app.Samples.Import(ctx, "incident", "incident-investigation"); err != nil {
+		t.Fatalf("import incident sample: %v", err)
+	}
+
+	result, err := app.Query.Execute(ctx, "incident", model.QueryRequest{
+		Query: ".runbook_set with(domain='platform', type='knowledge', query='retry', mode='keyword', topk=5)",
+	})
+	if err != nil {
+		t.Fatalf("search runbook set: %v", err)
+	}
+	assertSearchResult(t, result, "keyword")
+}
+
+func assertSearchResult(t *testing.T, result model.QueryResult, mode string) {
+	t.Helper()
+	if len(result.Rows) == 0 {
+		t.Fatalf("expected search rows, got %+v", result)
+	}
+	if result.Explain == nil {
+		t.Fatalf("expected search explain, got %+v", result)
+	}
+	if result.Explain.SearchMode != mode {
+		t.Fatalf("unexpected search mode: %+v", result.Explain)
+	}
+	if result.Explain.SearchProvider != "memory" {
+		t.Fatalf("unexpected search provider: %+v", result.Explain)
+	}
 }
 
 func TestLoadQuickStartIsSafeWithExistingWorkspace(t *testing.T) {

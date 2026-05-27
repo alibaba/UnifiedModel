@@ -61,19 +61,21 @@ func TestHTTPQuickFlow(t *testing.T) {
 	if len(rows(t, entityRows)) != 1 {
 		t.Fatalf("expected one entity row: %+v", entityRows)
 	}
+	assertQueryEnvelope(t, entityRows, []string{"__entity_id__", "display_name"})
 	topoRows := post(t, server.URL+"/api/v1/query/demo/execute", map[string]any{"query": ".topo | graph-call getDirectRelations([(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | project src,relation,dest | limit 10"})
 	if len(rows(t, topoRows)) != 1 {
 		t.Fatalf("expected one topo row: %+v", topoRows)
 	}
-	cypherRows := post(t, server.URL+"/api/v1/query/demo/execute", map[string]any{
+	cypherPayload := map[string]any{
 		"query":      ".topo | graph-call cypher(`MATCH (svc:``devops@devops.service`` {__entity_id__: $svc}) OPTIONAL MATCH path = (svc)-[r*1..2]-(neighbor) WITH svc, neighbor, relationships(path) AS rels WHERE neighbor IS NULL OR coalesce(neighbor.__deleted__, false) = false RETURN svc.__entity_id__ AS service, neighbor.__entity_id__ AS neighbor, [rel IN rels | type(rel)] AS relation_types, size(rels) AS hops ORDER BY hops, neighbor LIMIT 20`) | limit 20",
 		"parameters": map[string]any{"svc": "10000000000000000000000000000101"},
-	})
+	}
+	cypherRows := post(t, server.URL+"/api/v1/query/demo/execute", cypherPayload)
 	cypherResultRows := rows(t, cypherRows)
 	if len(cypherResultRows) == 0 || cypherResultRows[0].(map[string]any)["hops"] != float64(1) {
 		t.Fatalf("expected cypher topo rows: %+v", cypherRows)
 	}
-	cypherExplain := cypherRows["explain"].(map[string]any)
+	cypherExplain := post(t, server.URL+"/api/v1/query/demo/explain", cypherPayload)
 	if cypherExplain["cypher_dialect"] != "ladybug" || cypherExplain["cypher_engine"] != "go" {
 		t.Fatalf("unexpected cypher explain metadata: %+v", cypherExplain)
 	}
@@ -270,6 +272,7 @@ func postStatus(t *testing.T, url string, payload any, allowedStatuses ...int) m
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
+	normalizeQueryExecutePayload(out)
 	return out
 }
 
@@ -297,6 +300,77 @@ func rows(t *testing.T, payload map[string]any) []any {
 		t.Fatalf("payload has no rows: %+v", payload)
 	}
 	return rows
+}
+
+func assertQueryEnvelope(t *testing.T, payload map[string]any, wantHeader []string) {
+	t.Helper()
+	if payload["code"] != "200" || payload["message"] != "successful" || payload["success"] != true {
+		t.Fatalf("unexpected query envelope: %+v", payload)
+	}
+	data, ok := payload["data"].(map[string]any)
+	if !ok {
+		t.Fatalf("query envelope has no data object: %+v", payload)
+	}
+	header, ok := data["header"].([]any)
+	if !ok {
+		t.Fatalf("query envelope has no header: %+v", payload)
+	}
+	if len(header) != len(wantHeader) {
+		t.Fatalf("header length = %d, want %d: %+v", len(header), len(wantHeader), header)
+	}
+	for i, want := range wantHeader {
+		if header[i] != want {
+			t.Fatalf("header[%d] = %v, want %s: %+v", i, header[i], want, header)
+		}
+	}
+	matrix, ok := data["data"].([]any)
+	if !ok || len(matrix) == 0 {
+		t.Fatalf("query envelope has no data matrix: %+v", payload)
+	}
+	status, ok := data["responseStatus"].(map[string]any)
+	if !ok || status["result"] != "Success" || status["retryPolicy"] != "None" || status["level"] != "Info" {
+		t.Fatalf("unexpected responseStatus: %+v", data["responseStatus"])
+	}
+}
+
+func normalizeQueryExecutePayload(payload map[string]any) {
+	data, ok := payload["data"].(map[string]any)
+	if !ok {
+		return
+	}
+	rawHeader, ok := data["header"].([]any)
+	if !ok {
+		return
+	}
+	rawData, ok := data["data"].([]any)
+	if !ok {
+		return
+	}
+	header := make([]any, 0, len(rawHeader))
+	headerStrings := make([]string, 0, len(rawHeader))
+	for _, raw := range rawHeader {
+		column, _ := raw.(string)
+		header = append(header, column)
+		headerStrings = append(headerStrings, column)
+	}
+	rows := make([]any, 0, len(rawData))
+	for _, rawRow := range rawData {
+		values, ok := rawRow.([]any)
+		if !ok {
+			continue
+		}
+		row := map[string]any{}
+		for i, column := range headerStrings {
+			if i < len(values) {
+				row[column] = values[i]
+			} else {
+				row[column] = nil
+			}
+		}
+		rows = append(rows, row)
+	}
+	payload["columns"] = header
+	payload["rows"] = rows
 }
 
 func errorCode(t *testing.T, payload map[string]any) string {

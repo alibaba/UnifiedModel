@@ -322,6 +322,7 @@ func e2eDecodeResponse(t *testing.T, label string, resp *http.Response, allowedS
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		t.Fatalf("decode %s response: %v", label, err)
 	}
+	e2eNormalizeQueryExecutePayload(out)
 	return out
 }
 
@@ -340,6 +341,46 @@ func e2eRows(t *testing.T, payload map[string]any) []map[string]any {
 		rows = append(rows, row)
 	}
 	return rows
+}
+
+func e2eNormalizeQueryExecutePayload(payload map[string]any) {
+	data, ok := payload["data"].(map[string]any)
+	if !ok {
+		return
+	}
+	rawHeader, ok := data["header"].([]any)
+	if !ok {
+		return
+	}
+	rawData, ok := data["data"].([]any)
+	if !ok {
+		return
+	}
+	header := make([]any, 0, len(rawHeader))
+	headerStrings := make([]string, 0, len(rawHeader))
+	for _, raw := range rawHeader {
+		column, _ := raw.(string)
+		header = append(header, column)
+		headerStrings = append(headerStrings, column)
+	}
+	rows := make([]any, 0, len(rawData))
+	for _, rawRow := range rawData {
+		values, ok := rawRow.([]any)
+		if !ok {
+			continue
+		}
+		row := map[string]any{}
+		for i, column := range headerStrings {
+			if i < len(values) {
+				row[column] = values[i]
+			} else {
+				row[column] = nil
+			}
+		}
+		rows = append(rows, row)
+	}
+	payload["columns"] = header
+	payload["rows"] = rows
 }
 
 func e2eItems(t *testing.T, payload map[string]any) []map[string]any {
@@ -378,6 +419,7 @@ func e2eJSONMap(t *testing.T, body []byte) map[string]any {
 	if err := json.Unmarshal(body, &out); err != nil {
 		t.Fatalf("decode json %s: %v", body, err)
 	}
+	e2eNormalizeQueryExecutePayload(out)
 	return out
 }
 

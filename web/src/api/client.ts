@@ -8,6 +8,7 @@ import type {
   ExpireRequest,
   HealthResponse,
   Page,
+  QueryExecuteResponse,
   QueryExplain,
   QueryRequest,
   QueryResult,
@@ -82,10 +83,10 @@ export class UModelApi {
   }
 
   query(workspace: string, payload: QueryRequest): Promise<QueryResult> {
-    return this.request(`/api/v1/query/${encodeURIComponent(workspace)}/execute`, {
+    return this.request<QueryResult | QueryExecuteResponse>(`/api/v1/query/${encodeURIComponent(workspace)}/execute`, {
       method: 'POST',
       body: payload,
-    })
+    }).then(normalizeQueryResult)
   }
 
   explain(workspace: string, payload: QueryRequest): Promise<QueryExplain> {
@@ -193,4 +194,34 @@ export class UModelApi {
     }
     return payload as T
   }
+}
+
+function normalizeQueryResult(payload: QueryResult | QueryExecuteResponse): QueryResult {
+  if (isQueryExecuteResponse(payload)) {
+    const columns = payload.data.header
+    const rows = payload.data.data.map((values) => {
+      const row: Record<string, unknown> = {}
+      columns.forEach((column, index) => {
+        row[column] = values[index]
+      })
+      return row
+    })
+    return {
+      columns,
+      rows,
+      page: {},
+    }
+  }
+  return payload
+}
+
+function isQueryExecuteResponse(payload: QueryResult | QueryExecuteResponse): payload is QueryExecuteResponse {
+  return Boolean(
+    payload &&
+      typeof payload === 'object' &&
+      'success' in payload &&
+      'data' in payload &&
+      Array.isArray((payload as QueryExecuteResponse).data?.header) &&
+      Array.isArray((payload as QueryExecuteResponse).data?.data),
+  )
 }

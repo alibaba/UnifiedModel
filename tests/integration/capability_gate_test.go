@@ -133,15 +133,16 @@ func TestCapabilityGate(t *testing.T) {
 			t.Fatalf("expected neighbor nodes at depth 2")
 		}
 
-		cypher := post(t, server.URL+"/api/v1/query/demo/execute", map[string]any{
+		cypherPayload := map[string]any{
 			"query":      ".topo | graph-call cypher(`MATCH (svc:``devops@devops.service`` {__entity_id__: $svc}) OPTIONAL MATCH path = (svc)-[r*1..2]-(neighbor) WITH svc, neighbor, relationships(path) AS rels WHERE neighbor IS NULL OR coalesce(neighbor.__deleted__, false) = false RETURN svc.__entity_id__ AS service, neighbor.__entity_id__ AS neighbor, [rel IN rels | type(rel)] AS relation_types, size(rels) AS hops ORDER BY hops, neighbor LIMIT 20`) | limit 20",
 			"parameters": map[string]any{"svc": "10000000000000000000000000000101"},
-		})
+		}
+		cypher := post(t, server.URL+"/api/v1/query/demo/execute", cypherPayload)
 		cypherRows := rows(t, cypher)
 		if len(cypherRows) == 0 {
 			t.Fatalf("expected cypher query results")
 		}
-		cypherExplain := cypher["explain"].(map[string]any)
+		cypherExplain := post(t, server.URL+"/api/v1/query/demo/explain", cypherPayload)
 		if cypherExplain["cypher_dialect"] != "ladybug" || cypherExplain["cypher_engine"] != "go" {
 			t.Fatalf("unexpected cypher explain: %+v", cypherExplain)
 		}
