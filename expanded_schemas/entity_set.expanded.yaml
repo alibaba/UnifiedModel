@@ -621,8 +621,8 @@ versions:
               en_us: >
                 The name fields of the TelemetryData. It is recommended to configure the display fields in order of importance.
                 Front-end, algorithms, etc. will freely choose according to the characteristics in various scenarios. For
-                example, for service operation entities, it is recommended to take ["operation_name", "service_name"]; For K8s
-                Pod entities, it is recommended to take ["pod_name", "namespace", "cluster"].
+                example, for service operation entities, it is recommended to take ["operation_name", "service_name"]; For
+                K8s Pod entities, it is recommended to take ["pod_name", "namespace", "cluster"].
             constraint:
               array:
                 item:

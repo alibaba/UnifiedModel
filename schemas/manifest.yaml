@@ -20,6 +20,9 @@ versions:
       - sls_entitystore:v1.0.0
       - external_storage:v1.0.0
       - aliyun_prometheus:v1.0.0
+      - elasticsearch:v1.0.0
+      - prometheus:v1.0.0
+      - mysql:v1.0.0
       - entity_set_link:v1.0.0
       - entity_source_link:v1.0.0
       - data_link:v1.0.0

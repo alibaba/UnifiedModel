@@ -22,6 +22,7 @@ public class UModel {
         // 注册所有类型
         TYPE_REGISTRY.put("aliyun_prometheus:v1.0.0", AliyunPrometheusV100::new);
         TYPE_REGISTRY.put("data_link:v1.0.0", DataLinkV100::new);
+        TYPE_REGISTRY.put("elasticsearch:v1.0.0", ElasticsearchV100::new);
         TYPE_REGISTRY.put("entity_set:v1.0.0", EntitySetV100::new);
         TYPE_REGISTRY.put("entity_set_link:v1.0.0", EntitySetLinkV100::new);
         TYPE_REGISTRY.put("entity_source:v1.0.0", EntitySourceV100::new);
@@ -32,7 +33,9 @@ public class UModel {
         TYPE_REGISTRY.put("external_storage:v1.0.0", ExternalStorageV100::new);
         TYPE_REGISTRY.put("log_set:v1.0.0", LogSetV100::new);
         TYPE_REGISTRY.put("metric_set:v1.0.0", MetricSetV100::new);
+        TYPE_REGISTRY.put("mysql:v1.0.0", MysqlV100::new);
         TYPE_REGISTRY.put("profile_set:v1.0.0", ProfileSetV100::new);
+        TYPE_REGISTRY.put("prometheus:v1.0.0", PrometheusV100::new);
         TYPE_REGISTRY.put("runbook_link:v1.0.0", RunbookLinkV100::new);
         TYPE_REGISTRY.put("runbook_set:v1.0.0", RunbookSetV100::new);
         TYPE_REGISTRY.put("sls_entitystore:v1.0.0", SlsEntitystoreV100::new);

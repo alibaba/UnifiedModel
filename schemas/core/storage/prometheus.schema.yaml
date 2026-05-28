@@ -1,0 +1,65 @@
+description:
+  zh_cn: Prometheus 存储，用于描述开源 Prometheus 实例的配置和连接信息。
+  en_us: Prometheus storage, used to define the open-source Prometheus instance configuration and connection details.
+name: prometheus
+versions:
+  - name: v1.0.0
+    spec:
+      type: object
+      properties:
+        kind:
+          type: string
+          constraint:
+            required: true
+            enum:
+              values:
+                - prometheus
+        schema:
+          type: object
+          extends:
+            - schema:v1
+          constraint:
+            required: true
+        metadata:
+          type: object
+          extends:
+            - metadata:v1
+          constraint:
+            required: true
+        spec:
+          type: object
+          constraint:
+            required: true
+          description:
+            zh_cn: Prometheus 的核心配置部分，定义监控实例的连接和查询参数。
+            en_us: The specification section containing Prometheus configuration, including connection and query parameters.
+          properties:
+            endpoint:
+              description:
+                zh_cn: Prometheus 实例的访问地址（URL）。
+                en_us: The endpoint URL of the Prometheus instance.
+              type: string
+              constraint:
+                required: true
+            properties:
+              description:
+                zh_cn: Prometheus 的额外配置信息，以键值对形式存储。
+                en_us: Additional configuration of the Prometheus instance, stored as key-value pairs.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
+            tags:
+              description:
+                zh_cn: 用于表示该 Prometheus 存储的标签。
+                en_us: This field is used to represent the tags of the Prometheus storage.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string

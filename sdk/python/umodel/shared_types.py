@@ -559,7 +559,7 @@ class TelemetryDataV1(UModelObject):
     time_field: Optional[str] = None
     # 注意：定位和 `name_fields` 有一定重叠，字段已废弃，请使用 `name_fields` 字段第一个值替代。可观测数据的显示字段。即默认展示的字段。
     display_field: Optional[str] = None
-    # 可观测数据的显示字段。建议按照显示重要性配置先后顺序，前端、算法等在各类场景会根据特点自由选择，例如极窄/引用场景下只取name_fields的第一个值。 例如：APM接口实体，建议取值为 ["operation_name", "service_na...
+    # 可观测数据的显示字段。建议按照显示重要性配置先后顺序，前端、算法等在各类场景会根据特点自由选择，例如极窄/引用场景下只取name_fields的第一个值。 例如：服务操作实体，建议取值为 ["operation_name", "service_nam...
     name_fields: Optional[List[str]] = None
     # 可观测数据的隐藏字段。即不用作展示的字段。
     hidden_fields: Optional[List[str]] = None

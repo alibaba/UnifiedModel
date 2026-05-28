@@ -65,6 +65,30 @@ public class SchemaTest {
     }
 
     @Test
+    public void testElasticsearchV100() {
+        ElasticsearchV100 obj = new ElasticsearchV100();
+
+        assertEquals("elasticsearch", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+        assertTrue(obj instanceof UModelCoreObject);
+        assertFalse(obj instanceof UModelLinkObject);
+
+        MetadataV1 metadata = new MetadataV1();
+        metadata.setName("test_elasticsearch");
+        obj.setMetadata(metadata);
+        assertEquals(metadata, obj.getMetadata());
+        assertEquals("test_elasticsearch", obj.getMetadata().getName());
+
+        SchemaV1 schema = new SchemaV1();
+        schema.setVersion("v1.0.0");
+        obj.setSchema(schema);
+        assertEquals(schema, obj.getSchema());
+        assertEquals("v1.0.0", obj.getSchema().getVersion());
+
+        assertNull(obj.validate());
+    }
+
+    @Test
     public void testEntitySetV100() {
         EntitySetV100 obj = new EntitySetV100();
 
@@ -314,6 +338,30 @@ public class SchemaTest {
     }
 
     @Test
+    public void testMysqlV100() {
+        MysqlV100 obj = new MysqlV100();
+
+        assertEquals("mysql", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+        assertTrue(obj instanceof UModelCoreObject);
+        assertFalse(obj instanceof UModelLinkObject);
+
+        MetadataV1 metadata = new MetadataV1();
+        metadata.setName("test_mysql");
+        obj.setMetadata(metadata);
+        assertEquals(metadata, obj.getMetadata());
+        assertEquals("test_mysql", obj.getMetadata().getName());
+
+        SchemaV1 schema = new SchemaV1();
+        schema.setVersion("v1.0.0");
+        obj.setSchema(schema);
+        assertEquals(schema, obj.getSchema());
+        assertEquals("v1.0.0", obj.getSchema().getVersion());
+
+        assertNull(obj.validate());
+    }
+
+    @Test
     public void testProfileSetV100() {
         ProfileSetV100 obj = new ProfileSetV100();
 
@@ -327,6 +375,30 @@ public class SchemaTest {
         obj.setMetadata(metadata);
         assertEquals(metadata, obj.getMetadata());
         assertEquals("test_profile_set", obj.getMetadata().getName());
+
+        SchemaV1 schema = new SchemaV1();
+        schema.setVersion("v1.0.0");
+        obj.setSchema(schema);
+        assertEquals(schema, obj.getSchema());
+        assertEquals("v1.0.0", obj.getSchema().getVersion());
+
+        assertNull(obj.validate());
+    }
+
+    @Test
+    public void testPrometheusV100() {
+        PrometheusV100 obj = new PrometheusV100();
+
+        assertEquals("prometheus", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+        assertTrue(obj instanceof UModelCoreObject);
+        assertFalse(obj instanceof UModelLinkObject);
+
+        MetadataV1 metadata = new MetadataV1();
+        metadata.setName("test_prometheus");
+        obj.setMetadata(metadata);
+        assertEquals(metadata, obj.getMetadata());
+        assertEquals("test_prometheus", obj.getMetadata().getName());
 
         SchemaV1 schema = new SchemaV1();
         schema.setVersion("v1.0.0");

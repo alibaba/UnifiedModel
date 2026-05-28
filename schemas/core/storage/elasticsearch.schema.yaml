@@ -1,0 +1,77 @@
+description:
+  zh_cn: ElasticSearch 存储，用于描述 ElasticSearch 实例的配置和连接信息。
+  en_us: ElasticSearch storage, used to define the ElasticSearch instance configuration and connection details.
+name: elasticsearch
+versions:
+  - name: v1.0.0
+    spec:
+      type: object
+      properties:
+        kind:
+          type: string
+          constraint:
+            required: true
+            enum:
+              values:
+                - elasticsearch
+        schema:
+          type: object
+          extends:
+            - schema:v1
+          constraint:
+            required: true
+        metadata:
+          type: object
+          extends:
+            - metadata:v1
+          constraint:
+            required: true
+        spec:
+          type: object
+          constraint:
+            required: true
+          description:
+            zh_cn: ElasticSearch 的核心配置部分，定义实例的连接和索引参数。
+            en_us: The specification section containing ElasticSearch configuration, including connection and index parameters.
+          properties:
+            endpoint:
+              description:
+                zh_cn: ElasticSearch 实例的访问地址（URL）。
+                en_us: The endpoint URL of the ElasticSearch instance.
+              type: string
+              constraint:
+                required: true
+            index:
+              description:
+                zh_cn: ElasticSearch 索引名称。
+                en_us: The name of the ElasticSearch index.
+              type: string
+              constraint:
+                required: true
+            version:
+              description:
+                zh_cn: ElasticSearch 的版本号（如 7.x、8.x）。
+                en_us: The version of the ElasticSearch instance (e.g. 7.x, 8.x).
+              type: string
+            properties:
+              description:
+                zh_cn: ElasticSearch 的额外配置信息，以键值对形式存储。
+                en_us: Additional configuration of the ElasticSearch instance, stored as key-value pairs.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
+            tags:
+              description:
+                zh_cn: 用于表示该 ElasticSearch 存储的标签。
+                en_us: This field is used to represent the tags of the ElasticSearch storage.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string

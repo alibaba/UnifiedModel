@@ -42,8 +42,8 @@ public class PerformanceTest {
         for (int i = 0; i < 100; i++) {
             testObjects.add(new AliyunPrometheusV100());
             testObjects.add(new DataLinkV100());
+            testObjects.add(new ElasticsearchV100());
             testObjects.add(new EntitySetV100());
-            testObjects.add(new EntitySetLinkV100());
             testObjects.add("普通字符串");
             testObjects.add(Integer.valueOf(42));
         }
@@ -61,7 +61,7 @@ public class PerformanceTest {
         long duration = System.currentTimeMillis() - startTime;
 
         assertEquals(iterations * 100 * 4, coreObjectCount);
-        assertEquals(iterations * 100 * 2, linkObjectCount);
+        assertEquals(iterations * 100 * 1, linkObjectCount);
 
         int totalChecks = iterations * testObjects.size() * 2;
         System.out.printf("执行 %d 次类型检查耗时: %d ms%n", totalChecks, duration);
@@ -81,8 +81,8 @@ public class PerformanceTest {
             DataLinkV100 o1 = new DataLinkV100();
             o1.setKind("data_link");
             createdObjects.add(o1);
-            EntitySetV100 o2 = new EntitySetV100();
-            o2.setKind("entity_set");
+            ElasticsearchV100 o2 = new ElasticsearchV100();
+            o2.setKind("elasticsearch");
             createdObjects.add(o2);
             createdObjects.add(new SemanticString("中文" + i, "English" + i));
             createdObjects.add(new LinkEndpoint("domain" + i, "kind" + i, "name" + i, "filter" + i));

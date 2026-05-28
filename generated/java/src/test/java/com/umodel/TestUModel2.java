@@ -40,6 +40,15 @@ public class TestUModel2 {
     }
 
     @Test
+    public void testParseUModelJsonElasticsearch() {
+        String json = "{\"kind\":\"elasticsearch\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_elasticsearch\"}}";
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertEquals("elasticsearch", obj.getKind());
+        assertTrue(obj instanceof ElasticsearchV100);
+    }
+
+    @Test
     public void testParseUModelJsonEntitySet() {
         String json = "{\"kind\":\"entity_set\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_entity_set\"}}";
         UModelCoreObject obj = UModel.parseUModelJson(json);
@@ -130,12 +139,30 @@ public class TestUModel2 {
     }
 
     @Test
+    public void testParseUModelJsonMysql() {
+        String json = "{\"kind\":\"mysql\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_mysql\"}}";
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertEquals("mysql", obj.getKind());
+        assertTrue(obj instanceof MysqlV100);
+    }
+
+    @Test
     public void testParseUModelJsonProfileSet() {
         String json = "{\"kind\":\"profile_set\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_profile_set\"}}";
         UModelCoreObject obj = UModel.parseUModelJson(json);
         assertNotNull(obj);
         assertEquals("profile_set", obj.getKind());
         assertTrue(obj instanceof ProfileSetV100);
+    }
+
+    @Test
+    public void testParseUModelJsonPrometheus() {
+        String json = "{\"kind\":\"prometheus\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_prometheus\"}}";
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertEquals("prometheus", obj.getKind());
+        assertTrue(obj instanceof PrometheusV100);
     }
 
     @Test
@@ -237,6 +264,7 @@ public class TestUModel2 {
     public void testIsCoreObject() {
         assertTrue(UModel.isCoreObject(new AliyunPrometheusV100()));
         assertTrue(UModel.isCoreObject(new DataLinkV100()));
+        assertTrue(UModel.isCoreObject(new ElasticsearchV100()));
         assertTrue(UModel.isCoreObject(new EntitySetV100()));
         assertTrue(UModel.isCoreObject(new EntitySetLinkV100()));
         assertTrue(UModel.isCoreObject(new EntitySourceV100()));
@@ -247,7 +275,9 @@ public class TestUModel2 {
         assertTrue(UModel.isCoreObject(new ExternalStorageV100()));
         assertTrue(UModel.isCoreObject(new LogSetV100()));
         assertTrue(UModel.isCoreObject(new MetricSetV100()));
+        assertTrue(UModel.isCoreObject(new MysqlV100()));
         assertTrue(UModel.isCoreObject(new ProfileSetV100()));
+        assertTrue(UModel.isCoreObject(new PrometheusV100()));
         assertTrue(UModel.isCoreObject(new RunbookLinkV100()));
         assertTrue(UModel.isCoreObject(new RunbookSetV100()));
         assertTrue(UModel.isCoreObject(new SlsEntitystoreV100()));
@@ -263,6 +293,7 @@ public class TestUModel2 {
     public void testIsLinkObject() {
         assertFalse(UModel.isLinkObject(new AliyunPrometheusV100()));
         assertTrue(UModel.isLinkObject(new DataLinkV100()));
+        assertFalse(UModel.isLinkObject(new ElasticsearchV100()));
         assertFalse(UModel.isLinkObject(new EntitySetV100()));
         assertTrue(UModel.isLinkObject(new EntitySetLinkV100()));
         assertFalse(UModel.isLinkObject(new EntitySourceV100()));
@@ -273,7 +304,9 @@ public class TestUModel2 {
         assertFalse(UModel.isLinkObject(new ExternalStorageV100()));
         assertFalse(UModel.isLinkObject(new LogSetV100()));
         assertFalse(UModel.isLinkObject(new MetricSetV100()));
+        assertFalse(UModel.isLinkObject(new MysqlV100()));
         assertFalse(UModel.isLinkObject(new ProfileSetV100()));
+        assertFalse(UModel.isLinkObject(new PrometheusV100()));
         assertTrue(UModel.isLinkObject(new RunbookLinkV100()));
         assertFalse(UModel.isLinkObject(new RunbookSetV100()));
         assertFalse(UModel.isLinkObject(new SlsEntitystoreV100()));

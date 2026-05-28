@@ -51,7 +51,7 @@ public class TelemetryDataV1 implements UModelObject {
     }
 
     /**
-     * 可观测数据的显示字段。建议按照显示重要性配置先后顺序，前端、算法等在各类场景会根据特点自由选择，例如极窄/引用场景下只取name_fields的第一个值。 例如：APM接口实体，建议取值为 ["operation_name", "service_na...
+     * 可观测数据的显示字段。建议按照显示重要性配置先后顺序，前端、算法等在各类场景会根据特点自由选择，例如极窄/引用场景下只取name_fields的第一个值。 例如：服务操作实体，建议取值为 ["operation_name", "service_nam...
      */
     @JSONField(name = "name_fields")
     private List<String> nameFields;

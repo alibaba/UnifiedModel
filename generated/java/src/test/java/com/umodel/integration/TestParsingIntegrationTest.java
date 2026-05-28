@@ -74,6 +74,36 @@ public class TestParsingIntegrationTest {
     }
 
     @Test
+    public void testElasticsearchJsonParsing() {
+        String json = "{\"kind\":\"elasticsearch\",\"schema\":{\"url\":\"umodel.aliyun.com\",\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_elasticsearch\",\"display_name\":{\"zh_cn\":\"测试elasticsearch\",\"en_us\":\"Test elasticsearch\"},\"domain\":\"test.domain\",\"launch_stage\":\"ga\",\"tags\":{\"category\":\"test\"}},\"spec\":{\"_data\":\"placeholder\"}}";
+
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertTrue(obj instanceof ElasticsearchV100);
+        assertEquals("elasticsearch", obj.getKind());
+
+        ElasticsearchV100 typed = (ElasticsearchV100) obj;
+        SchemaV1 schema = typed.getSchema();
+        assertNotNull(schema);
+        assertEquals("umodel.aliyun.com", schema.getUrl());
+        assertEquals("v1.0.0", schema.getVersion());
+
+        MetadataV1 metadata = typed.getMetadata();
+        assertNotNull(metadata);
+        assertEquals("test_elasticsearch", metadata.getName());
+        assertEquals("test.domain", metadata.getDomain());
+        assertEquals("ga", metadata.getLaunchStage());
+
+        SemanticStringV1 displayName = metadata.getDisplayName();
+        assertNotNull(displayName);
+        assertEquals("Test elasticsearch", displayName.getEnUs());
+
+        Map<String, String> tags = metadata.getTags();
+        assertNotNull(tags);
+        assertEquals("test", tags.get("category"));
+    }
+
+    @Test
     public void testEntitySetJsonParsing() {
         String json = "{\"kind\":\"entity_set\",\"schema\":{\"url\":\"umodel.aliyun.com\",\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_entity_set\",\"display_name\":{\"zh_cn\":\"测试entity_set\",\"en_us\":\"Test entity_set\"},\"domain\":\"test.domain\",\"launch_stage\":\"ga\",\"tags\":{\"category\":\"test\"}},\"spec\":{\"_data\":\"placeholder\"}}";
 
@@ -374,6 +404,36 @@ public class TestParsingIntegrationTest {
     }
 
     @Test
+    public void testMysqlJsonParsing() {
+        String json = "{\"kind\":\"mysql\",\"schema\":{\"url\":\"umodel.aliyun.com\",\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_mysql\",\"display_name\":{\"zh_cn\":\"测试mysql\",\"en_us\":\"Test mysql\"},\"domain\":\"test.domain\",\"launch_stage\":\"ga\",\"tags\":{\"category\":\"test\"}},\"spec\":{\"_data\":\"placeholder\"}}";
+
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertTrue(obj instanceof MysqlV100);
+        assertEquals("mysql", obj.getKind());
+
+        MysqlV100 typed = (MysqlV100) obj;
+        SchemaV1 schema = typed.getSchema();
+        assertNotNull(schema);
+        assertEquals("umodel.aliyun.com", schema.getUrl());
+        assertEquals("v1.0.0", schema.getVersion());
+
+        MetadataV1 metadata = typed.getMetadata();
+        assertNotNull(metadata);
+        assertEquals("test_mysql", metadata.getName());
+        assertEquals("test.domain", metadata.getDomain());
+        assertEquals("ga", metadata.getLaunchStage());
+
+        SemanticStringV1 displayName = metadata.getDisplayName();
+        assertNotNull(displayName);
+        assertEquals("Test mysql", displayName.getEnUs());
+
+        Map<String, String> tags = metadata.getTags();
+        assertNotNull(tags);
+        assertEquals("test", tags.get("category"));
+    }
+
+    @Test
     public void testProfileSetJsonParsing() {
         String json = "{\"kind\":\"profile_set\",\"schema\":{\"url\":\"umodel.aliyun.com\",\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_profile_set\",\"display_name\":{\"zh_cn\":\"测试profile_set\",\"en_us\":\"Test profile_set\"},\"domain\":\"test.domain\",\"launch_stage\":\"ga\",\"tags\":{\"category\":\"test\"}},\"spec\":{\"_data\":\"placeholder\"}}";
 
@@ -397,6 +457,36 @@ public class TestParsingIntegrationTest {
         SemanticStringV1 displayName = metadata.getDisplayName();
         assertNotNull(displayName);
         assertEquals("Test profile_set", displayName.getEnUs());
+
+        Map<String, String> tags = metadata.getTags();
+        assertNotNull(tags);
+        assertEquals("test", tags.get("category"));
+    }
+
+    @Test
+    public void testPrometheusJsonParsing() {
+        String json = "{\"kind\":\"prometheus\",\"schema\":{\"url\":\"umodel.aliyun.com\",\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_prometheus\",\"display_name\":{\"zh_cn\":\"测试prometheus\",\"en_us\":\"Test prometheus\"},\"domain\":\"test.domain\",\"launch_stage\":\"ga\",\"tags\":{\"category\":\"test\"}},\"spec\":{\"_data\":\"placeholder\"}}";
+
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertTrue(obj instanceof PrometheusV100);
+        assertEquals("prometheus", obj.getKind());
+
+        PrometheusV100 typed = (PrometheusV100) obj;
+        SchemaV1 schema = typed.getSchema();
+        assertNotNull(schema);
+        assertEquals("umodel.aliyun.com", schema.getUrl());
+        assertEquals("v1.0.0", schema.getVersion());
+
+        MetadataV1 metadata = typed.getMetadata();
+        assertNotNull(metadata);
+        assertEquals("test_prometheus", metadata.getName());
+        assertEquals("test.domain", metadata.getDomain());
+        assertEquals("ga", metadata.getLaunchStage());
+
+        SemanticStringV1 displayName = metadata.getDisplayName();
+        assertNotNull(displayName);
+        assertEquals("Test prometheus", displayName.getEnUs());
 
         Map<String, String> tags = metadata.getTags();
         assertNotNull(tags);

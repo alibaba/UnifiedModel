@@ -1,0 +1,87 @@
+description:
+  zh_cn: MySQL 存储，用于描述 MySQL 数据库实例的配置和连接信息。
+  en_us: MySQL storage, used to define the MySQL database instance configuration and connection details.
+name: mysql
+versions:
+  - name: v1.0.0
+    spec:
+      type: object
+      properties:
+        kind:
+          type: string
+          constraint:
+            required: true
+            enum:
+              values:
+                - mysql
+        schema:
+          type: object
+          extends:
+            - schema:v1
+          constraint:
+            required: true
+        metadata:
+          type: object
+          extends:
+            - metadata:v1
+          constraint:
+            required: true
+        spec:
+          type: object
+          constraint:
+            required: true
+          description:
+            zh_cn: MySQL 的核心配置部分，定义数据库实例的连接和查询参数。
+            en_us: The specification section containing MySQL configuration, including connection and query parameters.
+          properties:
+            endpoint:
+              description:
+                zh_cn: MySQL 实例的访问地址（host:port）。
+                en_us: The endpoint address of the MySQL instance (host:port).
+              type: string
+              constraint:
+                required: true
+            database:
+              description:
+                zh_cn: MySQL 数据库名称。
+                en_us: The name of the MySQL database.
+              type: string
+              constraint:
+                required: true
+            table:
+              description:
+                zh_cn: MySQL 表名称。
+                en_us: The name of the MySQL table.
+              type: string
+            sql_filter:
+              description:
+                zh_cn: SQL 过滤条件，用于筛选目标数据。
+                en_us: SQL filter condition for filtering target data.
+              type: string
+            sql_view:
+              description:
+                zh_cn: 基于 SQL 生成的视图，一般用于动态生成实体列表、连接等场景。
+                en_us: The SQL view, usually used to dynamically generate entity lists, connections, etc.
+              type: string
+            properties:
+              description:
+                zh_cn: MySQL 的额外配置信息，以键值对形式存储。
+                en_us: Additional configuration of the MySQL instance, stored as key-value pairs.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
+            tags:
+              description:
+                zh_cn: 用于表示该 MySQL 存储的标签。
+                en_us: This field is used to represent the tags of the MySQL storage.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string

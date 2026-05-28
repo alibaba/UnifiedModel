@@ -28,6 +28,7 @@ func ParseYAML(data []byte, v interface{}) error {
 var TypeRegistry = map[string]func() interface{}{
 	"aliyun_prometheus:v1.0.0":  func() interface{} { return &AliyunPrometheusV100{} },
 	"data_link:v1.0.0":          func() interface{} { return &DataLinkV100{} },
+	"elasticsearch:v1.0.0":      func() interface{} { return &ElasticsearchV100{} },
 	"entity_set:v1.0.0":         func() interface{} { return &EntitySetV100{} },
 	"entity_set_link:v1.0.0":    func() interface{} { return &EntitySetLinkV100{} },
 	"entity_source:v1.0.0":      func() interface{} { return &EntitySourceV100{} },
@@ -38,7 +39,9 @@ var TypeRegistry = map[string]func() interface{}{
 	"external_storage:v1.0.0":   func() interface{} { return &ExternalStorageV100{} },
 	"log_set:v1.0.0":            func() interface{} { return &LogSetV100{} },
 	"metric_set:v1.0.0":         func() interface{} { return &MetricSetV100{} },
+	"mysql:v1.0.0":              func() interface{} { return &MysqlV100{} },
 	"profile_set:v1.0.0":        func() interface{} { return &ProfileSetV100{} },
+	"prometheus:v1.0.0":         func() interface{} { return &PrometheusV100{} },
 	"runbook_link:v1.0.0":       func() interface{} { return &RunbookLinkV100{} },
 	"runbook_set:v1.0.0":        func() interface{} { return &RunbookSetV100{} },
 	"sls_entitystore:v1.0.0":    func() interface{} { return &SlsEntitystoreV100{} },

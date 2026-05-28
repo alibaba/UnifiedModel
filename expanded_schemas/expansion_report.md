@@ -1,8 +1,8 @@
 # UModel Schema 展开报告
 
 ## 📊 统计信息
-- 共处理schema文件: 20
-- 共加载类型定义: 38
+- 共处理schema文件: 23
+- 共加载类型定义: 41
 
 ## 📋 处理的Schema列表
 - **entity_set**: 1 个版本
@@ -15,9 +15,12 @@
 - **profile_set**: 1 个版本
 - **log_set**: 1 个版本
 - **aliyun_prometheus**: 1 个版本
+- **mysql**: 1 个版本
 - **sls_entitystore**: 1 个版本
+- **elasticsearch**: 1 个版本
 - **sls_logstore**: 1 个版本
 - **external_storage**: 1 个版本
+- **prometheus**: 1 个版本
 - **sls_metricstore**: 1 个版本
 - **explorer_link**: 1 个版本
 - **runbook_link**: 1 个版本
@@ -32,6 +35,7 @@
 - **automation_config**: automation_config:v1
 - **constraint_type**: constraint_type:v1
 - **data_link**: data_link:v1.0.0
+- **elasticsearch**: elasticsearch:v1.0.0
 - **entity_set**: entity_set:v1.0.0
 - **entity_set_link**: entity_set_link:v1.0.0
 - **entity_source**: entity_source:v1.0.0
@@ -47,9 +51,11 @@
 - **metadata**: metadata:v1
 - **metric**: metric:v1
 - **metric_set**: metric_set:v1.0.0
+- **mysql**: mysql:v1.0.0
 - **observation**: observation:v1
 - **parameter_config**: parameter_config:v1
 - **profile_set**: profile_set:v1.0.0
+- **prometheus**: prometheus:v1.0.0
 - **runbook_link**: runbook_link:v1.0.0
 - **runbook_set**: runbook_set:v1.0.0
 - **schema**: schema:v1

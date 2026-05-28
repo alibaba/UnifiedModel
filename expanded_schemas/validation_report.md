@@ -3,8 +3,8 @@
 基于 `schemas/base.yaml` 中定义的元数据规范进行验证
 
 ## 📊 验证统计
-- 总文件数: 20
-- 验证通过: 20
+- 总文件数: 23
+- 验证通过: 23
 - 有错误: 0
 - 有警告: 0
 
@@ -21,16 +21,25 @@
 ### external_storage.expanded.yaml
 ✅ **状态**: 验证通过
 
+### prometheus.expanded.yaml
+✅ **状态**: 验证通过
+
 ### data_link.expanded.yaml
 ✅ **状态**: 验证通过
 
 ### entity_source.expanded.yaml
 ✅ **状态**: 验证通过
 
+### elasticsearch.expanded.yaml
+✅ **状态**: 验证通过
+
 ### explorer_link.expanded.yaml
 ✅ **状态**: 验证通过
 
 ### entity_source_link.expanded.yaml
+✅ **状态**: 验证通过
+
+### mysql.expanded.yaml
 ✅ **状态**: 验证通过
 
 ### sls_logstore.expanded.yaml

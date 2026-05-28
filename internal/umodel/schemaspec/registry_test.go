@@ -11,6 +11,7 @@ func TestDefaultRegistryLoadsEveryKindFromManifest(t *testing.T) {
 		"trace_set", "profile_set", "runbook_set", "explorer",
 		"sls_logstore", "sls_metricstore", "sls_entitystore",
 		"external_storage", "aliyun_prometheus",
+		"elasticsearch", "prometheus", "mysql",
 		"entity_set_link", "entity_source_link", "data_link",
 		"storage_link", "runbook_link", "explorer_link",
 	}

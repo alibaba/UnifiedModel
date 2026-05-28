@@ -39,6 +39,13 @@ def _register_types():
     except (ImportError, AttributeError) as e:
         pass  # 模块 data_link 导入失败: {e}
 
+    # 注册 elasticsearch 相关类型
+    try:
+        from . import elasticsearch
+        TYPE_REGISTRY["elasticsearch:v1.0.0"] = getattr(elasticsearch, "ElasticsearchV100", None)
+    except (ImportError, AttributeError) as e:
+        pass  # 模块 elasticsearch 导入失败: {e}
+
     # 注册 entity_set 相关类型
     try:
         from . import entity_set
@@ -109,12 +116,26 @@ def _register_types():
     except (ImportError, AttributeError) as e:
         pass  # 模块 metric_set 导入失败: {e}
 
+    # 注册 mysql 相关类型
+    try:
+        from . import mysql
+        TYPE_REGISTRY["mysql:v1.0.0"] = getattr(mysql, "MysqlV100", None)
+    except (ImportError, AttributeError) as e:
+        pass  # 模块 mysql 导入失败: {e}
+
     # 注册 profile_set 相关类型
     try:
         from . import profile_set
         TYPE_REGISTRY["profile_set:v1.0.0"] = getattr(profile_set, "ProfileSetV100", None)
     except (ImportError, AttributeError) as e:
         pass  # 模块 profile_set 导入失败: {e}
+
+    # 注册 prometheus 相关类型
+    try:
+        from . import prometheus
+        TYPE_REGISTRY["prometheus:v1.0.0"] = getattr(prometheus, "PrometheusV100", None)
+    except (ImportError, AttributeError) as e:
+        pass  # 模块 prometheus 导入失败: {e}
 
     # 注册 runbook_link 相关类型
     try:
