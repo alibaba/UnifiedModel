@@ -51,10 +51,8 @@ type MysqlV100Spec struct {
 	Database string `json:"database" yaml:"database"`
 	// Table MySQL 表名称。
 	Table string `json:"table,omitempty" yaml:"table,omitempty"`
-	// SqlFilter SQL 过滤条件，用于筛选目标数据。
-	SqlFilter string `json:"sql_filter,omitempty" yaml:"sql_filter,omitempty"`
-	// SqlView 基于 SQL 生成的视图，一般用于动态生成实体列表、连接等场景。
-	SqlView string `json:"sql_view,omitempty" yaml:"sql_view,omitempty"`
+	// Sql SQL 查询语句，用于从 MySQL 中提取数据。
+	Sql string `json:"sql,omitempty" yaml:"sql,omitempty"`
 	// Properties MySQL 的额外配置信息，以键值对形式存储。
 	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
 	// Tags 用于表示该 MySQL 存储的标签。

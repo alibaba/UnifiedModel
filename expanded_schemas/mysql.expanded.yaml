@@ -214,16 +214,10 @@ versions:
               zh_cn: MySQL 表名称。
               en_us: The name of the MySQL table.
             type: string
-          sql_filter:
+          sql:
             description:
-              zh_cn: SQL 过滤条件，用于筛选目标数据。
-              en_us: SQL filter condition for filtering target data.
-            type: string
-          sql_view:
-            description:
-              zh_cn: 基于 SQL 生成的视图，一般用于动态生成实体列表、连接等场景。
-              en_us: >-
-                The SQL view, usually used to dynamically generate entity lists, connections, etc.
+              zh_cn: SQL 查询语句，用于从 MySQL 中提取数据。
+              en_us: SQL query statement for extracting data from MySQL.
             type: string
           properties:
             description:

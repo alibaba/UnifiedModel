@@ -108,31 +108,17 @@ public class MysqlV100 implements UModelCoreObject {
         }
 
         /**
-         * SQL 过滤条件，用于筛选目标数据。
+         * SQL 查询语句，用于从 MySQL 中提取数据。
          */
-        @JSONField(name = "sql_filter")
-        private String sqlFilter;
+        @JSONField(name = "sql")
+        private String sql;
 
-        public String getSqlFilter() {
-            return sqlFilter;
+        public String getSql() {
+            return sql;
         }
 
-        public void setSqlFilter(String sqlFilter) {
-            this.sqlFilter = sqlFilter;
-        }
-
-        /**
-         * 基于 SQL 生成的视图，一般用于动态生成实体列表、连接等场景。
-         */
-        @JSONField(name = "sql_view")
-        private String sqlView;
-
-        public String getSqlView() {
-            return sqlView;
-        }
-
-        public void setSqlView(String sqlView) {
-            this.sqlView = sqlView;
+        public void setSql(String sql) {
+            this.sql = sql;
         }
 
         /**

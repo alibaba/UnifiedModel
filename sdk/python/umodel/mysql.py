@@ -47,10 +47,8 @@ class MysqlV100Spec:
     database: Optional[str] = None
     # MySQL 表名称。
     table: Optional[str] = None
-    # SQL 过滤条件，用于筛选目标数据。
-    sql_filter: Optional[str] = None
-    # 基于 SQL 生成的视图，一般用于动态生成实体列表、连接等场景。
-    sql_view: Optional[str] = None
+    # SQL 查询语句，用于从 MySQL 中提取数据。
+    sql: Optional[str] = None
     # MySQL 的额外配置信息，以键值对形式存储。
     properties: Optional[Dict[str, str]] = None
     # 用于表示该 MySQL 存储的标签。
