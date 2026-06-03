@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router'
 import { GitBranch, Layers, Network, PanelLeft, Settings2, TerminalSquare, UploadCloud } from 'lucide-react'
 import { UModelApi } from './api/client'
 import type { HealthResponse, WorkspaceMetadata } from './api/types'
@@ -7,7 +8,8 @@ import { useI18n } from './i18n'
 import { scheduleMonacoPreload } from './lib/preloadMonaco'
 import { useLocalStorageState } from './lib/storage'
 import { WorkspaceLanding } from './features/workspaces/WorkspaceLanding'
-import { WorkspaceShell, type WorkspaceView } from './features/workspace/WorkspaceShell'
+import { WorkspaceShell } from './features/workspace/WorkspaceShell'
+import { defaultWorkspaceView, workspacePath, workspaceViewFromSegment, type WorkspaceView } from './routes'
 
 const storageKeys = {
   apiBase: 'openumodel.apiBase',
@@ -17,57 +19,144 @@ const storageKeys = {
 export function App() {
   const { t } = useI18n()
   const [apiBase, setApiBase] = useLocalStorageState(storageKeys.apiBase, '')
-  const [selectedWorkspace, setSelectedWorkspace] = useLocalStorageState<string | null>(storageKeys.workspace, null)
+  const [, setLastWorkspace] = useLocalStorageState<string | null>(storageKeys.workspace, null)
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [workspace, setWorkspace] = useState<WorkspaceMetadata | null>(null)
-  const [view, setView] = useState<WorkspaceView>('explorer')
 
   const api = useMemo(() => new UModelApi(apiBase), [apiBase])
   const navItems = useMemo(
     () => [
-      { value: 'explorer' as const, label: t('nav.explorer'), icon: <GitBranch size={16} /> },
+      { value: 'umodel' as const, label: t('nav.umodel'), icon: <GitBranch size={16} /> },
       { value: 'entityTopo' as const, label: t('nav.entityTopo'), icon: <Network size={16} /> },
       { value: 'query' as const, label: t('nav.query'), icon: <TerminalSquare size={16} /> },
       { value: 'imports' as const, label: t('nav.imports'), icon: <UploadCloud size={16} /> },
       { value: 'settings' as const, label: t('nav.settings'), icon: <Settings2 size={16} /> },
-      { value: 'docs' as const, label: t('nav.apiMap'), icon: <Layers size={16} /> },
+      { value: 'apiDebug' as const, label: t('nav.apiMap'), icon: <Layers size={16} /> },
     ],
     [t],
   )
 
   useEffect(() => scheduleMonacoPreload(), [])
 
-  if (!selectedWorkspace) {
-    return (
-      <WorkspaceLanding
-        api={api}
-        apiBase={apiBase}
-        onApiBaseChange={setApiBase}
-        health={health}
-        onHealthChange={setHealth}
-        onOpenWorkspace={(nextWorkspace) => {
-          setSelectedWorkspace(nextWorkspace.id)
-          setWorkspace(nextWorkspace)
-          setView('explorer')
-        }}
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <LandingRoute
+            api={api}
+            apiBase={apiBase}
+            onApiBaseChange={setApiBase}
+            health={health}
+            onHealthChange={setHealth}
+            onWorkspaceOpen={(nextWorkspace) => {
+              setLastWorkspace(nextWorkspace.id)
+              setWorkspace(nextWorkspace)
+            }}
+          />
+        }
       />
-    )
-  }
+      <Route path="/workspaces/:workspaceId" element={<WorkspaceDefaultRedirect />} />
+      <Route
+        path="/workspaces/:workspaceId/:viewSegment"
+        element={
+          <WorkspaceRoute
+            api={api}
+            workspace={workspace}
+            health={health}
+            navItems={navItems}
+            onWorkspaceChange={setWorkspace}
+            onHealthChange={setHealth}
+            onWorkspaceOpen={setLastWorkspace}
+          />
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+function LandingRoute({
+  api,
+  apiBase,
+  onApiBaseChange,
+  health,
+  onHealthChange,
+  onWorkspaceOpen,
+}: {
+  api: UModelApi
+  apiBase: string
+  onApiBaseChange: (value: string) => void
+  health: HealthResponse | null
+  onHealthChange: (health: HealthResponse | null) => void
+  onWorkspaceOpen: (workspace: WorkspaceMetadata) => void
+}) {
+  const navigate = useNavigate()
+
+  return (
+    <WorkspaceLanding
+      api={api}
+      apiBase={apiBase}
+      onApiBaseChange={onApiBaseChange}
+      health={health}
+      onHealthChange={onHealthChange}
+      onOpenWorkspace={(nextWorkspace) => {
+        onWorkspaceOpen(nextWorkspace)
+        navigate(workspacePath(nextWorkspace.id))
+      }}
+    />
+  )
+}
+
+function WorkspaceDefaultRedirect() {
+  const { workspaceId } = useParams()
+  return <Navigate to={workspaceId ? workspacePath(workspaceId, defaultWorkspaceView) : '/'} replace />
+}
+
+function WorkspaceRoute({
+  api,
+  workspace,
+  health,
+  navItems,
+  onWorkspaceChange,
+  onHealthChange,
+  onWorkspaceOpen,
+}: {
+  api: UModelApi
+  workspace: WorkspaceMetadata | null
+  health: HealthResponse | null
+  navItems: Array<{ value: WorkspaceView; label: string; icon: ReactNode }>
+  onWorkspaceChange: (workspace: WorkspaceMetadata | null) => void
+  onHealthChange: (health: HealthResponse | null) => void
+  onWorkspaceOpen: (workspaceId: string | null) => void
+}) {
+  const navigate = useNavigate()
+  const { workspaceId, viewSegment } = useParams()
+  const view = workspaceViewFromSegment(viewSegment)
+  const activeWorkspace = workspace?.id === workspaceId ? workspace : null
+
+  useEffect(() => {
+    if (workspaceId) onWorkspaceOpen(workspaceId)
+  }, [onWorkspaceOpen, workspaceId])
+
+  if (!workspaceId) return <Navigate to="/" replace />
+  if (!view) return <Navigate to={workspacePath(workspaceId)} replace />
 
   return (
     <WorkspaceShell
       api={api}
-      workspaceId={selectedWorkspace}
-      workspace={workspace}
+      workspaceId={workspaceId}
+      workspace={activeWorkspace}
       health={health}
       view={view}
       navItems={navItems}
-      onViewChange={setView}
-      onWorkspaceChange={setWorkspace}
-      onHealthChange={setHealth}
+      onViewChange={(nextView) => navigate(workspacePath(workspaceId, nextView))}
+      onWorkspaceChange={onWorkspaceChange}
+      onHealthChange={onHealthChange}
       onBack={() => {
-        setSelectedWorkspace(null)
-        setWorkspace(null)
+        onWorkspaceOpen(null)
+        onWorkspaceChange(null)
+        navigate('/')
       }}
     />
   )

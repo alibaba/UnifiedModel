@@ -198,7 +198,7 @@ export function SearchPanel({
       )}
     </div>
   )
-  const portalTarget = typeof document === 'undefined' ? null : document.querySelector('.openumodel-explorer')
+  const portalTarget = typeof document === 'undefined' ? null : document.querySelector('.umodel-page')
   return portalTarget ? createPortal(panel, portalTarget) : panel
 }
 

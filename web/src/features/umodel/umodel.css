@@ -1,4 +1,4 @@
-.openumodel-explorer {
+.umodel-page {
   --ume-panel-overlap: var(--om-panel-overlap);
   --ume-sidebar-content-width: 260px;
   --ume-panel-border: var(--om-panel-border);
@@ -61,37 +61,37 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.openumodel-explorer * {
+.umodel-page * {
   scrollbar-color: rgba(113, 113, 122, 0.34) transparent;
   scrollbar-width: thin;
 }
 
-.openumodel-explorer *::-webkit-scrollbar {
+.umodel-page *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-.openumodel-explorer *::-webkit-scrollbar-track {
+.umodel-page *::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.openumodel-explorer *::-webkit-scrollbar-thumb {
+.umodel-page *::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
   background: rgba(113, 113, 122, 0.34);
   background-clip: padding-box;
 }
 
-.openumodel-explorer *::-webkit-scrollbar-thumb:hover {
+.umodel-page *::-webkit-scrollbar-thumb:hover {
   background-color: rgba(82, 82, 91, 0.5);
 }
 
-.openumodel-explorer .monaco-scrollable-element > .scrollbar > .slider {
+.umodel-page .monaco-scrollable-element > .scrollbar > .slider {
   border-radius: 999px !important;
   background: rgba(113, 113, 122, 0.34) !important;
 }
 
-.workspace-content:has(.openumodel-explorer) {
+.workspace-content:has(.umodel-page) {
   padding: 0;
   overflow: hidden;
 }
@@ -3179,7 +3179,7 @@ body.ume-resizing-detail .ume-detail-panel {
 }
 
 @media (max-width: 1100px) {
-  .openumodel-explorer {
+  .umodel-page {
     --ume-sidebar-content-width: 230px;
   }
 
@@ -3199,7 +3199,7 @@ body.ume-resizing-detail .ume-detail-panel {
 }
 
 @media (max-width: 900px) {
-  .openumodel-explorer {
+  .umodel-page {
     --ume-sidebar-content-width: 210px;
   }
 

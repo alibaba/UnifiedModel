@@ -4537,7 +4537,7 @@ html[lang="zh-CN"] .landing .landing-copy p {
   box-shadow: var(--om-shadow-panel);
 }
 
-.workspace-main.explorer-main-host {
+.workspace-main.canvas-main-host {
   grid-template-rows: 1fr;
   background: #ffffff;
 }
@@ -4563,7 +4563,7 @@ html[lang="zh-CN"] .landing .landing-copy p {
   padding: 16px;
 }
 
-.workspace-content-explorer {
+.workspace-content-canvas {
   padding: 0;
   overflow: hidden;
 }

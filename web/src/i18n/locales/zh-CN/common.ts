@@ -16,7 +16,7 @@ export const zhCNCommon = {
   'nav.collapseSidebar': '收起侧边栏',
   'nav.entityTopo': 'EntityTopo 探索',
   'nav.expandSidebar': '展开侧边栏',
-  'nav.explorer': 'UModel 探索',
+  'nav.umodel': 'UModel 探索',
   'nav.imports': '导入与写入',
   'nav.query': '查询',
   'nav.settings': '设置',

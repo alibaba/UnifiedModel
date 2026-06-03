@@ -21,7 +21,7 @@ import {
 } from '@xyflow/react'
 import type { UModelElement } from '../../api/types'
 import { useI18n } from '../../i18n'
-import type { ExplorerEdgeData, ExplorerNodeData, GraphModel } from './graphModel'
+import type { UModelEdgeData, UModelNodeData, GraphModel } from './graphModel'
 import {
   colorForKind,
   entityLinkTypeForEdge,
@@ -54,7 +54,7 @@ export function GraphView({
   forceFullMode: boolean
   selectedId: string | null
   onZoomLevelChange: (level: ZoomLevel) => void
-  onNodesChange: (changes: NodeChange<Node<ExplorerNodeData>>[]) => void
+  onNodesChange: (changes: NodeChange<Node<UModelNodeData>>[]) => void
   onSelect: (element: UModelElement | null) => void
 }) {
   const { t } = useI18n()
@@ -125,7 +125,7 @@ export function GraphView({
   )
 }
 
-const UModelNodeCard = memo(({ data }: NodeProps<Node<ExplorerNodeData>>) => {
+const UModelNodeCard = memo(({ data }: NodeProps<Node<UModelNodeData>>) => {
   const { t } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuRect, setMenuRect] = useState<DOMRect | null>(null)
@@ -338,7 +338,7 @@ function UModelEdge({
   sourcePosition,
   targetPosition,
   data,
-}: EdgeProps<Edge<ExplorerEdgeData>>) {
+}: EdgeProps<Edge<UModelEdgeData>>) {
   const { t } = useI18n()
   let edgePath: string
   let labelX: number

@@ -6,7 +6,7 @@ import { Badge, Button, SegmentedControl } from '../../design/components'
 import { useI18n, type MessageKey } from '../../i18n'
 import { asArray, formatError, parseJson, stringify } from '../../lib/json'
 import { disableMonacoEditContext } from '../../lib/preloadMonaco'
-import { parseUModelElementsFromJson } from '../explorer/ExplorerPage'
+import { parseUModelElementsFromJson } from '../umodel/UModelPage'
 import './imports.css'
 
 disableMonacoEditContext()

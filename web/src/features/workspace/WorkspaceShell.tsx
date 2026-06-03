@@ -6,15 +6,14 @@ import { Brand, HealthBadge } from '../../App'
 import { Button, Badge, IconButton } from '../../design/components'
 import { useI18n, type MessageKey } from '../../i18n'
 import { formatError } from '../../lib/json'
+import type { WorkspaceView } from '../../routes'
 
-const ExplorerPage = lazy(() => import('../explorer/ExplorerPage').then(({ ExplorerPage }) => ({ default: ExplorerPage })))
+const UModelPage = lazy(() => import('../umodel/UModelPage').then(({ UModelPage }) => ({ default: UModelPage })))
 const EntityTopoPage = lazy(() => import('../entityTopo/EntityTopoPage').then(({ EntityTopoPage }) => ({ default: EntityTopoPage })))
 const QueryPage = lazy(() => import('../query/QueryPage').then(({ QueryPage }) => ({ default: QueryPage })))
 const ImportsPage = lazy(() => import('../imports/ImportsPage').then(({ ImportsPage }) => ({ default: ImportsPage })))
 const SettingsPage = lazy(() => import('../settings/SettingsPage').then(({ SettingsPage }) => ({ default: SettingsPage })))
 const ApiMapPage = lazy(() => import('../settings/ApiMapPage').then(({ ApiMapPage }) => ({ default: ApiMapPage })))
-
-export type WorkspaceView = 'explorer' | 'entityTopo' | 'query' | 'imports' | 'settings' | 'docs'
 
 interface NavItem {
   value: WorkspaceView
@@ -71,8 +70,8 @@ export function WorkspaceShell({
 
   const page = useMemo(() => {
     switch (view) {
-      case 'explorer':
-        return <ExplorerPage api={api} workspaceId={workspaceId} refreshToken={refreshToken} />
+      case 'umodel':
+        return <UModelPage api={api} workspaceId={workspaceId} refreshToken={refreshToken} />
       case 'entityTopo':
         return <EntityTopoPage api={api} workspaceId={workspaceId} refreshToken={refreshToken} />
       case 'query':
@@ -89,18 +88,18 @@ export function WorkspaceShell({
             onBack={onBack}
           />
         )
-      case 'docs':
+      case 'apiDebug':
         return <ApiMapPage api={api} workspaceId={workspaceId} />
       default:
         return null
     }
   }, [api, onBack, onWorkspaceChange, refreshToken, view, workspace, workspaceId])
 
-  const explorerHost = view === 'explorer' || view === 'entityTopo'
-  const topbarHidden = explorerHost || view === 'query' || view === 'imports' || view === 'settings' || view === 'docs'
+  const canvasHost = view === 'umodel' || view === 'entityTopo'
+  const topbarHidden = canvasHost || view === 'query' || view === 'imports' || view === 'settings' || view === 'apiDebug'
 
   return (
-    <div className={`workspace-shell app-shell ${sidebarCollapsed ? 'collapsed' : ''} ${explorerHost ? 'explorer-host' : ''}`}>
+    <div className={`workspace-shell app-shell ${sidebarCollapsed ? 'collapsed' : ''} ${canvasHost ? 'canvas-host' : ''}`}>
       <aside className="workspace-sidebar">
         <div className="workspace-sidebar-header">
           <Brand compact />
@@ -141,7 +140,7 @@ export function WorkspaceShell({
         </div>
       </aside>
 
-      <section className={`workspace-main ${topbarHidden ? 'workspace-main-no-topbar' : ''} ${explorerHost ? 'explorer-main-host' : ''}`}>
+      <section className={`workspace-main ${topbarHidden ? 'workspace-main-no-topbar' : ''} ${canvasHost ? 'canvas-main-host' : ''}`}>
         {!topbarHidden && (
         <header className="workspace-topbar">
           <div className="row" style={{ minWidth: 0 }}>
@@ -159,7 +158,7 @@ export function WorkspaceShell({
           </div>
         </header>
         )}
-        <main className={`workspace-content ${explorerHost ? 'workspace-content-explorer' : ''}`}>
+        <main className={`workspace-content ${canvasHost ? 'workspace-content-canvas' : ''}`}>
           <Suspense fallback={<div className="workspace-page-loading">{t('common.loading')}</div>}>{page}</Suspense>
         </main>
       </section>
@@ -169,8 +168,8 @@ export function WorkspaceShell({
 
 function viewLabelKey(view: WorkspaceView): MessageKey {
   switch (view) {
-    case 'explorer':
-      return 'nav.explorer'
+    case 'umodel':
+      return 'nav.umodel'
     case 'entityTopo':
       return 'nav.entityTopo'
     case 'query':
@@ -179,7 +178,9 @@ function viewLabelKey(view: WorkspaceView): MessageKey {
       return 'nav.imports'
     case 'settings':
       return 'nav.settings'
-    case 'docs':
+    case 'apiDebug':
       return 'nav.apiMap'
   }
 }
+
+export type { WorkspaceView }

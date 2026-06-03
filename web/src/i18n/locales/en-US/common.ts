@@ -14,7 +14,7 @@ export const enUSCommon = {
   'nav.collapseSidebar': 'Collapse sidebar',
   'nav.entityTopo': 'EntityTopo Explorer',
   'nav.expandSidebar': 'Expand sidebar',
-  'nav.explorer': 'UModel Explorer',
+  'nav.umodel': 'UModel Explorer',
   'nav.imports': 'Imports & Writes',
   'nav.query': 'Query',
   'nav.settings': 'Settings',

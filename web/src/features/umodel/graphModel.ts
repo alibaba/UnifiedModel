@@ -28,7 +28,7 @@ export interface GraphActions {
   onDelete: (element: UModelElement, cascade: boolean) => void
 }
 
-export interface ExplorerNodeData extends Record<string, unknown> {
+export interface UModelNodeData extends Record<string, unknown> {
   element: UModelElement
   title: string
   name: string
@@ -41,7 +41,7 @@ export interface ExplorerNodeData extends Record<string, unknown> {
   draftStatus?: DraftStatus
 }
 
-export interface ExplorerEdgeData extends Record<string, unknown> {
+export interface UModelEdgeData extends Record<string, unknown> {
   element: UModelElement
   title: string
   kind: string
@@ -55,8 +55,8 @@ export interface ExplorerEdgeData extends Record<string, unknown> {
 }
 
 export interface GraphModel {
-  nodes: Array<Node<ExplorerNodeData>>
-  edges: Array<Edge<ExplorerEdgeData>>
+  nodes: Array<Node<UModelNodeData>>
+  edges: Array<Edge<UModelEdgeData>>
 }
 
 let graphvizPromise: Promise<Graphviz> | null = null
@@ -154,7 +154,7 @@ export function buildGraph(
     }
   })
 
-  const edges: Array<Edge<ExplorerEdgeData>> = validEdges.map(({ id, element, source, target, sourceElement, targetElement, kind }) => ({
+  const edges: Array<Edge<UModelEdgeData>> = validEdges.map(({ id, element, source, target, sourceElement, targetElement, kind }) => ({
     id,
     type: 'umodel',
     source,

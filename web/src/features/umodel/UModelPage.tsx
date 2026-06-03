@@ -33,10 +33,10 @@ import { UModelApi } from '../../api/client'
 import { Button, EmptyState, IconButton, SegmentedControl } from '../../design/components'
 import { useI18n, type TFunction } from '../../i18n'
 import { asArray, formatError, parseJson, stringify } from '../../lib/json'
-import { buildGraph, layoutGraphWithGraphviz, type ExplorerEdgeData, type ExplorerNodeData, type GraphModel } from './graphModel'
-import { SearchPanel } from './ExplorerSearchPanel'
-import { FilterBar, SettingsSidebar, SummarySidebar } from './ExplorerSidebar'
-import { GraphView } from './ExplorerGraphView'
+import { buildGraph, layoutGraphWithGraphviz, type UModelNodeData, type GraphModel } from './graphModel'
+import { SearchPanel } from './UModelSearchPanel'
+import { FilterBar, SettingsSidebar, SummarySidebar } from './UModelSidebar'
+import { GraphView } from './UModelGraphView'
 import {
   aliasForElements,
   asUnknownArray,
@@ -76,11 +76,11 @@ import {
   type ViewMode,
   type ZoomLevel,
 } from './model'
-import './explorer.css'
+import './umodel.css'
 
 type SidebarTab = 'summary' | 'settings'
 
-export function ExplorerPage({
+export function UModelPage({
   api,
   workspaceId,
   refreshToken,
@@ -392,7 +392,7 @@ export function ExplorerPage({
     }
   }, [graphSource, mode])
 
-  const handleGraphNodesChange = useCallback((changes: NodeChange<Node<ExplorerNodeData>>[]) => {
+  const handleGraphNodesChange = useCallback((changes: NodeChange<Node<UModelNodeData>>[]) => {
     setGraph((current) => ({
       ...current,
       nodes: applyNodeChanges(changes, current.nodes),
@@ -500,7 +500,7 @@ export function ExplorerPage({
   }
 
   return (
-    <div className="ume-v2 openumodel-explorer">
+    <div className="ume-v2 umodel-page">
       <aside className="ume-sidebar">
         <div className="ume-sidebar-tabs">
           <button className={sidebarTab === 'summary' ? 'active' : ''} onClick={() => setSidebarTab('summary')} type="button" title={t('umodelExplorer.tabs.summary')}>
