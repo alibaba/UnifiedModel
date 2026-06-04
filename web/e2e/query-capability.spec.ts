@@ -57,8 +57,14 @@ test.describe('Query capability via UI', () => {
     expect(hasContent || (await page.locator('text=entity_set').count()) > 0).toBeTruthy()
   })
 
-  test('agent view shows discovery tools', async ({ page }) => {
-    await page.locator('text=Agent').click()
-    await expect(page.locator('strong', { hasText: 'query_spl_execute' }).first()).toBeVisible({ timeout: 10_000 })
+  test('api debugger shows agent discovery tools', async ({ page }) => {
+    await page.getByRole('button', { name: 'API Debugger' }).click()
+    await expect(page).toHaveURL(/\/workspaces\/demo\/api-debug$/)
+
+    await page.locator('.api-debug-list button', { hasText: 'Discover agent surface' }).click()
+    await expect(page.locator('.api-debug-request-line code', { hasText: '/api/v1/agent/demo/discover' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Call' }).click()
+    await expect(page.locator('.api-debug-response', { hasText: 'query_spl_execute' })).toBeVisible({ timeout: 10_000 })
   })
 })
