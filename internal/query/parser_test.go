@@ -99,6 +99,44 @@ func TestParseEntityFiltersTopKAndIDs(t *testing.T) {
 	}
 }
 
+func TestParseEntitySetEntityCall(t *testing.T) {
+	plan, err := Parse(model.QueryRequest{
+		Query: ".entity_set with(domain='apm', name='apm.service', ids=['svc-1'], query=$query) | entity-call list_data_set($types, detail=$detail) | limit 10",
+		Params: map[string]any{
+			"query":  "service_id = 'svc-1'",
+			"types":  []string{"metric_set", "log_set"},
+			"detail": true,
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse entity-call: %v", err)
+	}
+	if plan.Source != ".entity_set" || plan.Limit != 10 {
+		t.Fatalf("unexpected plan: %+v", plan)
+	}
+	if plan.Filters["domain"] != "apm" || plan.Filters["name"] != "apm.service" || plan.Filters["query"] != "service_id = 'svc-1'" {
+		t.Fatalf("unexpected filters: %+v", plan.Filters)
+	}
+	if !reflect.DeepEqual(plan.Operators, []string{"with", "entity-call:list_data_set", "limit"}) {
+		t.Fatalf("unexpected operators: %+v", plan.Operators)
+	}
+	if plan.EntityCall == nil || plan.EntityCall.Name != "list_data_set" {
+		t.Fatalf("unexpected entity call: %+v", plan.EntityCall)
+	}
+	if !reflect.DeepEqual(plan.EntityCall.Arguments, []any{[]string{"metric_set", "log_set"}}) {
+		t.Fatalf("unexpected entity-call arguments: %#v", plan.EntityCall.Arguments)
+	}
+	if !reflect.DeepEqual(plan.EntityCall.NamedArguments, map[string]any{"detail": true}) {
+		t.Fatalf("unexpected entity-call named arguments: %#v", plan.EntityCall.NamedArguments)
+	}
+	if plan.Pipeline[1].EntityCall == nil || !reflect.DeepEqual(plan.Pipeline[1].EntityCall.Arguments, plan.EntityCall.Arguments) {
+		t.Fatalf("pipeline entity-call should keep resolved arguments: %+v", plan.Pipeline)
+	}
+	if !reflect.DeepEqual(plan.Pipeline[1].EntityCall.NamedArguments, plan.EntityCall.NamedArguments) {
+		t.Fatalf("pipeline entity-call should keep resolved named arguments: %+v", plan.Pipeline)
+	}
+}
+
 func TestParseTopoControlledGraphCalls(t *testing.T) {
 	neighbors, err := Parse(model.QueryRequest{Query: ".topo | graph-call getNeighborNodes('full', 3, [" + cartServiceNode + "]) | limit 10"})
 	if err != nil {
@@ -161,6 +199,10 @@ func TestParseRejectsMalformedWithLimitAndDepth(t *testing.T) {
 		".entity | limit 0",
 		".entity_set",
 		".entity_set with(domain='apm')",
+		".entity_set with(domain='apm', name='apm.service')",
+		".entity_set with(domain='apm', name='apm.service') | entity-call",
+		".entity_set with(domain='apm', name='apm.service') | entity-call get_metric(,)",
+		".entity with(domain='apm', name='apm.service') | entity-call get_log('apm', 'apm.log.app')",
 		".topo | graph-call getNeighborNodes('both', 2, [" + cartServiceNode + "])",
 		".topo | graph-call getNeighborNodes('full', -1, [" + cartServiceNode + "])",
 		".topo | graph-call getNeighborNodes('full', 2, [])",

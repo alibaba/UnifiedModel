@@ -258,6 +258,8 @@ func (c cli) query(args []string) error {
 		return c.doJSON(http.MethodPost, "/api/v1/query/"+args[1]+"/"+action, map[string]any{"query": strings.Join(args[2:], " ")})
 	case "examples":
 		fmt.Fprintln(c.out, `.umodel with(kind='entity_set') | limit 20`)
+		fmt.Fprintln(c.out, `.entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()`)
+		fmt.Fprintln(c.out, `.entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)`)
 		fmt.Fprintln(c.out, `.entity with(domain='devops', name='devops.service', query='checkout') | limit 20`)
 		fmt.Fprintln(c.out, `.topo | graph-call getDirectRelations([(:"devops@devops.service" {__entity_id__: '10000000000000000000000000000101'})]) | limit 20`)
 		return nil

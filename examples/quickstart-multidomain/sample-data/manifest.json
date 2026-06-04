@@ -2,7 +2,7 @@
   "sample": "multi-domain-quickstart",
   "title": "Multi-domain quickstart sample",
   "schema_pack": "examples/quickstart-multidomain",
-  "source_hint": "Enterprise demo domains reuse EntitySet and EntitySetLink topology from Demo/umodel-demo-2/umodel; dataset, storage, metric, and log definitions are intentionally excluded.",
+  "source_hint": "Enterprise demo domains reuse EntitySet and EntitySetLink topology from Demo/umodel-demo-2/umodel; DevOps includes a minimal MetricSet/LogSet/EventSet/DataLink/StorageLink chain for EntitySet discovery.",
   "domains": [
     "devops",
     "k8s",
@@ -22,20 +22,16 @@
   "counts": {
     "entity_sets": 35,
     "entity_set_links": 42,
-    "data_sets": 0,
-    "data_links": 0,
-    "storage_links": 0,
+    "data_sets": 3,
+    "data_links": 3,
+    "storage_links": 3,
+    "storages": 3,
     "entities": 93,
     "relations": 125
   },
   "excluded_kinds": [
-    "metric_set",
-    "log_set",
     "trace_set",
-    "event_set",
     "profile_set",
-    "runbook_set",
-    "data_link",
-    "storage_link"
+    "runbook_set"
   ]
 }

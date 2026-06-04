@@ -68,15 +68,42 @@ func TestImportMultiDomainQuickStartWritesSchemaEntitiesAndTopology(t *testing.T
 	}
 
 	querySvc := query.NewService(graph)
-	for _, kind := range []string{"metric_set", "log_set", "trace_set", "event_set", "profile_set", "runbook_set", "data_link", "storage_link"} {
+	for _, kind := range []string{"metric_set", "log_set", "event_set", "data_link", "storage_link", "prometheus", "elasticsearch", "mysql"} {
 		rows, err := querySvc.Execute(ctx, "demo", model.QueryRequest{
 			Query: ".umodel with(kind='" + kind + "') | limit 1",
 		})
 		if err != nil {
-			t.Fatalf("query excluded kind %s: %v", kind, err)
+			t.Fatalf("query imported kind %s: %v", kind, err)
 		}
-		if len(rows.Rows) != 0 {
-			t.Fatalf("quickstart should not import %s definitions, got %+v", kind, rows)
+		if len(rows.Rows) == 0 {
+			t.Fatalf("quickstart should import %s definitions, got %+v", kind, rows)
+		}
+	}
+
+	dataSetRows, err := querySvc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)",
+	})
+	if err != nil {
+		t.Fatalf("list quickstart data sets: %v", err)
+	}
+	if len(dataSetRows.Rows) != 1 {
+		t.Fatalf("expected assistant response row, got %+v", dataSetRows.Rows)
+	}
+	data, ok := dataSetRows.Rows[0]["data"].([]map[string]any)
+	if !ok || len(data) != 3 {
+		t.Fatalf("expected metric, log, and event data sets, got %#v", dataSetRows.Rows[0]["data"])
+	}
+	joinedData := ""
+	for _, item := range data {
+		values, ok := item["values"].([]string)
+		if !ok {
+			t.Fatalf("unexpected list_data_set row: %#v", item)
+		}
+		joinedData += strings.Join(values, "\n")
+	}
+	for _, want := range []string{"devops.metric.service", "devops.log.service", "devops.event.deployment", "prometheus", "devops.prometheus.core", "elasticsearch", "devops.elasticsearch.logs", "mysql", "devops.mysql.events", "\"id\":\"service_id\""} {
+		if !strings.Contains(joinedData, want) {
+			t.Fatalf("expected list_data_set output to contain %q, got %s", want, joinedData)
 		}
 	}
 

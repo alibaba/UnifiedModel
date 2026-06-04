@@ -58,6 +58,14 @@ const examples = [
     query:
       ".topo | graph-call cypher(`MATCH (src:``devops@devops.service`` {__entity_id__: '10000000000000000000000000000101'})-[r]->(dest) RETURN properties(src) AS src, properties(r) AS relation, properties(dest) AS dest LIMIT 20`) | limit 20",
   },
+  {
+    labelKey: 'query.examples.entitySetMethods',
+    query: ".entity_set with(domain='devops', name='devops.service') | entity-call __list_method__()",
+  },
+  {
+    labelKey: 'query.examples.entitySetDatasets',
+    query: ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)",
+  },
 ] as const satisfies ReadonlyArray<{ labelKey: MessageKey; query: string }>
 
 export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: string }) {

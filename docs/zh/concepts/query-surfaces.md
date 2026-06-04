@@ -10,8 +10,9 @@ Query Service 是 UModel 的公共读取面。REST、CLI、Web UI、SDK 和 MCP 
 | Source | 读取内容 | 示例 |
 |---|---|---|
 | `.umodel` | 模型定义 | `.umodel with(kind='entity_set')` |
+| `.entity_set` | EntitySet 方法响应 | `.entity_set with(domain='devops', name='devops.service') &#124; entity-call __list_method__()` |
 | `.entity` | 运行时实体 | `.entity with(domain='devops', name='devops.service')` |
-| `.topo` | 运行时拓扑关系 | `.topo | graph-call getDirectRelations(...)` |
+| `.topo` | 运行时拓扑关系 | `.topo &#124; graph-call getDirectRelations(...)` |
 
 ## 查询流程
 

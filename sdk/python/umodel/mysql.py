@@ -26,7 +26,7 @@ class MysqlV100(UModelCoreObject):
     kind: Optional[str] = None
     schema: Optional[Dict[str, Any]] = None
     metadata: Optional[Dict[str, Any]] = None
-    # MySQL 的核心配置部分，定义数据库实例的连接和查询参数。
+    # MySQL 的核心配置部分。UModel 只使用这些字段生成只读 SQL 查询计划，不直接连接数据库，也不保存明文凭据。
     spec: Optional['MysqlV100Spec'] = None
 
     def get_kind(self) -> str:
@@ -40,16 +40,32 @@ class MysqlV100(UModelCoreObject):
 
 @dataclass
 class MysqlV100Spec:
-    """MySQL 的核心配置部分，定义数据库实例的连接和查询参数。"""
-    # MySQL 实例的访问地址（host:port）。
+    """MySQL 的核心配置部分。UModel 只使用这些字段生成只读 SQL 查询计划，不直接连接数据库，也不保存明文凭据。"""
+    # MySQL 实例访问地址，格式通常为 host:port。
     endpoint: Optional[str] = None
-    # MySQL 数据库名称。
+    # 默认查询数据库名称。
     database: Optional[str] = None
-    # MySQL 表名称。
+    # 默认查询表名。若 DataSet 或查询参数中指定表名，可覆盖此字段。
     table: Optional[str] = None
-    # SQL 查询语句，用于从 MySQL 中提取数据。
-    sql: Optional[str] = None
-    # MySQL 的额外配置信息，以键值对形式存储。
+    # 可选 SQL 模板，用于特殊查询规划场景。模板必须保持只读语义，不应包含 INSERT、UPDATE、DELETE、DDL 等语句。
+    sql_template: Optional[str] = None
+    # SQL 方言。MySQL 存储默认使用 mysql。
+    sql_dialect: Optional[str] = None
+    # 时间过滤字段名，用于将请求时间范围下推到 SQL WHERE 条件中。
+    time_field: Optional[str] = None
+    # time_field 的时间单位。默认值为 second。
+    time_unit: Optional[str] = None
+    # 未显式指定 limit 时生成查询的默认 LIMIT。
+    default_limit: Optional[int] = None
+    # 查询规划允许生成的最大 LIMIT，用于避免生成过大的查询计划。
+    max_limit: Optional[int] = None
+    # 标识该存储是否只能规划只读查询。默认值为 true；UModel PaaS 查询规划不应生成写入语句。
+    read_only: Optional[bool] = None
+    # 凭据引用标识，例如 secret://mysql-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+    credential_ref: Optional[str] = None
+    # MySQL TLS 模式。默认值为 preferred。
+    tls_mode: Optional[str] = None
+    # MySQL 的额外非敏感配置，以键值对形式存储。
     properties: Optional[Dict[str, str]] = None
-    # 用于表示该 MySQL 存储的标签。
+    # 用于标注该 MySQL 存储的标签。
     tags: Optional[Dict[str, str]] = None

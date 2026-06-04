@@ -1,0 +1,26 @@
+kind: elasticsearch
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.elasticsearch.logs"
+  domain: devops
+  display_name:
+    en_us: "DevOps Elasticsearch Logs"
+    zh_cn: "DevOps Elasticsearch 日志"
+  description:
+    en_us: "Elasticsearch-compatible log index used by the quickstart service log set."
+    zh_cn: "Quickstart 服务日志集使用的 Elasticsearch 兼容日志索引。"
+spec:
+  endpoint: "https://elasticsearch.devops.example:9200"
+  index: "devops-service-logs-*"
+  index_pattern: "devops-service-logs-${yyyy.MM.dd}"
+  version: "8.x"
+  query_dialect: elasticsearch_dsl
+  time_field: timestamp
+  default_size: 1000
+  max_size: 10000
+  tls_verify: true
+  tags:
+    sample: multi-domain-quickstart
+    role: logs

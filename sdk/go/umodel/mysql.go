@@ -12,7 +12,7 @@ type MysqlV100 struct {
 	Kind     string      `json:"kind" yaml:"kind"`
 	Schema   *SchemaV1   `json:"schema" yaml:"schema"`
 	Metadata *MetadataV1 `json:"metadata" yaml:"metadata"`
-	// Spec MySQL 的核心配置部分，定义数据库实例的连接和查询参数。
+	// Spec MySQL 的核心配置部分。UModel 只使用这些字段生成只读 SQL 查询计划，不直接连接数据库，也不保存明文凭据。
 	Spec *MysqlV100Spec `json:"spec" yaml:"spec"`
 }
 
@@ -43,19 +43,35 @@ func (s *MysqlV100) GetMetadata() *MetadataV1 {
 	return s.Metadata
 }
 
-// MysqlV100Spec MySQL 的核心配置部分，定义数据库实例的连接和查询参数。
+// MysqlV100Spec MySQL 的核心配置部分。UModel 只使用这些字段生成只读 SQL 查询计划，不直接连接数据库，也不保存明文凭据。
 type MysqlV100Spec struct {
-	// Endpoint MySQL 实例的访问地址（host:port）。
+	// Endpoint MySQL 实例访问地址，格式通常为 host:port。
 	Endpoint string `json:"endpoint" yaml:"endpoint"`
-	// Database MySQL 数据库名称。
+	// Database 默认查询数据库名称。
 	Database string `json:"database" yaml:"database"`
-	// Table MySQL 表名称。
+	// Table 默认查询表名。若 DataSet 或查询参数中指定表名，可覆盖此字段。
 	Table string `json:"table,omitempty" yaml:"table,omitempty"`
-	// Sql SQL 查询语句，用于从 MySQL 中提取数据。
-	Sql string `json:"sql,omitempty" yaml:"sql,omitempty"`
-	// Properties MySQL 的额外配置信息，以键值对形式存储。
+	// SqlTemplate 可选 SQL 模板，用于特殊查询规划场景。模板必须保持只读语义，不应包含 INSERT、UPDATE、DELETE、DDL 等语句。
+	SqlTemplate string `json:"sql_template,omitempty" yaml:"sql_template,omitempty"`
+	// SqlDialect SQL 方言。MySQL 存储默认使用 mysql。
+	SqlDialect string `json:"sql_dialect,omitempty" yaml:"sql_dialect,omitempty"`
+	// TimeField 时间过滤字段名，用于将请求时间范围下推到 SQL WHERE 条件中。
+	TimeField string `json:"time_field,omitempty" yaml:"time_field,omitempty"`
+	// TimeUnit time_field 的时间单位。默认值为 second。
+	TimeUnit string `json:"time_unit,omitempty" yaml:"time_unit,omitempty"`
+	// DefaultLimit 未显式指定 limit 时生成查询的默认 LIMIT。
+	DefaultLimit int64 `json:"default_limit,omitempty" yaml:"default_limit,omitempty"`
+	// MaxLimit 查询规划允许生成的最大 LIMIT，用于避免生成过大的查询计划。
+	MaxLimit int64 `json:"max_limit,omitempty" yaml:"max_limit,omitempty"`
+	// ReadOnly 标识该存储是否只能规划只读查询。默认值为 true；UModel PaaS 查询规划不应生成写入语句。
+	ReadOnly bool `json:"read_only,omitempty" yaml:"read_only,omitempty"`
+	// CredentialRef 凭据引用标识，例如 secret://mysql-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+	CredentialRef string `json:"credential_ref,omitempty" yaml:"credential_ref,omitempty"`
+	// TlsMode MySQL TLS 模式。默认值为 preferred。
+	TlsMode string `json:"tls_mode,omitempty" yaml:"tls_mode,omitempty"`
+	// Properties MySQL 的额外非敏感配置，以键值对形式存储。
 	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Tags 用于表示该 MySQL 存储的标签。
+	// Tags 用于标注该 MySQL 存储的标签。
 	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
 }
 

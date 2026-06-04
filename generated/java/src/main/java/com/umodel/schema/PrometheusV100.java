@@ -42,7 +42,7 @@ public class PrometheusV100 implements UModelCoreObject {
     }
 
     /**
-     * Prometheus 的核心配置部分，定义监控实例的连接和查询参数。
+     * Prometheus 的核心配置部分。UModel 只使用这些字段生成 PromQL 查询计划，不直接执行查询，也不保存明文凭据。
      */
     @JSONField(name = "spec")
     private PrometheusV100Spec spec;
@@ -62,11 +62,11 @@ public class PrometheusV100 implements UModelCoreObject {
     }
 
     /**
-     * Prometheus 的核心配置部分，定义监控实例的连接和查询参数。
+     * Prometheus 的核心配置部分。UModel 只使用这些字段生成 PromQL 查询计划，不直接执行查询，也不保存明文凭据。
      */
     public static class PrometheusV100Spec {
         /**
-         * Prometheus 实例的访问地址（URL）。
+         * Prometheus 或 Prometheus 兼容服务的访问地址，例如 http://prometheus:9090。
          */
         @JSONField(name = "endpoint")
         private String endpoint;
@@ -80,7 +80,147 @@ public class PrometheusV100 implements UModelCoreObject {
         }
 
         /**
-         * Prometheus 的额外配置信息，以键值对形式存储。
+         * Prometheus HTTP API 前缀。默认值为 /api/v1。
+         */
+        @JSONField(name = "api_prefix")
+        private String apiPrefix;
+
+        public String getApiPrefix() {
+            return apiPrefix;
+        }
+
+        public void setApiPrefix(String apiPrefix) {
+            this.apiPrefix = apiPrefix;
+        }
+
+        /**
+         * 默认 PromQL 查询类型。instant 表示即时查询，range 表示区间查询。
+         */
+        @JSONField(name = "default_query_type")
+        private String defaultQueryType;
+
+        public String getDefaultQueryType() {
+            return defaultQueryType;
+        }
+
+        public void setDefaultQueryType(String defaultQueryType) {
+            this.defaultQueryType = defaultQueryType;
+        }
+
+        /**
+         * 区间查询的默认 step，例如 60s、1m。
+         */
+        @JSONField(name = "default_step")
+        private String defaultStep;
+
+        public String getDefaultStep() {
+            return defaultStep;
+        }
+
+        public void setDefaultStep(String defaultStep) {
+            this.defaultStep = defaultStep;
+        }
+
+        /**
+         * PromQL 查询规划使用的默认回看窗口，例如 5m。
+         */
+        @JSONField(name = "lookback_delta")
+        private String lookbackDelta;
+
+        public String getLookbackDelta() {
+            return lookbackDelta;
+        }
+
+        public void setLookbackDelta(String lookbackDelta) {
+            this.lookbackDelta = lookbackDelta;
+        }
+
+        /**
+         * 可选租户标识，用于多租户 Prometheus 兼容系统。
+         */
+        @JSONField(name = "tenant")
+        private String tenant;
+
+        public String getTenant() {
+            return tenant;
+        }
+
+        public void setTenant(String tenant) {
+            this.tenant = tenant;
+        }
+
+        /**
+         * 多租户系统使用的租户 HTTP 头名称，例如 X-Scope-OrgID。
+         */
+        @JSONField(name = "tenant_header")
+        private String tenantHeader;
+
+        public String getTenantHeader() {
+            return tenantHeader;
+        }
+
+        public void setTenantHeader(String tenantHeader) {
+            this.tenantHeader = tenantHeader;
+        }
+
+        /**
+         * 凭据引用标识，例如 secret://prometheus-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+         */
+        @JSONField(name = "credential_ref")
+        private String credentialRef;
+
+        public String getCredentialRef() {
+            return credentialRef;
+        }
+
+        public void setCredentialRef(String credentialRef) {
+            this.credentialRef = credentialRef;
+        }
+
+        /**
+         * 是否校验 TLS 证书。默认值为 true。
+         */
+        @JSONField(name = "tls_verify")
+        private Boolean tlsVerify;
+
+        public Boolean getTlsVerify() {
+            return tlsVerify;
+        }
+
+        public void setTlsVerify(Boolean tlsVerify) {
+            this.tlsVerify = tlsVerify;
+        }
+
+        /**
+         * Prometheus 外部标签，用于 query planning 时补充查询上下文或结果来源说明。
+         */
+        @JSONField(name = "external_labels")
+        private Map<String, String> externalLabels;
+
+        public Map<String, String> getExternalLabels() {
+            return externalLabels;
+        }
+
+        public void setExternalLabels(Map<String, String> externalLabels) {
+            this.externalLabels = externalLabels;
+        }
+
+        /**
+         * 非敏感 HTTP 头，用于租户、路由等查询上下文。不得存放认证密钥。
+         */
+        @JSONField(name = "headers")
+        private Map<String, String> headers;
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+
+        public void setHeaders(Map<String, String> headers) {
+            this.headers = headers;
+        }
+
+        /**
+         * Prometheus 的额外非敏感配置，以键值对形式存储。
          */
         @JSONField(name = "properties")
         private Map<String, String> properties;
@@ -94,7 +234,7 @@ public class PrometheusV100 implements UModelCoreObject {
         }
 
         /**
-         * 用于表示该 Prometheus 存储的标签。
+         * 用于标注该 Prometheus 存储的标签。
          */
         @JSONField(name = "tags")
         private Map<String, String> tags;

@@ -79,7 +79,7 @@ output[6]: ".umodel with(kind='entity_set') | project domain,name,kind | sort do
 
 | Tool | 默认启用 | 用途 |
 |---|---:|---|
-| `query_spl_execute` | Yes | 执行 `.umodel`、`.entity`、`.topo` SPL。 |
+| `query_spl_execute` | Yes | 执行 `.umodel`、`.entity_set`、`.entity`、`.topo` 或 `.runbook_set` SPL。 |
 | `query_spl_explain` | Yes | 返回查询计划。 |
 | `query_spl_examples` | Yes | 返回安全查询示例。 |
 | `umodel_validate` | Yes | 校验 UModel elements。 |
@@ -95,7 +95,7 @@ output[6]: ".umodel with(kind='entity_set') | project domain,name,kind | sort do
 |---|---|---|
 | `overview` | `umodel://workspace/{workspace}/overview` | Workspace-scoped API 和能力概览。 |
 | `schema-index` | `umodel://workspace/{workspace}/schema-index` | 模型/schema 元数据摘要。 |
-| `query-templates` | `umodel://workspace/{workspace}/query-templates` | `.umodel`、`.entity`、`.topo` 查询模板。 |
+| `query-templates` | `umodel://workspace/{workspace}/query-templates` | `.umodel`、`.entity_set`、`.entity` 和 `.topo` 查询模板。 |
 | `tool-capability-metadata` | `umodel://workspace/{workspace}/tool-capability-metadata` | Tool 能力和写启用元数据。 |
 
 Resources 只读且面向元数据。运行时 rows 应由 `query_spl_execute` 等 tools 返回。

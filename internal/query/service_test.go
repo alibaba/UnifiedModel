@@ -133,6 +133,73 @@ func TestExecuteEntityQueryUsesGraphStoreRows(t *testing.T) {
 	}
 }
 
+func TestExecuteEntitySetListMethodsReturnsAssistantRawData(t *testing.T) {
+	ctx := context.Background()
+	svc := NewService(graphstore.NewMemoryStore())
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call __list_method__()"})
+	if err != nil {
+		t.Fatalf("execute __list_method__: %v", err)
+	}
+	row := result.Rows[0]
+	if row["responseType"] != 2 || row["query"] != "" {
+		t.Fatalf("expected assistant raw data response, got %+v", row)
+	}
+	header, ok := row["header"].([]string)
+	if !ok || !containsString(header, "name") || !containsString(header, "params") || !containsString(header, "returns") {
+		t.Fatalf("unexpected __list_method__ header: %#v", row["header"])
+	}
+	data, ok := row["data"].([]map[string]any)
+	if !ok || len(data) != 2 {
+		t.Fatalf("unexpected __list_method__ data: %#v", row["data"])
+	}
+	values, ok := data[1]["values"].([]string)
+	if !ok || len(values) == 0 || values[0] != "list_data_set" {
+		t.Fatalf("expected assistant canonical list_data_set method row, got %#v", data[1])
+	}
+}
+
+func TestExecuteEntitySetListDataSetAliasReturnsAssistantRawData(t *testing.T) {
+	ctx := context.Background()
+	svc := NewService(graphstore.NewMemoryStore())
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call list_dataset(['metric_set'], true)"})
+	if err != nil {
+		t.Fatalf("execute list_dataset alias: %v", err)
+	}
+	row := result.Rows[0]
+	if row["responseType"] != 2 || row["query"] != "" {
+		t.Fatalf("expected assistant raw data response, got %+v", row)
+	}
+	header, ok := row["header"].([]string)
+	if !ok || !containsString(header, "data_set_id") || !containsString(header, "storage_link_detail") {
+		t.Fatalf("unexpected list_data_set header: %#v", row["header"])
+	}
+	data, ok := row["data"].([]map[string]any)
+	if !ok || len(data) != 0 {
+		t.Fatalf("memory quickstart has no data links; expected empty data, got %#v", row["data"])
+	}
+	if result.Explain == nil || result.Explain.EntityCall == nil || result.Explain.EntityCall.Name != "list_data_set" {
+		t.Fatalf("expected canonical list_data_set in explain, got %+v", result.Explain)
+	}
+}
+
+func TestExecuteEntitySetRejectsPlaceholderMethod(t *testing.T) {
+	ctx := context.Background()
+	svc := NewService(graphstore.NewMemoryStore())
+	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call METHOD()"})
+	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
+		t.Fatalf("expected query plan error for placeholder method, got %v", err)
+	}
+}
+
+func TestExecuteEntitySetRejectsUnsupportedMethod(t *testing.T) {
+	ctx := context.Background()
+	svc := NewService(graphstore.NewMemoryStore())
+	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call get_metric('apm', 'devops.metric.service', 'request_count')"})
+	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
+		t.Fatalf("expected query plan error for unsupported method, got %v", err)
+	}
+}
+
 func TestExecuteEntityTopKAndProject(t *testing.T) {
 	ctx := context.Background()
 	store := graphstore.NewMemoryStore()

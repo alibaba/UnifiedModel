@@ -1,7 +1,7 @@
 description:
-  zh_cn: MySQL 存储，用于描述 MySQL 数据库实例的配置和连接信息。
+  zh_cn: MySQL 存储，用于描述 MySQL 实例、数据库、表以及查询规划所需的连接信息。
   en_us: >-
-    MySQL storage, used to define the MySQL database instance configuration and connection details.
+    MySQL storage, used to define the MySQL instance, database, table, and connection metadata required for query planning.
 name: mysql
 versions:
 - name: v1.0.0
@@ -191,38 +191,117 @@ versions:
         constraint:
           required: true
         description:
-          zh_cn: MySQL 的核心配置部分，定义数据库实例的连接和查询参数。
+          zh_cn: MySQL 的核心配置部分。UModel 只使用这些字段生成只读 SQL 查询计划，不直接连接数据库，也不保存明文凭据。
           en_us: >-
-            The specification section containing MySQL configuration, including connection and query parameters.
+            The specification section for MySQL. UModel uses these fields to generate read-only SQL query plans only; it does
+            not connect to databases or store plaintext credentials.
         properties:
           endpoint:
             description:
-              zh_cn: MySQL 实例的访问地址（host:port）。
-              en_us: The endpoint address of the MySQL instance (host:port).
+              zh_cn: MySQL 实例访问地址，格式通常为 host:port。
+              en_us: The MySQL instance endpoint, usually in host:port format.
             type: string
             constraint:
               required: true
           database:
             description:
-              zh_cn: MySQL 数据库名称。
-              en_us: The name of the MySQL database.
+              zh_cn: 默认查询数据库名称。
+              en_us: The default database name to query.
             type: string
             constraint:
               required: true
           table:
             description:
-              zh_cn: MySQL 表名称。
-              en_us: The name of the MySQL table.
+              zh_cn: 默认查询表名。若 DataSet 或查询参数中指定表名，可覆盖此字段。
+              en_us: >-
+                The default table name to query. It can be overridden by the DataSet or query parameters.
             type: string
-          sql:
+          sql_template:
             description:
-              zh_cn: SQL 查询语句，用于从 MySQL 中提取数据。
-              en_us: SQL query statement for extracting data from MySQL.
+              zh_cn: 可选 SQL 模板，用于特殊查询规划场景。模板必须保持只读语义，不应包含 INSERT、UPDATE、DELETE、DDL 等语句。
+              en_us: >-
+                Optional SQL template for special query planning scenarios. The template must keep read-only semantics and
+                should not contain INSERT, UPDATE, DELETE, DDL, or similar statements.
             type: string
+          sql_dialect:
+            description:
+              zh_cn: SQL 方言。MySQL 存储默认使用 mysql。
+              en_us: SQL dialect. MySQL storage uses mysql by default.
+            type: string
+            constraint:
+              enum:
+                values:
+                - mysql
+                - ansi
+              default_value: mysql
+          time_field:
+            description:
+              zh_cn: 时间过滤字段名，用于将请求时间范围下推到 SQL WHERE 条件中。
+              en_us: Time field used to push request time ranges into SQL WHERE conditions.
+            type: string
+          time_unit:
+            description:
+              zh_cn: time_field 的时间单位。默认值为 second。
+              en_us: Time unit of time_field. Defaults to second.
+            type: string
+            constraint:
+              enum:
+                values:
+                - second
+                - millisecond
+                - microsecond
+                - nanosecond
+                - datetime
+              default_value: second
+          default_limit:
+            description:
+              zh_cn: 未显式指定 limit 时生成查询的默认 LIMIT。
+              en_us: Default SQL LIMIT when no explicit limit is provided.
+            type: integer
+            constraint:
+              default_value: 1000
+          max_limit:
+            description:
+              zh_cn: 查询规划允许生成的最大 LIMIT，用于避免生成过大的查询计划。
+              en_us: >-
+                Maximum SQL LIMIT allowed by the planner to avoid producing excessively large query plans.
+            type: integer
+            constraint:
+              default_value: 10000
+          read_only:
+            description:
+              zh_cn: 标识该存储是否只能规划只读查询。默认值为 true；UModel PaaS 查询规划不应生成写入语句。
+              en_us: >-
+                Indicates whether this storage should only plan read-only queries. Defaults to true; UModel PaaS query planning
+                should not generate write statements.
+            type: boolean
+            constraint:
+              default_value: true
+          credential_ref:
+            description:
+              zh_cn: 凭据引用标识，例如 secret://mysql-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+              en_us: >-
+                Credential reference, for example secret://mysql-prod-readonly. Plaintext usernames, passwords, or tokens
+                must not be stored in UModel.
+            type: string
+          tls_mode:
+            description:
+              zh_cn: MySQL TLS 模式。默认值为 preferred。
+              en_us: MySQL TLS mode. Defaults to preferred.
+            type: string
+            constraint:
+              enum:
+                values:
+                - disabled
+                - preferred
+                - required
+                - verify_ca
+                - verify_identity
+              default_value: preferred
           properties:
             description:
-              zh_cn: MySQL 的额外配置信息，以键值对形式存储。
-              en_us: Additional configuration of the MySQL instance, stored as key-value pairs.
+              zh_cn: MySQL 的额外非敏感配置，以键值对形式存储。
+              en_us: Additional non-sensitive MySQL configuration, stored as key-value pairs.
             type: map
             constraint:
               map:
@@ -232,8 +311,8 @@ versions:
                   type: string
           tags:
             description:
-              zh_cn: 用于表示该 MySQL 存储的标签。
-              en_us: This field is used to represent the tags of the MySQL storage.
+              zh_cn: 用于标注该 MySQL 存储的标签。
+              en_us: Tags used to describe this MySQL storage.
             type: map
             constraint:
               map:

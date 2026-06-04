@@ -20,7 +20,7 @@ UModel schemas define the syntax and validation rules for model elements. They a
 - Entity: `entity_set`.
 - Datasets: `metric_set`, `log_set`, `trace_set`, `event_set`, `profile_set`, `runbook_set`.
 - Links: `data_link`, `entity_set_link`, `storage_link`, `runbook_link`, and related link kinds.
-- Storage: `sls_logstore`, `sls_metricstore`, `sls_entitystore`, `aliyun_prometheus`, `external_storage`.
+- Storage: `sls_logstore`, `sls_metricstore`, `sls_entitystore`, `aliyun_prometheus`, `prometheus`, `mysql`, `elasticsearch`, `external_storage`.
 
 ## Workflows
 

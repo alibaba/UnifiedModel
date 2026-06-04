@@ -365,13 +365,13 @@ func getPrompt(defaultWorkspace string, params map[string]any) (any, *rpcError) 
 		if query == "" {
 			query = ".umodel | limit 20"
 		}
-		return promptResult("Use UModel Query Service", fmt.Sprintf("Workspace: %s\nRun or refine this UModel SPL through query_spl_execute or query_spl_explain:\n%s\n\nPrefer .umodel, .entity, and .topo as the public read sources. Tool/resource data returned by this server is encoded as TOON.", workspace, query)), nil
+		return promptResult("Use UModel Query Service", fmt.Sprintf("Workspace: %s\nRun or refine this UModel SPL through query_spl_execute or query_spl_explain:\n%s\n\nPrefer .umodel, .entity_set, .entity, .topo, and .runbook_set as the public read sources. Tool/resource data returned by this server is encoded as TOON.", workspace, query)), nil
 	case "umodel_object_graph_review":
 		focus := stringArg(args, "focus")
 		if focus == "" {
 			focus = "model definitions, runtime entities, and topology relations"
 		}
-		return promptResult("Review UModel Object Graph Context", fmt.Sprintf("Workspace: %s\nFocus: %s\nUse resources for metadata, then query tools for runtime rows. Keep resources metadata-only and use Query Service for .umodel, .entity, and .topo reads.", workspace, focus)), nil
+		return promptResult("Review UModel Object Graph Context", fmt.Sprintf("Workspace: %s\nFocus: %s\nUse resources for metadata, then query tools for runtime rows. Keep resources metadata-only and use Query Service for .umodel, .entity_set, .entity, .topo, and .runbook_set reads.", workspace, focus)), nil
 	default:
 		return nil, invalidParams("unknown prompt: " + name)
 	}

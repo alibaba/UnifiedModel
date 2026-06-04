@@ -23,6 +23,8 @@ export const enUSQuery = {
   'query.examples.cypher': 'Cypher',
   'query.examples.direct': 'Direct',
   'query.examples.entity': '.entity',
+  'query.examples.entitySetDatasets': 'EntitySet DataSets',
+  'query.examples.entitySetMethods': 'EntitySet Methods',
   'query.examples.neighbors': 'Neighbors',
   'query.examples.title': 'Examples',
   'query.examples.topo': '.topo',

@@ -25,6 +25,8 @@ export const zhCNQuery = {
   'query.examples.cypher': 'Cypher',
   'query.examples.direct': 'direct',
   'query.examples.entity': '.entity',
+  'query.examples.entitySetDatasets': 'EntitySet 数据集',
+  'query.examples.entitySetMethods': 'EntitySet 方法',
   'query.examples.neighbors': 'neighbors',
   'query.examples.title': '示例',
   'query.examples.topo': '.topo',

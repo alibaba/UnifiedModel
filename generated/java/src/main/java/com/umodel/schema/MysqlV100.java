@@ -42,7 +42,7 @@ public class MysqlV100 implements UModelCoreObject {
     }
 
     /**
-     * MySQL 的核心配置部分，定义数据库实例的连接和查询参数。
+     * MySQL 的核心配置部分。UModel 只使用这些字段生成只读 SQL 查询计划，不直接连接数据库，也不保存明文凭据。
      */
     @JSONField(name = "spec")
     private MysqlV100Spec spec;
@@ -62,11 +62,11 @@ public class MysqlV100 implements UModelCoreObject {
     }
 
     /**
-     * MySQL 的核心配置部分，定义数据库实例的连接和查询参数。
+     * MySQL 的核心配置部分。UModel 只使用这些字段生成只读 SQL 查询计划，不直接连接数据库，也不保存明文凭据。
      */
     public static class MysqlV100Spec {
         /**
-         * MySQL 实例的访问地址（host:port）。
+         * MySQL 实例访问地址，格式通常为 host:port。
          */
         @JSONField(name = "endpoint")
         private String endpoint;
@@ -80,7 +80,7 @@ public class MysqlV100 implements UModelCoreObject {
         }
 
         /**
-         * MySQL 数据库名称。
+         * 默认查询数据库名称。
          */
         @JSONField(name = "database")
         private String database;
@@ -94,7 +94,7 @@ public class MysqlV100 implements UModelCoreObject {
         }
 
         /**
-         * MySQL 表名称。
+         * 默认查询表名。若 DataSet 或查询参数中指定表名，可覆盖此字段。
          */
         @JSONField(name = "table")
         private String table;
@@ -108,21 +108,133 @@ public class MysqlV100 implements UModelCoreObject {
         }
 
         /**
-         * SQL 查询语句，用于从 MySQL 中提取数据。
+         * 可选 SQL 模板，用于特殊查询规划场景。模板必须保持只读语义，不应包含 INSERT、UPDATE、DELETE、DDL 等语句。
          */
-        @JSONField(name = "sql")
-        private String sql;
+        @JSONField(name = "sql_template")
+        private String sqlTemplate;
 
-        public String getSql() {
-            return sql;
+        public String getSqlTemplate() {
+            return sqlTemplate;
         }
 
-        public void setSql(String sql) {
-            this.sql = sql;
+        public void setSqlTemplate(String sqlTemplate) {
+            this.sqlTemplate = sqlTemplate;
         }
 
         /**
-         * MySQL 的额外配置信息，以键值对形式存储。
+         * SQL 方言。MySQL 存储默认使用 mysql。
+         */
+        @JSONField(name = "sql_dialect")
+        private String sqlDialect;
+
+        public String getSqlDialect() {
+            return sqlDialect;
+        }
+
+        public void setSqlDialect(String sqlDialect) {
+            this.sqlDialect = sqlDialect;
+        }
+
+        /**
+         * 时间过滤字段名，用于将请求时间范围下推到 SQL WHERE 条件中。
+         */
+        @JSONField(name = "time_field")
+        private String timeField;
+
+        public String getTimeField() {
+            return timeField;
+        }
+
+        public void setTimeField(String timeField) {
+            this.timeField = timeField;
+        }
+
+        /**
+         * time_field 的时间单位。默认值为 second。
+         */
+        @JSONField(name = "time_unit")
+        private String timeUnit;
+
+        public String getTimeUnit() {
+            return timeUnit;
+        }
+
+        public void setTimeUnit(String timeUnit) {
+            this.timeUnit = timeUnit;
+        }
+
+        /**
+         * 未显式指定 limit 时生成查询的默认 LIMIT。
+         */
+        @JSONField(name = "default_limit")
+        private Long defaultLimit;
+
+        public Long getDefaultLimit() {
+            return defaultLimit;
+        }
+
+        public void setDefaultLimit(Long defaultLimit) {
+            this.defaultLimit = defaultLimit;
+        }
+
+        /**
+         * 查询规划允许生成的最大 LIMIT，用于避免生成过大的查询计划。
+         */
+        @JSONField(name = "max_limit")
+        private Long maxLimit;
+
+        public Long getMaxLimit() {
+            return maxLimit;
+        }
+
+        public void setMaxLimit(Long maxLimit) {
+            this.maxLimit = maxLimit;
+        }
+
+        /**
+         * 标识该存储是否只能规划只读查询。默认值为 true；UModel PaaS 查询规划不应生成写入语句。
+         */
+        @JSONField(name = "read_only")
+        private Boolean readOnly;
+
+        public Boolean getReadOnly() {
+            return readOnly;
+        }
+
+        public void setReadOnly(Boolean readOnly) {
+            this.readOnly = readOnly;
+        }
+
+        /**
+         * 凭据引用标识，例如 secret://mysql-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+         */
+        @JSONField(name = "credential_ref")
+        private String credentialRef;
+
+        public String getCredentialRef() {
+            return credentialRef;
+        }
+
+        public void setCredentialRef(String credentialRef) {
+            this.credentialRef = credentialRef;
+        }
+
+        /**
+         * MySQL TLS 模式。默认值为 preferred。
+         */
+        @JSONField(name = "tls_mode")
+        private String tlsMode;
+
+        public String getTlsMode() {
+            return tlsMode;
+        }
+
+        public void setTlsMode(String tlsMode) {
+            this.tlsMode = tlsMode;
+        }
+
+        /**
+         * MySQL 的额外非敏感配置，以键值对形式存储。
          */
         @JSONField(name = "properties")
         private Map<String, String> properties;
@@ -136,7 +248,7 @@ public class MysqlV100 implements UModelCoreObject {
         }
 
         /**
-         * 用于表示该 MySQL 存储的标签。
+         * 用于标注该 MySQL 存储的标签。
          */
         @JSONField(name = "tags")
         private Map<String, String> tags;

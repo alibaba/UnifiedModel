@@ -1,0 +1,63 @@
+kind: event_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.event.deployment"
+  domain: devops
+  display_name:
+    en_us: "Deployment Events"
+    zh_cn: "部署事件"
+  description:
+    en_us: "Deployment lifecycle events related to DevOps services in the quickstart workspace."
+    zh_cn: "Quickstart workspace 中与 DevOps 服务关联的部署生命周期事件。"
+spec:
+  fields:
+    - name: event_time
+      type: time
+      display_name:
+        en_us: "Event Time"
+        zh_cn: "事件时间"
+    - name: service_id
+      type: string
+      display_name:
+        en_us: "Service ID"
+        zh_cn: "服务 ID"
+    - name: environment
+      type: string
+      display_name:
+        en_us: "Environment"
+        zh_cn: "环境"
+    - name: deployment_id
+      type: string
+      display_name:
+        en_us: "Deployment ID"
+        zh_cn: "部署 ID"
+    - name: status
+      type: string
+      display_name:
+        en_us: "Status"
+        zh_cn: "状态"
+    - name: actor
+      type: string
+      display_name:
+        en_us: "Actor"
+        zh_cn: "操作者"
+  time_field: event_time
+  name_fields:
+    - deployment_id
+    - status
+  tag_fields:
+    - service_id
+    - environment
+    - status
+  ordered_fields:
+    - event_time
+    - service_id
+    - deployment_id
+    - status
+  default_order: desc
+  entity_fields:
+    entity_id: service_id
+    domain: domain
+    entity_type: entity_type

@@ -42,7 +42,7 @@ public class ElasticsearchV100 implements UModelCoreObject {
     }
 
     /**
-     * ElasticSearch 的核心配置部分，定义实例的连接和索引参数。
+     * Elasticsearch 的核心配置部分。UModel 只使用这些字段生成 Elasticsearch 查询计划，不直接执行查询，也不保存明文凭据。
      */
     @JSONField(name = "spec")
     private ElasticsearchV100Spec spec;
@@ -62,11 +62,11 @@ public class ElasticsearchV100 implements UModelCoreObject {
     }
 
     /**
-     * ElasticSearch 的核心配置部分，定义实例的连接和索引参数。
+     * Elasticsearch 的核心配置部分。UModel 只使用这些字段生成 Elasticsearch 查询计划，不直接执行查询，也不保存明文凭据。
      */
     public static class ElasticsearchV100Spec {
         /**
-         * ElasticSearch 实例的访问地址（URL）。
+         * Elasticsearch 集群访问地址，例如 https://es.example.com:9200。
          */
         @JSONField(name = "endpoint")
         private String endpoint;
@@ -80,7 +80,7 @@ public class ElasticsearchV100 implements UModelCoreObject {
         }
 
         /**
-         * ElasticSearch 索引名称。
+         * 默认查询索引名称，也可以是 Elasticsearch 支持的索引通配表达式。
          */
         @JSONField(name = "index")
         private String index;
@@ -94,7 +94,21 @@ public class ElasticsearchV100 implements UModelCoreObject {
         }
 
         /**
-         * ElasticSearch 的版本号（如 7.x、8.x）。
+         * 面向按时间滚动索引的索引模式，例如 logs-${yyyy.MM.dd}。如果为空，查询规划使用 index 字段。
+         */
+        @JSONField(name = "index_pattern")
+        private String indexPattern;
+
+        public String getIndexPattern() {
+            return indexPattern;
+        }
+
+        public void setIndexPattern(String indexPattern) {
+            this.indexPattern = indexPattern;
+        }
+
+        /**
+         * Elasticsearch 版本号或版本族，例如 7.x、8.x。
          */
         @JSONField(name = "version")
         private String version;
@@ -108,7 +122,119 @@ public class ElasticsearchV100 implements UModelCoreObject {
         }
 
         /**
-         * ElasticSearch 的额外配置信息，以键值对形式存储。
+         * 查询生成方言。默认生成 Elasticsearch Query DSL。
+         */
+        @JSONField(name = "query_dialect")
+        private String queryDialect;
+
+        public String getQueryDialect() {
+            return queryDialect;
+        }
+
+        public void setQueryDialect(String queryDialect) {
+            this.queryDialect = queryDialect;
+        }
+
+        /**
+         * 时间过滤字段名，用于将请求时间范围下推到 Elasticsearch 查询中。
+         */
+        @JSONField(name = "time_field")
+        private String timeField;
+
+        public String getTimeField() {
+            return timeField;
+        }
+
+        public void setTimeField(String timeField) {
+            this.timeField = timeField;
+        }
+
+        /**
+         * 未显式指定 limit 时生成查询的默认 size。
+         */
+        @JSONField(name = "default_size")
+        private Long defaultSize;
+
+        public Long getDefaultSize() {
+            return defaultSize;
+        }
+
+        public void setDefaultSize(Long defaultSize) {
+            this.defaultSize = defaultSize;
+        }
+
+        /**
+         * 查询规划允许生成的最大 size，用于避免生成过大的查询计划。
+         */
+        @JSONField(name = "max_size")
+        private Long maxSize;
+
+        public Long getMaxSize() {
+            return maxSize;
+        }
+
+        public void setMaxSize(Long maxSize) {
+            this.maxSize = maxSize;
+        }
+
+        /**
+         * 可选的 Elasticsearch routing 值。用于规划需要固定 routing 的查询。
+         */
+        @JSONField(name = "routing")
+        private String routing;
+
+        public String getRouting() {
+            return routing;
+        }
+
+        public void setRouting(String routing) {
+            this.routing = routing;
+        }
+
+        /**
+         * 凭据引用标识，例如 secret://es-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+         */
+        @JSONField(name = "credential_ref")
+        private String credentialRef;
+
+        public String getCredentialRef() {
+            return credentialRef;
+        }
+
+        public void setCredentialRef(String credentialRef) {
+            this.credentialRef = credentialRef;
+        }
+
+        /**
+         * 是否校验 TLS 证书。默认值为 true。
+         */
+        @JSONField(name = "tls_verify")
+        private Boolean tlsVerify;
+
+        public Boolean getTlsVerify() {
+            return tlsVerify;
+        }
+
+        public void setTlsVerify(Boolean tlsVerify) {
+            this.tlsVerify = tlsVerify;
+        }
+
+        /**
+         * 非敏感 HTTP 头，用于租户、路由等查询上下文。不得存放认证密钥。
+         */
+        @JSONField(name = "headers")
+        private Map<String, String> headers;
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+
+        public void setHeaders(Map<String, String> headers) {
+            this.headers = headers;
+        }
+
+        /**
+         * Elasticsearch 的额外非敏感配置，以键值对形式存储。
          */
         @JSONField(name = "properties")
         private Map<String, String> properties;
@@ -122,7 +248,7 @@ public class ElasticsearchV100 implements UModelCoreObject {
         }
 
         /**
-         * 用于表示该 ElasticSearch 存储的标签。
+         * 用于标注该 Elasticsearch 存储的标签。
          */
         @JSONField(name = "tags")
         private Map<String, String> tags;

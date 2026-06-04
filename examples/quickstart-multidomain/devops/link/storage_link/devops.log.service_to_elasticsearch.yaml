@@ -1,0 +1,23 @@
+kind: storage_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.log.service_to_elasticsearch"
+  domain: devops
+  display_name:
+    en_us: "Service logs stored in Elasticsearch"
+    zh_cn: "服务日志存储在 Elasticsearch"
+spec:
+  src:
+    domain: devops
+    kind: log_set
+    name: devops.log.service
+  dest:
+    domain: devops
+    kind: elasticsearch
+    name: devops.elasticsearch.logs
+  fields_mapping:
+    service_id: service_id
+    environment: environment
+    timestamp: timestamp

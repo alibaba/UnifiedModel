@@ -1,6 +1,6 @@
 description:
-  zh_cn: ElasticSearch 存储，用于描述 ElasticSearch 实例的配置和连接信息。
-  en_us: ElasticSearch storage, used to define the ElasticSearch instance configuration and connection details.
+  zh_cn: Elasticsearch 存储，用于描述 Elasticsearch 集群、索引以及查询规划所需的连接信息。
+  en_us: Elasticsearch storage, used to define the Elasticsearch cluster, index, and connection metadata required for query planning.
 name: elasticsearch
 versions:
   - name: v1.0.0
@@ -31,32 +31,96 @@ versions:
           constraint:
             required: true
           description:
-            zh_cn: ElasticSearch 的核心配置部分，定义实例的连接和索引参数。
-            en_us: The specification section containing ElasticSearch configuration, including connection and index parameters.
+            zh_cn: Elasticsearch 的核心配置部分。UModel 只使用这些字段生成 Elasticsearch 查询计划，不直接执行查询，也不保存明文凭据。
+            en_us: The specification section for Elasticsearch. UModel uses these fields to generate Elasticsearch query plans only; it does not execute queries or store plaintext credentials.
           properties:
             endpoint:
               description:
-                zh_cn: ElasticSearch 实例的访问地址（URL）。
-                en_us: The endpoint URL of the ElasticSearch instance.
+                zh_cn: Elasticsearch 集群访问地址，例如 https://es.example.com:9200。
+                en_us: The Elasticsearch cluster endpoint, for example https://es.example.com:9200.
               type: string
               constraint:
                 required: true
             index:
               description:
-                zh_cn: ElasticSearch 索引名称。
-                en_us: The name of the ElasticSearch index.
+                zh_cn: 默认查询索引名称，也可以是 Elasticsearch 支持的索引通配表达式。
+                en_us: The default index name to query. It may also be an Elasticsearch-supported index wildcard expression.
               type: string
               constraint:
                 required: true
+            index_pattern:
+              description:
+                zh_cn: 面向按时间滚动索引的索引模式，例如 logs-${yyyy.MM.dd}。如果为空，查询规划使用 index 字段。
+                en_us: Index pattern for time-rolled indices, for example logs-${yyyy.MM.dd}. When empty, query planning uses the index field.
+              type: string
             version:
               description:
-                zh_cn: ElasticSearch 的版本号（如 7.x、8.x）。
-                en_us: The version of the ElasticSearch instance (e.g. 7.x, 8.x).
+                zh_cn: Elasticsearch 版本号或版本族，例如 7.x、8.x。
+                en_us: The Elasticsearch version or version family, for example 7.x or 8.x.
               type: string
+            query_dialect:
+              description:
+                zh_cn: 查询生成方言。默认生成 Elasticsearch Query DSL。
+                en_us: Query generation dialect. Elasticsearch Query DSL is used by default.
+              type: string
+              constraint:
+                enum:
+                  values:
+                    - elasticsearch_dsl
+                    - lucene
+                    - eql
+                default_value: elasticsearch_dsl
+            time_field:
+              description:
+                zh_cn: 时间过滤字段名，用于将请求时间范围下推到 Elasticsearch 查询中。
+                en_us: Time field used to push request time ranges into Elasticsearch queries.
+              type: string
+            default_size:
+              description:
+                zh_cn: 未显式指定 limit 时生成查询的默认 size。
+                en_us: Default query size when no explicit limit is provided.
+              type: integer
+              constraint:
+                default_value: 1000
+            max_size:
+              description:
+                zh_cn: 查询规划允许生成的最大 size，用于避免生成过大的查询计划。
+                en_us: Maximum query size allowed by the planner to avoid producing excessively large query plans.
+              type: integer
+              constraint:
+                default_value: 10000
+            routing:
+              description:
+                zh_cn: 可选的 Elasticsearch routing 值。用于规划需要固定 routing 的查询。
+                en_us: Optional Elasticsearch routing value for queries that should target a fixed routing key.
+              type: string
+            credential_ref:
+              description:
+                zh_cn: 凭据引用标识，例如 secret://es-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+                en_us: Credential reference, for example secret://es-prod-readonly. Plaintext usernames, passwords, or tokens must not be stored in UModel.
+              type: string
+            tls_verify:
+              description:
+                zh_cn: 是否校验 TLS 证书。默认值为 true。
+                en_us: Whether TLS certificates should be verified. Defaults to true.
+              type: boolean
+              constraint:
+                default_value: true
+            headers:
+              description:
+                zh_cn: 非敏感 HTTP 头，用于租户、路由等查询上下文。不得存放认证密钥。
+                en_us: Non-sensitive HTTP headers for tenant or routing context. Authentication secrets must not be stored here.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
             properties:
               description:
-                zh_cn: ElasticSearch 的额外配置信息，以键值对形式存储。
-                en_us: Additional configuration of the ElasticSearch instance, stored as key-value pairs.
+                zh_cn: Elasticsearch 的额外非敏感配置，以键值对形式存储。
+                en_us: Additional non-sensitive Elasticsearch configuration, stored as key-value pairs.
               type: map
               constraint:
                 map:
@@ -66,8 +130,8 @@ versions:
                     type: string
             tags:
               description:
-                zh_cn: 用于表示该 ElasticSearch 存储的标签。
-                en_us: This field is used to represent the tags of the ElasticSearch storage.
+                zh_cn: 用于标注该 Elasticsearch 存储的标签。
+                en_us: Tags used to describe this Elasticsearch storage.
               type: map
               constraint:
                 map:

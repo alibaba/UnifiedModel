@@ -32,7 +32,10 @@ schemas/
         ├── sls_logstore.schema.yaml     # SLS日志存储定义
         ├── sls_metricstore.schema.yaml  # SLS指标存储定义
         ├── sls_entitystore.schema.yaml  # SLS实体存储定义
-        └── aliyun_prometheus.schema.yaml # 阿里云Prometheus存储定义
+        ├── aliyun_prometheus.schema.yaml # 阿里云Prometheus存储定义
+        ├── prometheus.schema.yaml        # 开源Prometheus存储定义
+        ├── mysql.schema.yaml             # MySQL存储定义
+        └── elasticsearch.schema.yaml     # Elasticsearch存储定义
 ```
 
 ## 🎯 核心概念
@@ -64,6 +67,9 @@ UModel Schema采用分层设计，包含以下几个层次：
 - **SLS MetricStore**: 阿里云SLS指标存储
 - **SLS EntityStore**: 阿里云SLS实体存储
 - **Aliyun Prometheus**: 阿里云Prometheus存储
+- **Prometheus**: 开源 Prometheus 或 Prometheus 兼容存储
+- **MySQL**: MySQL 数据库存储
+- **Elasticsearch**: Elasticsearch 索引存储
 
 ## 🔧 Schema语法特性
 
@@ -151,6 +157,5 @@ models:
 
 > 💡 **提示**: 如需了解具体模型的详细定义，请查看对应的`.schema.yaml`文件。每个文件都包含完整的字段定义、约束条件和使用示例。
 > 💡 **提示**: 完整展开后的模型定义在 `expanded_schemas` 目录。
-
 
 

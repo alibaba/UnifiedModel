@@ -1,0 +1,27 @@
+kind: mysql
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.mysql.events"
+  domain: devops
+  display_name:
+    en_us: "DevOps MySQL Events"
+    zh_cn: "DevOps MySQL 事件"
+  description:
+    en_us: "MySQL table metadata used by the quickstart deployment event set."
+    zh_cn: "Quickstart 部署事件集使用的 MySQL 表元数据。"
+spec:
+  endpoint: "mysql.devops.example:3306"
+  database: "devops_observability"
+  table: "deployment_events"
+  sql_dialect: mysql
+  time_field: event_time
+  time_unit: datetime
+  default_limit: 1000
+  max_limit: 10000
+  read_only: true
+  tls_mode: preferred
+  tags:
+    sample: multi-domain-quickstart
+    role: events

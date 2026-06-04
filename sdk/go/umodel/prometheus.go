@@ -12,7 +12,7 @@ type PrometheusV100 struct {
 	Kind     string      `json:"kind" yaml:"kind"`
 	Schema   *SchemaV1   `json:"schema" yaml:"schema"`
 	Metadata *MetadataV1 `json:"metadata" yaml:"metadata"`
-	// Spec Prometheus 的核心配置部分，定义监控实例的连接和查询参数。
+	// Spec Prometheus 的核心配置部分。UModel 只使用这些字段生成 PromQL 查询计划，不直接执行查询，也不保存明文凭据。
 	Spec *PrometheusV100Spec `json:"spec" yaml:"spec"`
 }
 
@@ -43,13 +43,33 @@ func (s *PrometheusV100) GetMetadata() *MetadataV1 {
 	return s.Metadata
 }
 
-// PrometheusV100Spec Prometheus 的核心配置部分，定义监控实例的连接和查询参数。
+// PrometheusV100Spec Prometheus 的核心配置部分。UModel 只使用这些字段生成 PromQL 查询计划，不直接执行查询，也不保存明文凭据。
 type PrometheusV100Spec struct {
-	// Endpoint Prometheus 实例的访问地址（URL）。
+	// Endpoint Prometheus 或 Prometheus 兼容服务的访问地址，例如 http://prometheus:9090。
 	Endpoint string `json:"endpoint" yaml:"endpoint"`
-	// Properties Prometheus 的额外配置信息，以键值对形式存储。
+	// ApiPrefix Prometheus HTTP API 前缀。默认值为 /api/v1。
+	ApiPrefix string `json:"api_prefix,omitempty" yaml:"api_prefix,omitempty"`
+	// DefaultQueryType 默认 PromQL 查询类型。instant 表示即时查询，range 表示区间查询。
+	DefaultQueryType string `json:"default_query_type,omitempty" yaml:"default_query_type,omitempty"`
+	// DefaultStep 区间查询的默认 step，例如 60s、1m。
+	DefaultStep string `json:"default_step,omitempty" yaml:"default_step,omitempty"`
+	// LookbackDelta PromQL 查询规划使用的默认回看窗口，例如 5m。
+	LookbackDelta string `json:"lookback_delta,omitempty" yaml:"lookback_delta,omitempty"`
+	// Tenant 可选租户标识，用于多租户 Prometheus 兼容系统。
+	Tenant string `json:"tenant,omitempty" yaml:"tenant,omitempty"`
+	// TenantHeader 多租户系统使用的租户 HTTP 头名称，例如 X-Scope-OrgID。
+	TenantHeader string `json:"tenant_header,omitempty" yaml:"tenant_header,omitempty"`
+	// CredentialRef 凭据引用标识，例如 secret://prometheus-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+	CredentialRef string `json:"credential_ref,omitempty" yaml:"credential_ref,omitempty"`
+	// TlsVerify 是否校验 TLS 证书。默认值为 true。
+	TlsVerify bool `json:"tls_verify,omitempty" yaml:"tls_verify,omitempty"`
+	// ExternalLabels Prometheus 外部标签，用于 query planning 时补充查询上下文或结果来源说明。
+	ExternalLabels map[string]string `json:"external_labels,omitempty" yaml:"external_labels,omitempty"`
+	// Headers 非敏感 HTTP 头，用于租户、路由等查询上下文。不得存放认证密钥。
+	Headers map[string]string `json:"headers,omitempty" yaml:"headers,omitempty"`
+	// Properties Prometheus 的额外非敏感配置，以键值对形式存储。
 	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Tags 用于表示该 Prometheus 存储的标签。
+	// Tags 用于标注该 Prometheus 存储的标签。
 	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
 }
 

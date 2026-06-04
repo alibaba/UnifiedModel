@@ -12,6 +12,7 @@ func buildExplain(plan model.QueryPlan, caps model.GraphStoreCapabilities, healt
 		Source:           plan.Source,
 		Provider:         provider,
 		StorageProvider:  provider,
+		EntityCall:       plan.EntityCall,
 		Pushdown:         pushdownForPlan(plan, caps),
 		Fallback:         fallbackForPlan(plan, caps),
 		Operators:        append([]string(nil), plan.Operators...),
@@ -52,6 +53,9 @@ func fallbackForPlan(plan model.QueryPlan, caps model.GraphStoreCapabilities) []
 	fallback := []string{}
 	if plan.Source == ".umodel" {
 		fallback = append(fallback, "snapshot_filter")
+	}
+	if plan.Source == ".entity_set" {
+		fallback = append(fallback, "entity_call_plan")
 	}
 	if plan.Source == ".entity" && !caps.ServerSideFilter {
 		fallback = append(fallback, "application_filter")

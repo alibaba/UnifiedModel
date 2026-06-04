@@ -1,0 +1,23 @@
+kind: storage_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.event.deployment_to_mysql"
+  domain: devops
+  display_name:
+    en_us: "Deployment events stored in MySQL"
+    zh_cn: "部署事件存储在 MySQL"
+spec:
+  src:
+    domain: devops
+    kind: event_set
+    name: devops.event.deployment
+  dest:
+    domain: devops
+    kind: mysql
+    name: devops.mysql.events
+  fields_mapping:
+    service_id: service_id
+    environment: environment
+    event_time: event_time

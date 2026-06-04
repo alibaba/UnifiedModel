@@ -1,0 +1,23 @@
+kind: data_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.service_related_to_devops.metric.service"
+  domain: devops
+  display_name:
+    en_us: "Service related to service metrics"
+    zh_cn: "服务关联服务指标"
+spec:
+  src:
+    domain: devops
+    kind: entity_set
+    name: devops.service
+  dest:
+    domain: devops
+    kind: metric_set
+    name: devops.metric.service
+  fields_mapping:
+    id: service_id
+    environment: environment
+  data_link_type: related_to

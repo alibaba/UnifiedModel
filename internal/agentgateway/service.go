@@ -93,7 +93,7 @@ func (s *Service) ReadResource(ctx context.Context, workspace string, req model.
 			"read_model": map[string]any{
 				"entrypoint": "/api/v1/query/" + workspace + "/execute",
 				"tool":       "query_spl_execute",
-				"sources":    []string{".umodel", ".entity", ".topo"},
+				"sources":    []string{".umodel", ".entity_set", ".entity", ".topo", ".runbook_set"},
 			},
 			"resource_policy": "Resources expose metadata and templates only; runtime rows are returned through Query API calls.",
 		}
@@ -102,6 +102,7 @@ func (s *Service) ReadResource(ctx context.Context, workspace string, req model.
 			"workspace": workspace,
 			"sources": []map[string]any{
 				{"source": ".umodel", "description": "UModel snapshot metadata", "query_api": "/api/v1/query/" + workspace + "/execute"},
+				{"source": ".entity_set", "description": "EntitySet method call planning through the Query Service", "query_api": "/api/v1/query/" + workspace + "/execute"},
 				{"source": ".entity", "description": "CMS 2.0 entity reads through the Query Service", "query_api": "/api/v1/query/" + workspace + "/execute"},
 				{"source": ".topo", "description": "Topology reads through the Query Service", "query_api": "/api/v1/query/" + workspace + "/execute"},
 			},
@@ -112,6 +113,8 @@ func (s *Service) ReadResource(ctx context.Context, workspace string, req model.
 			"workspace": workspace,
 			"templates": []map[string]any{
 				{"id": "list-umodel", "query": ".umodel with(kind='entity_set') | limit 20"},
+				{"id": "entity-set-methods", "query": ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()"},
+				{"id": "entity-set-data-sets", "query": ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)"},
 				{"id": "find-entity", "query": ".entity with(domain='devops', name='devops.service', query=$query) | limit 20", "parameters": map[string]any{"query": "checkout"}},
 				{"id": "topology-neighbors", "query": ".topo | graph-call getNeighborNodes('full', 2, [(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 20"},
 				{"id": "topology-cypher", "query": ".topo | graph-call cypher(`MATCH (src)-[r]->(dest) RETURN properties(src) AS src, properties(r) AS relation, properties(dest) AS dest LIMIT 20`)"},
@@ -414,6 +417,8 @@ func nextActions(workspace string, examples []string) []model.AgentNextAction {
 func defaultExamples() []string {
 	return []string{
 		".umodel with(kind='entity_set') | limit 20",
+		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()",
+		".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)",
 		".entity with(domain='devops', name='devops.service', query='checkout') | limit 20",
 		".topo | graph-call getNeighborNodes('full', 2, [(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 20",
 		".topo | graph-call cypher(`MATCH (src)-[r]->(dest) RETURN properties(src) AS src, properties(r) AS relation, properties(dest) AS dest LIMIT 20`)",

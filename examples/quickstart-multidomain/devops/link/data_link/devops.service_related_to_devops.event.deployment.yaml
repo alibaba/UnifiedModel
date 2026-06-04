@@ -1,0 +1,23 @@
+kind: data_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.service_related_to_devops.event.deployment"
+  domain: devops
+  display_name:
+    en_us: "Service related to deployment events"
+    zh_cn: "服务关联部署事件"
+spec:
+  src:
+    domain: devops
+    kind: entity_set
+    name: devops.service
+  dest:
+    domain: devops
+    kind: event_set
+    name: devops.event.deployment
+  fields_mapping:
+    id: service_id
+    environment: environment
+  data_link_type: related_to

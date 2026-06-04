@@ -10,8 +10,9 @@ Query Service is the public read surface for UModel. REST, CLI, Web UI, SDKs, an
 | Source | Reads | Example |
 |---|---|---|
 | `.umodel` | Model definitions | `.umodel with(kind='entity_set')` |
+| `.entity_set` | EntitySet method responses | `.entity_set with(domain='devops', name='devops.service') &#124; entity-call __list_method__()` |
 | `.entity` | Runtime entity records | `.entity with(domain='devops', name='devops.service')` |
-| `.topo` | Runtime topology relations | `.topo | graph-call getDirectRelations(...)` |
+| `.topo` | Runtime topology relations | `.topo &#124; graph-call getDirectRelations(...)` |
 
 ## Query Flow
 

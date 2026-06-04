@@ -353,21 +353,22 @@ func queryRowsAsMatrix(columns []string, rows []map[string]any) [][]any {
 }
 
 type QueryExplain struct {
-	Source           string   `json:"source"`
-	Provider         string   `json:"provider,omitempty"`
-	StorageProvider  string   `json:"storage_provider,omitempty"`
-	SearchProvider   string   `json:"search_provider,omitempty"`
-	EmbedModel       string   `json:"embed_model,omitempty"`
-	SearchMode       string   `json:"search_mode,omitempty"`
-	CypherDialect    string   `json:"cypher_dialect,omitempty"`
-	CypherEngine     string   `json:"cypher_engine,omitempty"`
-	Pushdown         []string `json:"pushdown,omitempty"`
-	Fallback         []string `json:"fallback,omitempty"`
-	Operators        []string `json:"operators,omitempty"`
-	Depth            int      `json:"depth,omitempty"`
-	Limit            int      `json:"limit,omitempty"`
-	TimeoutMS        int      `json:"timeout_ms,omitempty"`
-	TimeRangeApplied bool     `json:"time_range_applied"`
+	Source           string          `json:"source"`
+	Provider         string          `json:"provider,omitempty"`
+	StorageProvider  string          `json:"storage_provider,omitempty"`
+	SearchProvider   string          `json:"search_provider,omitempty"`
+	EmbedModel       string          `json:"embed_model,omitempty"`
+	SearchMode       string          `json:"search_mode,omitempty"`
+	CypherDialect    string          `json:"cypher_dialect,omitempty"`
+	CypherEngine     string          `json:"cypher_engine,omitempty"`
+	EntityCall       *EntityCallPlan `json:"entity_call,omitempty"`
+	Pushdown         []string        `json:"pushdown,omitempty"`
+	Fallback         []string        `json:"fallback,omitempty"`
+	Operators        []string        `json:"operators,omitempty"`
+	Depth            int             `json:"depth,omitempty"`
+	Limit            int             `json:"limit,omitempty"`
+	TimeoutMS        int             `json:"timeout_ms,omitempty"`
+	TimeRangeApplied bool            `json:"time_range_applied"`
 }
 
 type QueryPredicate struct {
@@ -398,6 +399,23 @@ type GraphCallPlan struct {
 	Cypher    string              `json:"cypher,omitempty"`
 }
 
+type EntityCallParam struct {
+	Key         string `json:"key,omitempty"`
+	Type        string `json:"type,omitempty"`
+	DisplayName string `json:"display_name,omitempty"`
+	Description string `json:"description,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+	Default     any    `json:"default,omitempty"`
+}
+
+type EntityCallPlan struct {
+	Name           string            `json:"name,omitempty"`
+	Arguments      []any             `json:"arguments,omitempty"`
+	NamedArguments map[string]any    `json:"named_arguments,omitempty"`
+	Parameters     map[string]any    `json:"parameters,omitempty"`
+	Signature      []EntityCallParam `json:"signature,omitempty"`
+}
+
 type QueryPipelineOperator struct {
 	Name       string          `json:"name,omitempty"`
 	Expression string          `json:"expression,omitempty"`
@@ -405,6 +423,7 @@ type QueryPipelineOperator struct {
 	Project    []string        `json:"project,omitempty"`
 	Sort       *QuerySort      `json:"sort,omitempty"`
 	GraphCall  *GraphCallPlan  `json:"graph_call,omitempty"`
+	EntityCall *EntityCallPlan `json:"entity_call,omitempty"`
 	Limit      int             `json:"limit,omitempty"`
 }
 
@@ -419,6 +438,7 @@ type QueryPlan struct {
 	Project    []string
 	Sort       []QuerySort
 	GraphCall  *GraphCallPlan
+	EntityCall *EntityCallPlan
 	TopK       int
 	TimeRange  TimeRange
 	Params     map[string]any
