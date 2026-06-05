@@ -182,6 +182,20 @@ func entityCallMethodSpecFor(name string) (entityCallMethodSpec, bool) {
 				{Key: "detail", Type: "boolean", DisplayName: "Detail Info, if true, return all fields of DataSet", Default: false},
 			},
 		}, true
+	case "get_log", "get_logs":
+		return entityCallMethodSpec{
+			Name: "get_logs",
+			Params: []model.EntityCallParam{
+				{Key: "domain", Type: "varchar", DisplayName: "log_set Domain", Required: true},
+				{Key: "name", Type: "varchar", DisplayName: "log_set Name", Required: true},
+				{
+					Key:         "query",
+					Type:        "varchar",
+					DisplayName: "Query expression for the log set",
+					Description: "Basic SPL where syntax, for example service_id = 'service_a' and level in ['ERROR', 'WARN'].",
+				},
+			},
+		}, true
 	default:
 		return entityCallMethodSpec{}, false
 	}

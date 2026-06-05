@@ -66,14 +66,15 @@ Agent 和 REST 调用方可以把命名参数绑定到 `with(...)` filters 和 `
 
 ## `.entity_set`
 
-`.entity_set` 用于处理 EntitySet 方法调用，返回与 UModel Assistant 一致的响应数据。本轮范围支持元信息/发现类方法，返回 `responseType=2` 以及 `header`/`data`。
+`.entity_set` 用于处理 EntitySet 方法调用，返回与 UModel Assistant 一致的响应数据。元信息/发现类方法返回 `responseType=2` 以及 `header`/`data`；查询规划类方法返回 `responseType=1`，并在 `query` 字段中给出下游查询计划。
 
 ```bash
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)"
+go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')"
 ```
 
-`domain` 和 `name` 是必填 filter；`ids` 可作为 EntitySet 调用上下文。当前支持的方法是 `__list_method__` 和 `list_data_set`（兼容 `list_dataset` 别名）；方法参数按 UModel Assistant 的签名校验。
+`domain` 和 `name` 是必填 filter；`ids` 可作为 EntitySet 调用上下文。当前支持的方法是 `__list_method__`、`list_data_set`（兼容 `list_dataset` 别名）和 `get_logs`（兼容 `get_log` 别名）；方法参数按 UModel Assistant 的签名校验。`get_logs` 会解析基础 SPL where 语法，按 `data_link.fields_mapping` 映射 EntitySet 字段，按 `storage_link.fields_mapping` 映射 LogSet 字段，并只返回翻译后的存储查询计划，不直接查询存储。
 
 ## `.topo`
 

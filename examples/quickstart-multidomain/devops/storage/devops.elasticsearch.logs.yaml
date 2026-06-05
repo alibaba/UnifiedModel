@@ -17,7 +17,7 @@ spec:
   index_pattern: "devops-service-logs-${yyyy.MM.dd}"
   version: "8.x"
   query_dialect: elasticsearch_dsl
-  time_field: timestamp
+  time_field: event_time
   default_size: 1000
   max_size: 10000
   tls_verify: true

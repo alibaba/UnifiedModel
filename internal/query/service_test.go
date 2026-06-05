@@ -2,6 +2,8 @@ package query
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/alibaba/UnifiedModel/internal/graphstore"
@@ -149,12 +151,16 @@ func TestExecuteEntitySetListMethodsReturnsAssistantRawData(t *testing.T) {
 		t.Fatalf("unexpected __list_method__ header: %#v", row["header"])
 	}
 	data, ok := row["data"].([]map[string]any)
-	if !ok || len(data) != 2 {
+	if !ok || len(data) != 3 {
 		t.Fatalf("unexpected __list_method__ data: %#v", row["data"])
 	}
 	values, ok := data[1]["values"].([]string)
 	if !ok || len(values) == 0 || values[0] != "list_data_set" {
 		t.Fatalf("expected assistant canonical list_data_set method row, got %#v", data[1])
+	}
+	values, ok = data[2]["values"].([]string)
+	if !ok || len(values) == 0 || values[0] != "get_logs" {
+		t.Fatalf("expected get_logs method row, got %#v", data[2])
 	}
 }
 
@@ -179,6 +185,89 @@ func TestExecuteEntitySetListDataSetAliasReturnsAssistantRawData(t *testing.T) {
 	}
 	if result.Explain == nil || result.Explain.EntityCall == nil || result.Explain.EntityCall.Name != "list_data_set" {
 		t.Fatalf("expected canonical list_data_set in explain, got %+v", result.Explain)
+	}
+}
+
+func TestExecuteEntitySetGetLogsReturnsQueryPlan(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  logQueryPlanElements(),
+	})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service', ids=['svc-1'], query='environment = \"prod\"') | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\" and service_id in [\"svc-1\", \"svc-2\"]')",
+	})
+	if err != nil {
+		t.Fatalf("execute get_logs: %v", err)
+	}
+	row := result.Rows[0]
+	if row["responseType"] != 1 {
+		t.Fatalf("expected responseType=1 query plan, got %+v", row)
+	}
+	queryText, ok := row["query"].(string)
+	if !ok || queryText == "" {
+		t.Fatalf("expected query string, got %#v", row["query"])
+	}
+	for _, want := range []string{"get_logs", "devops.log.service", "devops.elasticsearch.logs", "elasticsearch_dsl", "devops-service-logs-*", "svc_id", "svc-1", "severity", "ERROR", "env", "prod"} {
+		if !strings.Contains(queryText, want) {
+			t.Fatalf("expected get_logs query plan to contain %q, got %s", want, queryText)
+		}
+	}
+	var queryPlan map[string]any
+	if err := json.Unmarshal([]byte(queryText), &queryPlan); err != nil {
+		t.Fatalf("decode query plan: %v", err)
+	}
+	query, ok := queryPlan["query"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected query object, got %#v", queryPlan["query"])
+	}
+	body, ok := query["body"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected elasticsearch body, got %#v", query["body"])
+	}
+	bodyQuery := mustJSON(body["query"])
+	if strings.Contains(bodyQuery, "query_string") {
+		t.Fatalf("expected translated DSL filters, got %s", bodyQuery)
+	}
+	for _, want := range []string{"svc_id", "severity", "env", "terms", "term"} {
+		if !strings.Contains(bodyQuery, want) {
+			t.Fatalf("expected translated DSL to contain %q, got %s", want, bodyQuery)
+		}
+	}
+	if result.Explain == nil || result.Explain.EntityCall == nil || result.Explain.EntityCall.Name != "get_logs" {
+		t.Fatalf("expected canonical get_logs in explain, got %+v", result.Explain)
+	}
+}
+
+func TestExecuteEntitySetGetLogAliasReturnsQueryPlan(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  logQueryPlanElements(),
+	})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call get_log(domain='devops', name='devops.log.service')",
+	})
+	if err != nil {
+		t.Fatalf("execute get_log alias: %v", err)
+	}
+	if result.Rows[0]["responseType"] != 1 {
+		t.Fatalf("expected responseType=1 alias query plan, got %+v", result.Rows[0])
+	}
+	if result.Explain == nil || result.Explain.EntityCall == nil || result.Explain.EntityCall.Name != "get_logs" {
+		t.Fatalf("expected get_log alias to normalize to get_logs, got %+v", result.Explain)
 	}
 }
 
@@ -405,5 +494,58 @@ func entityPayload(id, displayName string) model.EntityPayload {
 		"__first_observed_time__": int64(100),
 		"__last_observed_time__":  int64(200),
 		"display_name":            displayName,
+	}
+}
+
+func logQueryPlanElements() []model.UModelElement {
+	return []model.UModelElement{
+		{Kind: "entity_set", Domain: "devops", Name: "devops.service"},
+		{
+			Kind:   "data_link",
+			Domain: "devops",
+			Name:   "devops.service_related_to_devops.log.service",
+			Spec: map[string]any{
+				"src":            map[string]any{"domain": "devops", "kind": "entity_set", "name": "devops.service"},
+				"dest":           map[string]any{"domain": "devops", "kind": "log_set", "name": "devops.log.service"},
+				"fields_mapping": map[string]any{"id": "service_id", "environment": "environment"},
+			},
+		},
+		{
+			Kind:   "log_set",
+			Domain: "devops",
+			Name:   "devops.log.service",
+			Spec: map[string]any{
+				"time_field":    "timestamp",
+				"default_order": "desc",
+				"fields": []any{
+					map[string]any{"name": "timestamp", "type": "time"},
+					map[string]any{"name": "service_id", "type": "string"},
+					map[string]any{"name": "level", "type": "string"},
+					map[string]any{"name": "message", "type": "string"},
+				},
+			},
+		},
+		{
+			Kind:   "storage_link",
+			Domain: "devops",
+			Name:   "devops.log.service_to_elasticsearch",
+			Spec: map[string]any{
+				"src":            map[string]any{"domain": "devops", "kind": "log_set", "name": "devops.log.service"},
+				"dest":           map[string]any{"domain": "devops", "kind": "elasticsearch", "name": "devops.elasticsearch.logs"},
+				"fields_mapping": map[string]any{"service_id": "svc_id", "environment": "env", "level": "severity", "message": "log_message", "timestamp": "event_time"},
+			},
+		},
+		{
+			Kind:   "elasticsearch",
+			Domain: "devops",
+			Name:   "devops.elasticsearch.logs",
+			Spec: map[string]any{
+				"endpoint":      "https://elasticsearch.devops.example:9200",
+				"index":         "devops-service-logs-*",
+				"query_dialect": "elasticsearch_dsl",
+				"time_field":    "event_time",
+				"default_size":  1000,
+			},
+		},
 	}
 }

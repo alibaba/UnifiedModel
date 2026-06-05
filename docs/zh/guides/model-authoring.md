@@ -26,7 +26,7 @@ examples/quickstart-multidomain/
 └── sample-data/
 ```
 
-按类别拆分目录，保持 diff 易审阅。Quickstart 包刻意保持为实体拓扑样例，不包含 `metric_set`、`log_set`、`trace_set`、`event_set`、`profile_set`、`runbook_set` 等 DataSet kind，也不包含 `data_link` 或 `storage_link` 定义。
+按类别拆分目录，保持 diff 易审阅。Quickstart 包包含紧凑的实体拓扑，以及一条小型 DevOps 可观测链路：`metric_set`、`log_set`、`event_set`，对应的 `data_link` / `storage_link`，以及 Prometheus、Elasticsearch、MySQL storage 定义。
 
 ## 推荐编写顺序
 

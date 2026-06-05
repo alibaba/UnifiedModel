@@ -26,7 +26,7 @@ examples/quickstart-multidomain/
 └── sample-data/
 ```
 
-Keep categories separated for reviewable diffs. The quickstart pack is intentionally entity-topology only; it does not include DataSet kinds such as `metric_set`, `log_set`, `trace_set`, `event_set`, `profile_set`, or `runbook_set`, and it does not include `data_link` or `storage_link` definitions.
+Keep categories separated for reviewable diffs. The quickstart pack includes a compact entity topology plus a small DevOps observability chain: `metric_set`, `log_set`, `event_set`, their `data_link` / `storage_link` definitions, and storage definitions for Prometheus, Elasticsearch, and MySQL.
 
 ## Authoring Order
 

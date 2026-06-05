@@ -79,6 +79,8 @@ func (e *Executor) executeEntitySetCall(ctx context.Context, workspace string, p
 		return entitySetAssistantRawResponse(entityCallListMethodHeader(), entityCallListMethodRows()), nil
 	case "list_data_set":
 		return e.executeEntitySetListDataSet(ctx, workspace, plan)
+	case "get_logs":
+		return e.executeEntitySetGetLogs(ctx, workspace, plan)
 	default:
 		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "unsupported entity-call method", map[string]string{"name": plan.EntityCall.Name})
 	}
@@ -92,6 +94,18 @@ func entitySetAssistantRawResponse(header []string, data []map[string]any) model
 			"query":        "",
 			"header":       header,
 			"data":         data,
+		}},
+	}
+}
+
+func entitySetAssistantQueryResponse(query string) model.QueryResult {
+	return model.QueryResult{
+		Columns: []string{"responseType", "query", "header", "data"},
+		Rows: []map[string]any{{
+			"responseType": 1,
+			"query":        query,
+			"header":       []string{},
+			"data":         []map[string]any{},
 		}},
 	}
 }
@@ -127,10 +141,41 @@ func (e *Executor) executeEntitySetListDataSet(ctx context.Context, workspace st
 	return entitySetAssistantRawResponse(listDataSetHeader(), rows), nil
 }
 
+func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
+	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	domain := stringFilter(plan.EntityCall.Parameters["domain"])
+	name := stringFilter(plan.EntityCall.Parameters["name"])
+	dataLink, logSet, ok := findRelatedDataSet(snapshot.Elements, stringFilter(plan.Filters["domain"]), stringFilter(plan.Filters["name"]), "log_set", domain, name)
+	if !ok {
+		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "related log_set not found", map[string]string{
+			"domain": domain,
+			"name":   name,
+		})
+	}
+	bindings := storageBindingsForDataSet(snapshot.Elements, logSet)
+	if len(bindings) == 0 {
+		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "log_set storage not found", map[string]string{
+			"domain": domain,
+			"name":   name,
+		})
+	}
+
+	queryPlan := logQueryPlan(plan, dataLink, logSet, bindings[0])
+	return entitySetAssistantQueryResponse(mustJSON(queryPlan)), nil
+}
+
 type setRef struct {
 	Domain string
 	Kind   string
 	Name   string
+}
+
+type storageBinding struct {
+	Link    model.UModelElement
+	Storage model.UModelElement
 }
 
 func entityCallRowValues(values []string) map[string]any {
@@ -146,6 +191,7 @@ func entityCallListMethodRows() []map[string]any {
 	for _, method := range []entityCallMethodInfo{
 		methodInfoListMethods(),
 		methodInfoListDataSet(),
+		methodInfoGetLogs(),
 	} {
 		rows = append(rows, entityCallRowValues([]string{
 			method.Name,
@@ -193,6 +239,27 @@ func methodInfoListMethods() entityCallMethodInfo {
 			{Key: "description", Type: "varchar", DisplayName: "Method Description"},
 			{Key: "params", Type: "varchar", DisplayName: "Method Parameters (JSON)"},
 			{Key: "returns", Type: "varchar", DisplayName: "Method Returns (JSON)"},
+		},
+	}
+}
+
+func methodInfoGetLogs() entityCallMethodInfo {
+	return entityCallMethodInfo{
+		Name:        "get_logs",
+		DisplayName: "Get Logs",
+		Description: "Get log query plan from a LogSet",
+		Params: []assistantParamInfo{
+			{Key: "domain", Type: "varchar", DisplayName: "log_set Domain", Required: true},
+			{Key: "name", Type: "varchar", DisplayName: "log_set Name", Required: true},
+			{
+				Key:         "query",
+				Type:        "varchar",
+				DisplayName: "Query expression for the log set",
+				Description: "Basic SPL where syntax, for example service_id = 'service_a' and level in ['ERROR', 'WARN'].",
+			},
+		},
+		Returns: []assistantReturnInfo{
+			{Key: "query", Type: "varchar", DisplayName: "Log query plan"},
 		},
 	}
 }
@@ -282,6 +349,223 @@ func storageDetailsForDataSet(elements []model.UModelElement, dataSet model.UMod
 		storageLinkDetail = append(storageLinkDetail, link)
 	}
 	return storageInfo, storageLinkInfo, storageDetail, storageLinkDetail
+}
+
+func findRelatedDataSet(elements []model.UModelElement, entityDomain, entityName, dataSetKind, dataSetDomain, dataSetName string) (model.UModelElement, model.UModelElement, bool) {
+	for _, link := range elements {
+		if link.Kind != "data_link" {
+			continue
+		}
+		src := refFromSpec(link.Spec, "src")
+		dest := refFromSpec(link.Spec, "dest")
+		if src.Kind != "entity_set" || src.Domain != entityDomain || src.Name != entityName {
+			continue
+		}
+		if dest.Kind != dataSetKind || dest.Domain != dataSetDomain || dest.Name != dataSetName {
+			continue
+		}
+		dataSet, ok := findUModelElement(elements, dest.Kind, dest.Domain, dest.Name)
+		if !ok {
+			continue
+		}
+		return link, dataSet, true
+	}
+	return model.UModelElement{}, model.UModelElement{}, false
+}
+
+func storageBindingsForDataSet(elements []model.UModelElement, dataSet model.UModelElement) []storageBinding {
+	out := []storageBinding{}
+	for _, link := range elements {
+		if link.Kind != "storage_link" {
+			continue
+		}
+		src := refFromSpec(link.Spec, "src")
+		if src.Domain != dataSet.Domain || src.Kind != dataSet.Kind || src.Name != dataSet.Name {
+			continue
+		}
+		dest := refFromSpec(link.Spec, "dest")
+		storage, ok := findUModelElement(elements, dest.Kind, dest.Domain, dest.Name)
+		if !ok {
+			continue
+		}
+		out = append(out, storageBinding{Link: link, Storage: storage})
+	}
+	return out
+}
+
+func logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet model.UModelElement, binding storageBinding) map[string]any {
+	dataLinkMapping := mapValue(dataLink.Spec["fields_mapping"])
+	storageLinkMapping := mapValue(binding.Link.Spec["fields_mapping"])
+	entityIDs := stringSliceValue(plan.Filters["ids"])
+	entityQuery := stringFilter(plan.Filters["query"])
+	dataFilter := stringValue(dataLink.Spec["data_filter"])
+	methodQuery := stringFilter(plan.EntityCall.Parameters["query"])
+
+	queryPlan := map[string]any{
+		"operation": "get_logs",
+		"data_source": map[string]any{
+			"data_set": map[string]any{
+				"domain": logSet.Domain,
+				"kind":   logSet.Kind,
+				"name":   logSet.Name,
+			},
+			"storage": map[string]any{
+				"domain": binding.Storage.Domain,
+				"type":   binding.Storage.Kind,
+				"name":   binding.Storage.Name,
+				"config": binding.Storage.Spec,
+			},
+			"data_link": map[string]any{
+				"domain": dataLink.Domain,
+				"name":   dataLink.Name,
+				"spec":   dataLink.Spec,
+			},
+			"storage_link": map[string]any{
+				"domain": binding.Link.Domain,
+				"name":   binding.Link.Name,
+				"spec":   binding.Link.Spec,
+			},
+		},
+		"query": buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.Limit),
+	}
+	return queryPlan
+}
+
+func buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, limit int) map[string]any {
+	switch storage.Kind {
+	case "elasticsearch":
+		return elasticsearchLogQuery(logSet, storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, limit)
+	default:
+		return map[string]any{
+			"dialect":      storage.Kind,
+			"entity_ids":   entityIDs,
+			"entity_query": entityQuery,
+			"data_filter":  dataFilter,
+			"query":        methodQuery,
+			"limit":        limit,
+		}
+	}
+}
+
+func elasticsearchLogQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, limit int) map[string]any {
+	dataSetMapper := dataSetToStorageFieldMapper(storageLinkMapping)
+	timeField := stringValue(storage.Spec["time_field"])
+	if timeField == "" {
+		timeField = dataSetMapper(firstNonEmpty(stringValue(logSet.Spec["time_field"]), "timestamp"))
+	}
+	size := intValue(storage.Spec["default_size"])
+	if limit > 0 && (size == 0 || limit < size) {
+		size = limit
+	}
+	if size <= 0 {
+		size = 1000
+	}
+
+	filters := []map[string]any{}
+	entityMapper := entityToStorageFieldMapper(dataLinkMapping, storageLinkMapping)
+	storageMapper := storageFieldMapper()
+	idField := mappedStorageField(dataLinkMapping, storageLinkMapping, "id")
+	if idField != "" && len(entityIDs) > 0 {
+		if len(entityIDs) == 1 {
+			filters = append(filters, map[string]any{"term": map[string]any{idField: entityIDs[0]}})
+		} else {
+			filters = append(filters, map[string]any{"terms": map[string]any{idField: entityIDs}})
+		}
+	}
+	filters = appendLogQueryFilter(filters, firstNonEmpty(stringValue(storage.Spec["search_filter"]), stringValue(storage.Spec["default_filter"]), stringValue(storage.Spec["query_filter"])), storageMapper)
+	filters = appendLogQueryFilter(filters, dataFilter, dataSetMapper)
+	filters = appendLogQueryFilter(filters, entityQuery, entityMapper)
+	filters = appendLogQueryFilter(filters, methodQuery, dataSetMapper)
+
+	query := map[string]any{"match_all": map[string]any{}}
+	if len(filters) > 0 {
+		query = map[string]any{"bool": map[string]any{"filter": filters}}
+	}
+	body := map[string]any{
+		"size":  size,
+		"query": query,
+		"sort":  []map[string]any{{timeField: map[string]any{"order": firstNonEmpty(stringValue(logSet.Spec["default_order"]), "desc")}}},
+	}
+	if fields := mappedLogOutputFields(logSet, storageLinkMapping); len(fields) > 0 {
+		body["_source"] = fields
+	}
+	return map[string]any{
+		"dialect": "elasticsearch_dsl",
+		"index":   storage.Spec["index"],
+		"body":    body,
+	}
+}
+
+func mappedStorageField(dataLinkMapping, storageLinkMapping map[string]any, entityField string) string {
+	dataSetField := stringValue(dataLinkMapping[entityField])
+	if dataSetField == "" {
+		dataSetField = entityField
+	}
+	storageField := stringValue(storageLinkMapping[dataSetField])
+	if storageField == "" {
+		return dataSetField
+	}
+	return storageField
+}
+
+func appendLogQueryFilter(filters []map[string]any, raw string, fieldMapper func(string) string) []map[string]any {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "*" {
+		return filters
+	}
+	expr, err := parseLogFilterExpression(raw)
+	if err != nil {
+		return append(filters, map[string]any{"query_string": map[string]any{"query": raw}})
+	}
+	return append(filters, logFilterToElasticsearch(expr, fieldMapper))
+}
+
+func entityToStorageFieldMapper(dataLinkMapping, storageLinkMapping map[string]any) func(string) string {
+	return func(field string) string {
+		return mappedStorageField(dataLinkMapping, storageLinkMapping, field)
+	}
+}
+
+func dataSetToStorageFieldMapper(storageLinkMapping map[string]any) func(string) string {
+	return func(field string) string {
+		if mapped := stringValue(storageLinkMapping[field]); mapped != "" {
+			return mapped
+		}
+		return field
+	}
+}
+
+func storageFieldMapper() func(string) string {
+	return func(field string) string {
+		return field
+	}
+}
+
+func mappedLogOutputFields(logSet model.UModelElement, storageLinkMapping map[string]any) []string {
+	fields, ok := logSet.Spec["fields"].([]any)
+	if !ok {
+		return []string{}
+	}
+	mapper := dataSetToStorageFieldMapper(storageLinkMapping)
+	out := []string{}
+	seen := map[string]struct{}{}
+	for _, field := range fields {
+		item, ok := field.(map[string]any)
+		if !ok {
+			continue
+		}
+		name := stringValue(item["name"])
+		if name == "" {
+			continue
+		}
+		mapped := mapper(name)
+		if _, exists := seen[mapped]; exists {
+			continue
+		}
+		seen[mapped] = struct{}{}
+		out = append(out, mapped)
+	}
+	return out
 }
 
 func refFromSpec(spec map[string]any, key string) setRef {
@@ -656,6 +940,27 @@ func stringFilter(value any) string {
 	return ""
 }
 
+func intValue(value any) int {
+	switch typed := value.(type) {
+	case int:
+		return typed
+	case int64:
+		return int(typed)
+	case int32:
+		return int(typed)
+	case float64:
+		return int(typed)
+	case float32:
+		return int(typed)
+	case string:
+		n, err := strconv.Atoi(typed)
+		if err == nil {
+			return n
+		}
+	}
+	return 0
+}
+
 func stringValue(value any) string {
 	switch typed := value.(type) {
 	case string:
@@ -691,4 +996,13 @@ func coalesce(values ...any) any {
 		}
 	}
 	return nil
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }

@@ -18,6 +18,9 @@ spec:
     kind: elasticsearch
     name: devops.elasticsearch.logs
   fields_mapping:
-    service_id: service_id
-    environment: environment
-    timestamp: timestamp
+    timestamp: event_time
+    service_id: svc_id
+    environment: env
+    level: severity
+    message: log_message
+    trace_id: trace_id

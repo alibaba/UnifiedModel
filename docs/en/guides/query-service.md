@@ -71,14 +71,15 @@ Agent and REST callers can bind named parameters into `with(...)` filters and `w
 
 ## `.entity_set`
 
-`.entity_set` handles EntitySet method calls with UModel Assistant-compatible response data. The current scope supports metadata/discovery methods that return `responseType=2` with `header` and `data`.
+`.entity_set` handles EntitySet method calls with UModel Assistant-compatible response data. Metadata/discovery methods return `responseType=2` with `header` and `data`; query-planning methods return `responseType=1` with a downstream query plan in `query`.
 
 ```bash
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)"
+go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')"
 ```
 
-The required filters are `domain` and `name`; `ids` is accepted as EntitySet call context. The currently supported methods are `__list_method__` and `list_data_set` (`list_dataset` alias); method parameters are validated against the UModel Assistant signatures.
+The required filters are `domain` and `name`; `ids` is accepted as EntitySet call context. The currently supported methods are `__list_method__`, `list_data_set` (`list_dataset` alias), and `get_logs` (`get_log` alias); method parameters are validated against the UModel Assistant signatures. `get_logs` parses basic SPL where syntax, maps EntitySet fields through `data_link.fields_mapping`, maps LogSet fields through `storage_link.fields_mapping`, and returns the translated storage query plan without querying the storage itself.
 
 ## `.topo`
 

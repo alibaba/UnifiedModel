@@ -26,6 +26,7 @@ export const zhCNQuery = {
   'query.examples.direct': 'direct',
   'query.examples.entity': '.entity',
   'query.examples.entitySetDatasets': 'EntitySet 数据集',
+  'query.examples.entitySetLogs': 'EntitySet 日志',
   'query.examples.entitySetMethods': 'EntitySet 方法',
   'query.examples.neighbors': 'neighbors',
   'query.examples.title': '示例',

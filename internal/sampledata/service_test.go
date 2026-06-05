@@ -2,6 +2,7 @@ package sampledata
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -104,6 +105,38 @@ func TestImportMultiDomainQuickStartWritesSchemaEntitiesAndTopology(t *testing.T
 	for _, want := range []string{"devops.metric.service", "devops.log.service", "devops.event.deployment", "prometheus", "devops.prometheus.core", "elasticsearch", "devops.elasticsearch.logs", "mysql", "devops.mysql.events", "\"id\":\"service_id\""} {
 		if !strings.Contains(joinedData, want) {
 			t.Fatalf("expected list_data_set output to contain %q, got %s", want, joinedData)
+		}
+	}
+
+	logPlanRows, err := querySvc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')",
+	})
+	if err != nil {
+		t.Fatalf("plan quickstart logs query: %v", err)
+	}
+	if len(logPlanRows.Rows) != 1 || logPlanRows.Rows[0]["responseType"] != 1 {
+		t.Fatalf("expected get_logs query plan row, got %+v", logPlanRows.Rows)
+	}
+	logQuery := ""
+	if text, ok := logPlanRows.Rows[0]["query"].(string); ok {
+		logQuery = text
+	}
+	for _, want := range []string{"get_logs", "devops.log.service", "devops.elasticsearch.logs", "elasticsearch_dsl", "devops-service-logs-*", "svc_id", "severity", "event_time", "10000000000000000000000000000101", "ERROR"} {
+		if !strings.Contains(logQuery, want) {
+			t.Fatalf("expected get_logs query plan to contain %q, got %s", want, logQuery)
+		}
+	}
+	var logPlan map[string]any
+	if err := json.Unmarshal([]byte(logQuery), &logPlan); err != nil {
+		t.Fatalf("decode get_logs query plan: %v", err)
+	}
+	translatedQuery, err := json.Marshal(logPlan["query"])
+	if err != nil {
+		t.Fatalf("encode translated logs query: %v", err)
+	}
+	for _, want := range []string{"\"term\"", "\"svc_id\":\"10000000000000000000000000000101\"", "\"severity\":\"ERROR\"", "\"event_time\""} {
+		if !strings.Contains(string(translatedQuery), want) {
+			t.Fatalf("expected translated get_logs query to contain %q, got %s", want, string(translatedQuery))
 		}
 	}
 

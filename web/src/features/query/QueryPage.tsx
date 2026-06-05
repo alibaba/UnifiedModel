@@ -66,6 +66,11 @@ const examples = [
     labelKey: 'query.examples.entitySetDatasets',
     query: ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)",
   },
+  {
+    labelKey: 'query.examples.entitySetLogs',
+    query:
+      ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')",
+  },
 ] as const satisfies ReadonlyArray<{ labelKey: MessageKey; query: string }>
 
 export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: string }) {
