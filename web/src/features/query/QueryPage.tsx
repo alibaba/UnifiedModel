@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Editor from '@monaco-editor/react'
-import { ArrowRight, BarChart3, CalendarClock, ChevronLeft, ChevronRight, Database, Network, Play, Rows3, Search, SearchCode, SlidersHorizontal, Table2, Wand2, X } from 'lucide-react'
+import { ArrowRight, BarChart3, CalendarClock, Check, ChevronDown, ChevronLeft, ChevronRight, Database, Eye, Network, Play, Rows3, Search, SearchCode, SlidersHorizontal, Table2, Wand2, X } from 'lucide-react'
 import type { editor as MonacoEditor } from 'monaco-editor'
 import type { QueryExplain, QueryRequest, QueryResult } from '../../api/types'
 import { UModelApi } from '../../api/client'
@@ -30,10 +30,39 @@ disableMonacoEditContext()
 
 type QueryAction = 'execute' | 'explain'
 type ResultView = 'table' | 'chart'
+type CellPreview = {
+  title: string
+  subtitle: string
+  value: string
+  language: string
+}
+type CellPresentation = {
+  display: string
+  full: string
+  language: string
+  multiline: boolean
+  complex: boolean
+  previewable: boolean
+  variant: 'plain' | 'code' | 'long-text'
+  showFullHover: boolean
+}
+type ColumnProfile = {
+  key: string
+  minWidth: number
+  weight: number
+  variant: 'plain' | 'code' | 'long-text'
+}
+type TableLayout = {
+  columnWidths: number[]
+  mode: 'fill' | 'overflow'
+  tableWidth: number
+}
 
 const resultPageSizes = [25, 50, 100]
 const splMinEditorHeight = 41
 const splMaxEditorHeight = 117
+const largeTextCodeblockLength = 1000
+const wrappedTextLineClamp = 4
 
 const examples = [
   { labelKey: 'query.examples.umodel', query: ".umodel with(kind='entity_set') | project domain,name,kind | sort domain,name | limit 20" },
@@ -86,7 +115,8 @@ export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: s
   const [resultView, setResultView] = useState<ResultView>('table')
   const [splEditorHeight, setSplEditorHeight] = useState(splMinEditorHeight)
 
-  const resultColumns = result?.columns.length ? result.columns : result?.rows[0] ? Object.keys(result.rows[0]) : []
+  const tableResult = useMemo(() => result ? normalizeResultForTable(result) : null, [result])
+  const resultColumns = tableResult?.columns.length ? tableResult.columns : tableResult?.rows[0] ? Object.keys(tableResult.rows[0]) : []
   const topoData = useMemo(() => (result ? buildEntityTopoData(result, [], topoEntityRows) : null), [result, topoEntityRows])
   const canChart = Boolean(topoData && topoData.nodes.length > 0 && topoData.edges.length > 0)
 
@@ -126,7 +156,7 @@ export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: s
   return (
     <div className="query-workbench">
       <header className="query-head">
-        <ExamplePicker onPick={(item) => {
+        <ExamplePicker value={query} onPick={(item) => {
           setQuery(item.query)
           setResultView('table')
         }} />
@@ -164,7 +194,7 @@ export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: s
           <div className="query-result-header">
             <div>
               <strong>{t('query.result.title')}</strong>
-              <span>{result ? formatResultSummary(t, result.rows.length, resultColumns.length) : t('query.result.empty.title')}</span>
+              <span>{tableResult ? formatResultSummary(t, tableResult.rows.length, resultColumns.length) : t('query.result.empty.title')}</span>
             </div>
             <SegmentedControl<ResultView>
               size="sm"
@@ -179,7 +209,7 @@ export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: s
 
           <div className="query-result-body">
             {resultView === 'table' ? (
-              result ? <ResultTable result={result} /> : <QueryEmpty title={t('query.result.empty.title')} detail={t('query.result.empty.detail')} icon={<Rows3 size={22} />} />
+              tableResult ? <ResultTable result={tableResult} /> : <QueryEmpty title={t('query.result.empty.title')} detail={t('query.result.empty.detail')} icon={<Rows3 size={22} />} />
             ) : (
               <QueryTopoChart data={topoData} canChart={canChart} />
             )}
@@ -212,19 +242,63 @@ export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: s
   )
 }
 
-function ExamplePicker({ onPick }: { onPick: (item: (typeof examples)[number]) => void }) {
+function ExamplePicker({
+  value,
+  onPick,
+}: {
+  value: string
+  onPick: (item: (typeof examples)[number]) => void
+}) {
   const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const pickerRef = useRef<HTMLDivElement | null>(null)
+  const selected = examples.find((item) => item.query === value)
+
+  useEffect(() => {
+    if (!open) return
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!pickerRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOnOutsidePointer)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
+  }, [open])
 
   return (
-    <div className="query-examples">
+    <div className="query-examples" ref={pickerRef}>
       <div className="query-example-title">{t('query.examples.title')}</div>
-      <div className="query-example-grid">
-        {examples.map((item) => (
-          <button key={item.labelKey} type="button" onClick={() => onPick(item)}>
-            <Wand2 size={13} />
-            {t(item.labelKey)}
-          </button>
-        ))}
+      <div className="query-example-control">
+        <button
+          className="query-example-trigger"
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <Wand2 size={14} />
+          <span>{selected ? t(selected.labelKey) : t('query.examples.placeholder')}</span>
+          <ChevronDown className="query-example-chevron" size={14} />
+        </button>
+        {open && (
+          <div className="query-example-menu" role="menu">
+            {examples.map((item) => {
+              const active = selected?.labelKey === item.labelKey
+              return (
+                <button
+                  key={item.labelKey}
+                  className={active ? 'active' : ''}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onPick(item)
+                    setOpen(false)
+                  }}
+                >
+                  <span>{t(item.labelKey)}</span>
+                  {active && <Check size={14} />}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -275,7 +349,7 @@ function MonacoBlock({
 }: {
   value: string
   language: string
-  height: number
+  height: number | string
   readOnly?: boolean
   lineNumbers?: 'on' | 'off'
   wordWrap?: 'on' | 'off'
@@ -330,6 +404,14 @@ function MonacoBlock({
           readOnly,
           renderLineHighlight: 'none',
           scrollBeyondLastLine: false,
+          scrollbar: {
+            alwaysConsumeMouseWheel: false,
+            horizontal: 'auto',
+            horizontalScrollbarSize: 8,
+            useShadows: false,
+            vertical: 'auto',
+            verticalScrollbarSize: 8,
+          },
           tabSize: 2,
           wordWrap,
         }}
@@ -633,8 +715,10 @@ function QueryEmpty({ title, detail, icon }: { title: string; detail: string; ic
 export function ResultTable({ result }: { result: QueryResult }) {
   const { t } = useI18n()
   const columns = result.columns.length > 0 ? result.columns : result.rows[0] ? Object.keys(result.rows[0]) : []
+  const [tableWrapRef, tableWrapWidth] = useElementWidth<HTMLDivElement>()
   const [pageSize, setPageSize] = useState(50)
   const [page, setPage] = useState(1)
+  const [preview, setPreview] = useState<CellPreview | null>(null)
   const pageCount = Math.max(1, Math.ceil(result.rows.length / pageSize))
   const safePage = Math.min(page, pageCount)
   const pageNumbers = useMemo(() => paginationItems(safePage, pageCount), [pageCount, safePage])
@@ -642,9 +726,12 @@ export function ResultTable({ result }: { result: QueryResult }) {
     () => result.rows.slice((safePage - 1) * pageSize, safePage * pageSize),
     [pageSize, result.rows, safePage],
   )
+  const columnProfiles = useMemo(() => getColumnProfiles(columns, pageRows), [columns, pageRows])
+  const tableLayout = useMemo(() => getTableLayout(columnProfiles, tableWrapWidth), [columnProfiles, tableWrapWidth])
 
   useEffect(() => {
     setPage(1)
+    setPreview(null)
   }, [result])
 
   useEffect(() => {
@@ -654,55 +741,352 @@ export function ResultTable({ result }: { result: QueryResult }) {
   if (result.rows.length === 0) return <EmptyState title={t('query.table.noRows.title')} detail={t('query.table.noRows.detail')} />
 
   return (
-    <div className="query-table-region">
-      <div className="query-table-wrap">
-        <table className="om-table query-table">
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column}>{column}</th>
+    <div className={preview ? 'query-table-region with-preview' : 'query-table-region'}>
+      <div className="query-table-main">
+        <div className="query-table-wrap" ref={tableWrapRef}>
+          <table
+            className={`om-table query-table ${tableLayout.mode === 'overflow' ? 'overflowing' : 'filling'}`}
+            style={{ minWidth: tableLayout.tableWidth, width: tableLayout.tableWidth }}
+          >
+            <colgroup>
+              {columnProfiles.map((profile, index) => (
+                <col
+                  key={profile.key}
+                  className={`query-col-${profile.variant}`}
+                  style={{ width: tableLayout.columnWidths[index] }}
+                />
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.map((row, index) => (
-              <tr key={`${safePage}-${index}`}>
-                {columns.map((column) => {
-                  const cellValue = formatCell(row[column])
-                  return (
-                    <td key={column} className={typeof row[column] === 'object' ? 'mono small' : undefined}>
-                      <span className="query-cell-value">{cellValue}</span>
-                    </td>
-                  )
-                })}
+            </colgroup>
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th key={column}>{column}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <footer className="query-table-footer">
-        <div className="query-table-pages">
-          <button disabled={safePage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} type="button" title={t('query.table.previousPage')}>
-            <ChevronLeft size={14} />
-          </button>
-          {pageNumbers.map((item, index) => item === '...'
-            ? <span className="query-table-page-gap" key={`gap-${index}`}>...</span>
-            : (
-              <button key={item} className={item === safePage ? 'active' : ''} onClick={() => setPage(item)} type="button">
-                {item}
-              </button>
-            ))}
-          <button disabled={safePage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} type="button" title={t('query.table.nextPage')}>
-            <ChevronRight size={14} />
-          </button>
+            </thead>
+            <tbody>
+              {pageRows.map((row, index) => {
+                const rowPresentations = columns.map((column, columnIndex) => getCellPresentation(row[column], tableLayout.columnWidths[columnIndex]))
+                const rowHasPreviewable = rowPresentations.some((presentation) => presentation.previewable)
+
+                return (
+                  <tr key={`${safePage}-${index}`} className={rowHasPreviewable ? 'query-row-has-code' : undefined}>
+                    {columns.map((column, columnIndex) => {
+                      const presentation = rowPresentations[columnIndex]
+                      const wrapLongText = rowHasPreviewable && presentation.variant === 'long-text'
+                      const showFullHover = presentation.showFullHover && (
+                        !wrapLongText || !canWrappedTextShowFull(presentation.full, tableLayout.columnWidths[columnIndex])
+                      )
+                      const rowNumber = (safePage - 1) * pageSize + index + 1
+                      const cellClassName = [
+                        presentation.complex ? 'mono small complex' : '',
+                        presentation.previewable ? 'query-cell-td-code' : '',
+                        presentation.variant === 'long-text' ? 'query-cell-td-long-text' : '',
+                      ].filter(Boolean).join(' ')
+
+                      return (
+                        <td key={column} className={cellClassName || undefined}>
+                          <div className={presentation.previewable ? 'query-cell-content previewable' : 'query-cell-content'}>
+                            {presentation.previewable ? (
+                              <span className="query-cell-code-shell">
+                                <span className="query-cell-actionbar">
+                                  <button
+                                    type="button"
+                                    aria-label={t('query.table.viewCell')}
+                                    onClick={() => setPreview({
+                                      title: column,
+                                      subtitle: t('query.preview.row', { row: rowNumber.toLocaleString() }),
+                                      value: presentation.full,
+                                      language: presentation.language,
+                                    })}
+                                  >
+                                    <Eye size={13} />
+                                    <span>{t('query.table.viewCell')}</span>
+                                  </button>
+                                </span>
+                                <span className="query-cell-value multiline complex code">
+                                  {presentation.display}
+                                </span>
+                              </span>
+                            ) : (
+                              <>
+                                <span
+                                  className={[
+                                    'query-cell-value',
+                                    presentation.multiline ? 'multiline' : '',
+                                    presentation.complex ? 'complex' : '',
+                                    wrapLongText ? 'wrapped' : '',
+                                    presentation.variant,
+                                  ].filter(Boolean).join(' ')}
+                                  tabIndex={showFullHover ? 0 : undefined}
+                                >
+                                  {wrapLongText ? presentation.full : presentation.display}
+                                </span>
+                                {showFullHover && (
+                                  <span className="query-cell-full-popover" role="tooltip">
+                                    {presentation.full}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
-        <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>
-          {resultPageSizes.map((size) => <option key={size} value={size}>{t('query.table.pageSize', { size })}</option>)}
-        </select>
-        <span>{t.rich('query.table.totalRows', { strong: (chunks) => <strong>{chunks}</strong> }, { count: result.rows.length.toLocaleString() })}</span>
-      </footer>
+        <footer className="query-table-footer">
+          <div className="query-table-pages">
+            <button disabled={safePage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} type="button" title={t('query.table.previousPage')}>
+              <ChevronLeft size={14} />
+            </button>
+            {pageNumbers.map((item, index) => item === '...'
+              ? <span className="query-table-page-gap" key={`gap-${index}`}>...</span>
+              : (
+                <button key={item} className={item === safePage ? 'active' : ''} onClick={() => setPage(item)} type="button">
+                  {item}
+                </button>
+              ))}
+            <button disabled={safePage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} type="button" title={t('query.table.nextPage')}>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>
+            {resultPageSizes.map((size) => <option key={size} value={size}>{t('query.table.pageSize', { size })}</option>)}
+          </select>
+          <span>{t.rich('query.table.totalRows', { strong: (chunks) => <strong>{chunks}</strong> }, { count: result.rows.length.toLocaleString() })}</span>
+        </footer>
+      </div>
+      {preview && (
+        <aside className="query-preview-panel">
+          <div className="query-preview-header">
+            <div>
+              <strong>{preview.title}</strong>
+              <span>{preview.subtitle}</span>
+            </div>
+            <button type="button" onClick={() => setPreview(null)} title={t('query.preview.close')} aria-label={t('query.preview.close')}>
+              <X size={15} />
+            </button>
+          </div>
+          <div className="query-preview-body">
+            <MonacoBlock
+              value={preview.value}
+              language={preview.language}
+              height="100%"
+              readOnly
+              wordWrap="on"
+            />
+          </div>
+        </aside>
+      )}
     </div>
   )
+}
+
+function getCellPresentation(value: unknown, columnWidth?: number): CellPresentation {
+  if (value === null || value === undefined) {
+    return { display: '-', full: '-', language: 'plaintext', multiline: false, complex: false, previewable: false, variant: 'plain', showFullHover: false }
+  }
+
+  const normalized = normalizeStructuredValue(value)
+  if (normalized.structured) {
+    const full = JSON.stringify(normalized.value, null, 2)
+    const compact = JSON.stringify(normalized.value)
+    if (compact.length <= 36) {
+      return {
+        display: compact,
+        full: compact,
+        language: 'json',
+        multiline: false,
+        complex: false,
+        previewable: false,
+        variant: 'plain',
+        showFullHover: false,
+      }
+    }
+    return {
+      display: full,
+      full,
+      language: 'json',
+      multiline: true,
+      complex: true,
+      previewable: true,
+      variant: 'code',
+      showFullHover: false,
+    }
+  }
+
+  const text = String(value)
+  if (text.length > largeTextCodeblockLength) {
+    return {
+      display: text,
+      full: text,
+      language: 'plaintext',
+      multiline: text.includes('\n'),
+      complex: true,
+      previewable: true,
+      variant: 'code',
+      showFullHover: false,
+    }
+  }
+
+  const long = text.length > 36 || text.includes('\n') || isTextVisuallyOverflowed(text, columnWidth)
+  return {
+    display: long ? middleEllipsis(text, inlineTextLimit(columnWidth)) : text,
+    full: text,
+    language: 'plaintext',
+    multiline: text.includes('\n'),
+    complex: long,
+    previewable: false,
+    variant: long ? 'long-text' : 'plain',
+    showFullHover: long,
+  }
+}
+
+function canWrappedTextShowFull(text: string, columnWidth?: number) {
+  if (!columnWidth) return false
+  return estimateWrappedLineCount(text, inlineTextContentWidth(columnWidth)) <= wrappedTextLineClamp
+}
+
+function estimateWrappedLineCount(text: string, lineWidth: number) {
+  if (lineWidth <= 0) return Number.POSITIVE_INFINITY
+  const hardLines = text.split('\n')
+  return hardLines.reduce((lineCount, line) => (
+    lineCount + Math.max(1, Math.ceil(estimateInlineTextWidth(line) / lineWidth))
+  ), 0)
+}
+
+function isTextVisuallyOverflowed(text: string, columnWidth?: number) {
+  if (!columnWidth || text.includes('\n')) return false
+  return estimateInlineTextWidth(text) > inlineTextContentWidth(columnWidth)
+}
+
+function inlineTextLimit(columnWidth?: number) {
+  if (!columnWidth) return 36
+  return clamp(Math.floor(inlineTextContentWidth(columnWidth) / 7.2), 12, 36)
+}
+
+function inlineTextContentWidth(columnWidth: number) {
+  return Math.max(40, columnWidth - 34)
+}
+
+function estimateInlineTextWidth(text: string) {
+  return Array.from(text).reduce((width, char) => width + estimateCharacterWidth(char), 0)
+}
+
+function estimateCharacterWidth(char: string) {
+  if (/[\u2e80-\u9fff\uac00-\ud7af\uff00-\uffef]/.test(char)) return 13
+  if (/\s/.test(char)) return 4.2
+  if (/[A-Z]/.test(char)) return 7.8
+  return 7.2
+}
+
+function useElementWidth<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const [width, setWidth] = useState(0)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return undefined
+
+    const updateWidth = () => setWidth(element.clientWidth)
+    updateWidth()
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateWidth)
+      return () => window.removeEventListener('resize', updateWidth)
+    }
+
+    const observer = new ResizeObserver(updateWidth)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  return [ref, width] as const
+}
+
+function getColumnProfiles(columns: string[], rows: Array<Record<string, unknown>>): ColumnProfile[] {
+  return columns.map((column) => {
+    let variant: ColumnProfile['variant'] = 'plain'
+    let maxTextLength = column.length
+
+    for (const row of rows) {
+      const presentation = getCellPresentation(row[column])
+      if (presentation.previewable) {
+        variant = 'code'
+      } else if (variant !== 'code' && presentation.variant === 'long-text') {
+        variant = 'long-text'
+      }
+      maxTextLength = Math.max(maxTextLength, Math.min(presentation.display.length, 30))
+    }
+
+    if (variant === 'code') return { key: column, minWidth: 320, weight: 2.2, variant }
+    if (variant === 'long-text') return { key: column, minWidth: 220, weight: 1.25, variant }
+
+    return {
+      key: column,
+      minWidth: clamp(Math.round(maxTextLength * 7.2 + 54), 128, 260),
+      weight: 1,
+      variant,
+    }
+  })
+}
+
+function getTableLayout(columns: ColumnProfile[], availableWidth: number): TableLayout {
+  if (columns.length === 0) return { columnWidths: [], mode: 'fill', tableWidth: Math.max(availableWidth, 0) }
+
+  const minWidths = columns.map((column) => column.minWidth)
+  const totalMinWidth = minWidths.reduce((sum, width) => sum + width, 0)
+  const safeAvailableWidth = Math.max(availableWidth, totalMinWidth)
+
+  if (availableWidth <= 0 || totalMinWidth >= availableWidth) {
+    return {
+      columnWidths: minWidths,
+      mode: totalMinWidth > availableWidth ? 'overflow' : 'fill',
+      tableWidth: totalMinWidth,
+    }
+  }
+
+  const remainingWidth = safeAvailableWidth - totalMinWidth
+  const totalWeight = columns.reduce((sum, column) => sum + column.weight, 0)
+  const columnWidths = minWidths.map((width, index) => (
+    Math.floor(width + (remainingWidth * columns[index].weight) / totalWeight)
+  ))
+  const roundingGap = safeAvailableWidth - columnWidths.reduce((sum, width) => sum + width, 0)
+  if (roundingGap > 0) columnWidths[columnWidths.length - 1] += roundingGap
+
+  return {
+    columnWidths,
+    mode: 'fill',
+    tableWidth: safeAvailableWidth,
+  }
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function middleEllipsis(value: string, maxLength = 36): string {
+  if (value.length <= maxLength) return value
+  const head = Math.ceil((maxLength - 1) * 0.6)
+  const tail = Math.floor((maxLength - 1) * 0.4)
+  return `${value.slice(0, head)}...${value.slice(value.length - tail)}`
+}
+
+function normalizeStructuredValue(value: unknown): { structured: boolean; value: unknown } {
+  if (typeof value === 'object') return { structured: true, value }
+  if (typeof value !== 'string') return { structured: false, value }
+
+  const trimmed = value.trim()
+  if (!looksLikeJsonValue(trimmed)) return { structured: false, value }
+  const parsed = parseJsonLike(trimmed)
+  return parsed !== trimmed && typeof parsed === 'object' && parsed !== null
+    ? { structured: true, value: parsed }
+    : { structured: false, value }
 }
 
 function formatResultSummary(t: TFunction, rows: number, columns: number) {
@@ -714,10 +1098,91 @@ function formatCountUnit(t: TFunction, count: number, oneKey: MessageKey, otherK
   return `${count.toLocaleString()} ${t(key)}`
 }
 
-function formatCell(value: unknown): string {
-  if (value === null || value === undefined) return '-'
-  if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
+function normalizeResultForTable(result: QueryResult): QueryResult {
+  const expanded = expandHeaderDataResult(result)
+  return expanded || result
+}
+
+function expandHeaderDataResult(result: QueryResult): QueryResult | null {
+  const nestedRows = result.rows.map((row) => extractHeaderDataRows(row))
+  if (nestedRows.length === 0 || nestedRows.some((item) => !item)) return null
+
+  const columns = uniqueStrings(nestedRows.flatMap((item) => item?.columns || []))
+  if (columns.length === 0) return null
+
+  return {
+    ...result,
+    columns,
+    rows: nestedRows.flatMap((item) => item?.rows || []),
+  }
+}
+
+function extractHeaderDataRows(row: Record<string, unknown>): { columns: string[]; rows: Array<Record<string, unknown>> } | null {
+  if (!('header' in row) || !('data' in row)) return null
+
+  const columns = readStringArray(row.header)
+  const rawData = parseJsonLike(row.data)
+  if (!columns || !Array.isArray(rawData)) return null
+
+  const rows = rawData.map((item) => dataItemToRow(columns, item)).filter((item): item is Record<string, unknown> => Boolean(item))
+  return { columns, rows }
+}
+
+function dataItemToRow(columns: string[], item: unknown): Record<string, unknown> | null {
+  const rawItem = parseJsonLike(item)
+  if (Array.isArray(rawItem)) return valuesToRow(columns, rawItem)
+  if (!rawItem || typeof rawItem !== 'object') return null
+
+  const record = rawItem as Record<string, unknown>
+  if (Array.isArray(record.values)) return valuesToRow(columns, record.values)
+  return record
+}
+
+function valuesToRow(columns: string[], values: unknown[]): Record<string, unknown> {
+  return Object.fromEntries(columns.map((column, index) => [column, parseCellValue(values[index])]))
+}
+
+function parseCellValue(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  const trimmed = value.trim()
+  if (!trimmed) return value
+  if (!looksLikeJsonValue(trimmed)) return value
+  return parseJsonLike(trimmed)
+}
+
+function parseJsonLike(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
+
+function readStringArray(value: unknown): string[] | null {
+  const parsed = parseJsonLike(value)
+  if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== 'string')) return null
+  return parsed
+}
+
+function looksLikeJsonValue(value: string): boolean {
+  return (
+    value === 'null' ||
+    value === 'true' ||
+    value === 'false' ||
+    value.startsWith('{') ||
+    value.startsWith('[') ||
+    (value.startsWith('"') && value.endsWith('"'))
+  )
+}
+
+function uniqueStrings(values: string[]) {
+  const seen = new Set<string>()
+  return values.filter((value) => {
+    if (seen.has(value)) return false
+    seen.add(value)
+    return true
+  })
 }
 
 function toIsoOrUndefined(value: string) {
