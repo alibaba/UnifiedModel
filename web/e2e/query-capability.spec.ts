@@ -1,4 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+
+async function pickQueryExample(page: Page, name: string) {
+  await page.locator('.query-example-trigger').click()
+  await page.getByRole('menuitem', { name }).click()
+}
 
 test.describe('Query capability via UI', () => {
   test.beforeEach(async ({ page }) => {
@@ -17,7 +22,7 @@ test.describe('Query capability via UI', () => {
   test('umodel query returns rows', async ({ page }) => {
     await page.getByRole('button', { name: 'Query' }).click()
     await expect(page.getByRole('button', { name: 'Execute' })).toBeVisible()
-    await page.getByRole('button', { name: '.umodel' }).click()
+    await pickQueryExample(page, '.umodel')
     await page.getByRole('button', { name: 'Execute' }).click()
 
     await expect(page.locator('.om-table tbody tr').first()).toBeVisible({ timeout: 10_000 })
@@ -27,7 +32,7 @@ test.describe('Query capability via UI', () => {
 
   test('entity query finds checkout service', async ({ page }) => {
     await page.getByRole('button', { name: 'Query' }).click()
-    await page.getByRole('button', { name: '.entity' }).click()
+    await pickQueryExample(page, '.entity')
     await page.getByRole('button', { name: 'Execute' }).click()
 
     await expect(page.locator('.om-table')).toBeVisible({ timeout: 10_000 })
@@ -36,7 +41,7 @@ test.describe('Query capability via UI', () => {
 
   test('topo query returns direct relations', async ({ page }) => {
     await page.getByRole('button', { name: 'Query' }).click()
-    await page.getByRole('button', { name: 'direct' }).click()
+    await pickQueryExample(page, 'direct')
     await page.getByRole('button', { name: 'Execute' }).click()
 
     await expect(page.locator('.om-table tbody tr').first()).toBeVisible({ timeout: 10_000 })
@@ -44,7 +49,7 @@ test.describe('Query capability via UI', () => {
 
   test('explain shows provider info', async ({ page }) => {
     await page.getByRole('button', { name: 'Query' }).click()
-    await page.getByRole('button', { name: '.umodel' }).click()
+    await pickQueryExample(page, '.umodel')
     await page.getByRole('button', { name: 'Explain' }).click()
 
     await expect(page.locator('text=memory')).toBeVisible({ timeout: 10_000 })
@@ -64,7 +69,15 @@ test.describe('Query capability via UI', () => {
     await page.locator('.api-debug-list button', { hasText: 'Discover agent surface' }).click()
     await expect(page.locator('.api-debug-request-line code', { hasText: '/api/v1/agent/demo/discover' })).toBeVisible()
 
+    const responsePromise = page.waitForResponse((response) => (
+      response.request().method() === 'GET' &&
+      response.url().includes('/api/v1/agent/demo/discover')
+    ))
     await page.getByRole('button', { name: 'Call' }).click()
-    await expect(page.locator('.api-debug-response', { hasText: 'query_spl_execute' })).toBeVisible({ timeout: 10_000 })
+    const response = await responsePromise
+    expect(response.ok()).toBeTruthy()
+    const payload = await response.json() as { tools?: Array<{ name?: string }> }
+    expect(payload.tools?.map((tool) => tool.name)).toContain('query_spl_execute')
+    await expect(page.locator('.api-debug-response', { hasText: '200 OK' })).toBeVisible({ timeout: 10_000 })
   })
 })
