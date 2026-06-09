@@ -72,9 +72,10 @@ Agent 和 REST 调用方可以把命名参数绑定到 `with(...)` filters 和 `
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')"
+go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')"
 ```
 
-`domain` 和 `name` 是必填 filter；`ids` 可作为 EntitySet 调用上下文。当前支持的方法是 `__list_method__`、`list_data_set`（兼容 `list_dataset` 别名）和 `get_logs`（兼容 `get_log` 别名）；方法参数按 UModel Assistant 的签名校验。`get_logs` 会解析基础 SPL where 语法，按 `data_link.fields_mapping` 映射 EntitySet 字段，按 `storage_link.fields_mapping` 映射 LogSet 字段，并只返回翻译后的存储查询计划，不直接查询存储。
+`domain` 和 `name` 是必填 filter；`ids` 可作为 EntitySet 调用上下文。当前支持的方法是 `__list_method__`、`list_data_set`（兼容 `list_dataset` 别名）、`get_logs`（兼容 `get_log` 别名）和 `get_metrics`（兼容 `get_metric` 别名）；方法参数按 UModel Assistant 的签名校验。`get_logs` 和 `get_metrics` 会解析基础 SPL where 语法，按 `data_link.fields_mapping` 映射 EntitySet 字段，按 `storage_link.fields_mapping` 映射 DataSet 字段，并只返回翻译后的存储查询计划，不直接查询存储。
 
 ## `.topo`
 

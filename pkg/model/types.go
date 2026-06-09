@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -263,12 +264,172 @@ type ExpireRequest struct {
 }
 
 type QueryRequest struct {
-	Query     string         `json:"query"`
-	TimeRange TimeRange      `json:"time_range,omitempty"`
-	Format    string         `json:"format,omitempty"`
-	Limit     int            `json:"limit,omitempty"`
-	TimeoutMS int            `json:"timeout_ms,omitempty"`
-	Params    map[string]any `json:"parameters,omitempty"`
+	Query            string         `json:"query"`
+	TimeRange        TimeRange      `json:"time_range,omitempty"`
+	Format           string         `json:"format,omitempty"`
+	Limit            int            `json:"limit,omitempty"`
+	TimeoutMS        int            `json:"timeout_ms,omitempty"`
+	Params           map[string]any `json:"parameters,omitempty"`
+	EntityData       *EntityData    `json:"entity_data,omitempty"`
+	EntityDataCamel  *EntityData    `json:"entityData,omitempty"`
+	FilterByEntities *EntityData    `json:"filterByEntities,omitempty"`
+}
+
+func (r QueryRequest) EntityFilterData() *EntityData {
+	for _, data := range []*EntityData{r.FilterByEntities, r.EntityDataCamel, r.EntityData} {
+		if data != nil && !data.Empty() {
+			return data
+		}
+	}
+	return nil
+}
+
+type EntityData struct {
+	Version int        `json:"version,omitempty"`
+	Header  []string   `json:"header,omitempty"`
+	Data    [][]string `json:"data,omitempty"`
+}
+
+func (e EntityData) Empty() bool {
+	return len(e.Header) == 0 || len(e.Data) == 0
+}
+
+func (e EntityData) ToArrayMap() []map[string]string {
+	if e.Empty() {
+		return nil
+	}
+	rows := make([]map[string]string, 0, len(e.Data))
+	for _, row := range e.Data {
+		item := make(map[string]string, len(e.Header))
+		for idx, field := range e.Header {
+			if field == "" || idx >= len(row) {
+				continue
+			}
+			item[field] = row[idx]
+		}
+		rows = append(rows, item)
+	}
+	return rows
+}
+
+func (e *EntityData) UnmarshalJSON(raw []byte) error {
+	if e == nil {
+		return nil
+	}
+	if string(raw) == "null" {
+		*e = EntityData{}
+		return nil
+	}
+	var table struct {
+		Version int             `json:"version,omitempty"`
+		Header  []string        `json:"header,omitempty"`
+		Data    json.RawMessage `json:"data,omitempty"`
+	}
+	if err := json.Unmarshal(raw, &table); err == nil && (len(table.Header) > 0 || len(table.Data) > 0) {
+		rows, header, err := decodeEntityDataRows(table.Data, table.Header)
+		if err != nil {
+			return err
+		}
+		*e = EntityData{Version: table.Version, Header: header, Data: rows}
+		return nil
+	}
+	rows, header, err := decodeEntityDataRows(raw, nil)
+	if err != nil {
+		return err
+	}
+	*e = EntityData{Header: header, Data: rows}
+	return nil
+}
+
+func decodeEntityDataRows(raw json.RawMessage, header []string) ([][]string, []string, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil, append([]string(nil), header...), nil
+	}
+	var items []json.RawMessage
+	if err := json.Unmarshal(raw, &items); err != nil {
+		return nil, nil, err
+	}
+	outHeader := append([]string(nil), header...)
+	if len(outHeader) == 0 {
+		outHeader = inferEntityDataHeader(items)
+	}
+	rows := make([][]string, 0, len(items))
+	for _, item := range items {
+		row, err := decodeEntityDataRow(item, outHeader)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(row) != len(outHeader) {
+			return nil, nil, fmt.Errorf("entity_data row length %d does not match header length %d", len(row), len(outHeader))
+		}
+		rows = append(rows, row)
+	}
+	return rows, outHeader, nil
+}
+
+func inferEntityDataHeader(items []json.RawMessage) []string {
+	keys := map[string]struct{}{}
+	for _, item := range items {
+		var row map[string]any
+		if err := json.Unmarshal(item, &row); err != nil {
+			continue
+		}
+		if _, ok := row["values"]; ok {
+			continue
+		}
+		for key := range row {
+			keys[key] = struct{}{}
+		}
+	}
+	header := make([]string, 0, len(keys))
+	for key := range keys {
+		header = append(header, key)
+	}
+	sort.Strings(header)
+	return header
+}
+
+func decodeEntityDataRow(raw json.RawMessage, header []string) ([]string, error) {
+	var values []any
+	if err := json.Unmarshal(raw, &values); err == nil {
+		return entityDataValuesToStrings(values), nil
+	}
+	var wrapped struct {
+		Values []any `json:"values"`
+	}
+	if err := json.Unmarshal(raw, &wrapped); err == nil && wrapped.Values != nil {
+		return entityDataValuesToStrings(wrapped.Values), nil
+	}
+	var object map[string]any
+	if err := json.Unmarshal(raw, &object); err != nil {
+		return nil, err
+	}
+	row := make([]string, 0, len(header))
+	for _, field := range header {
+		row = append(row, entityDataCellString(object[field]))
+	}
+	return row, nil
+}
+
+func entityDataValuesToStrings(values []any) []string {
+	row := make([]string, 0, len(values))
+	for _, value := range values {
+		row = append(row, entityDataCellString(value))
+	}
+	return row
+}
+
+func entityDataCellString(value any) string {
+	switch typed := value.(type) {
+	case nil:
+		return ""
+	case string:
+		return typed
+	case fmt.Stringer:
+		return typed.String()
+	default:
+		return fmt.Sprint(typed)
+	}
 }
 
 type QueryResult struct {
@@ -442,6 +603,7 @@ type QueryPlan struct {
 	TopK       int
 	TimeRange  TimeRange
 	Params     map[string]any
+	EntityData *EntityData
 	Limit      int
 	Depth      int
 	TimeoutMS  int

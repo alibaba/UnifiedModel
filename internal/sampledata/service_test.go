@@ -140,6 +140,38 @@ func TestImportMultiDomainQuickStartWritesSchemaEntitiesAndTopology(t *testing.T
 		}
 	}
 
+	metricPlanRows, err := querySvc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101'], query='environment = \"prod\"') | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
+	})
+	if err != nil {
+		t.Fatalf("plan quickstart metrics query: %v", err)
+	}
+	if len(metricPlanRows.Rows) != 1 || metricPlanRows.Rows[0]["responseType"] != 1 {
+		t.Fatalf("expected get_metrics query plan row, got %+v", metricPlanRows.Rows)
+	}
+	metricQuery := ""
+	if text, ok := metricPlanRows.Rows[0]["query"].(string); ok {
+		metricQuery = text
+	}
+	for _, want := range []string{"get_metrics", "devops.metric.service", "devops.prometheus.core", "prometheus_promql", "request_count", "service_id", "environment", "prod", "30s"} {
+		if !strings.Contains(metricQuery, want) {
+			t.Fatalf("expected get_metrics query plan to contain %q, got %s", want, metricQuery)
+		}
+	}
+	var metricPlan map[string]any
+	if err := json.Unmarshal([]byte(metricQuery), &metricPlan); err != nil {
+		t.Fatalf("decode get_metrics query plan: %v", err)
+	}
+	translatedMetricQuery, err := json.Marshal(metricPlan["query"])
+	if err != nil {
+		t.Fatalf("encode translated metrics query: %v", err)
+	}
+	for _, want := range []string{"\"prometheus_promql\"", "devops_service_request_total", "service_id=\\\"10000000000000000000000000000101\\\"", "environment=\\\"prod\\\""} {
+		if !strings.Contains(string(translatedMetricQuery), want) {
+			t.Fatalf("expected translated get_metrics query to contain %q, got %s", want, string(translatedMetricQuery))
+		}
+	}
+
 	entityRows, err := querySvc.Execute(ctx, "demo", model.QueryRequest{
 		Query: ".entity with(domain='devops', name='devops.service', query='checkout') | project __entity_id__,display_name,business_value | limit 10",
 	})

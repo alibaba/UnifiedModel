@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -81,6 +82,8 @@ func (e *Executor) executeEntitySetCall(ctx context.Context, workspace string, p
 		return e.executeEntitySetListDataSet(ctx, workspace, plan)
 	case "get_logs":
 		return e.executeEntitySetGetLogs(ctx, workspace, plan)
+	case "get_metrics":
+		return e.executeEntitySetGetMetrics(ctx, workspace, plan)
 	default:
 		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "unsupported entity-call method", map[string]string{"name": plan.EntityCall.Name})
 	}
@@ -136,7 +139,10 @@ func (e *Executor) executeEntitySetListDataSet(ctx context.Context, workspace st
 		if !ok {
 			continue
 		}
-		rows = append(rows, entityCallRowValues(listDataSetValues(snapshot.Elements, link, dataSet, detail)))
+		if !filterByEntityAllows(stringValue(link.Spec["filter_by_entity"]), plan.EntityData) {
+			continue
+		}
+		rows = append(rows, entityCallRowValues(listDataSetValues(snapshot.Elements, link, dataSet, detail, plan.EntityData)))
 	}
 	return entitySetAssistantRawResponse(listDataSetHeader(), rows), nil
 }
@@ -148,14 +154,14 @@ func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string
 	}
 	domain := stringFilter(plan.EntityCall.Parameters["domain"])
 	name := stringFilter(plan.EntityCall.Parameters["name"])
-	dataLink, logSet, ok := findRelatedDataSet(snapshot.Elements, stringFilter(plan.Filters["domain"]), stringFilter(plan.Filters["name"]), "log_set", domain, name)
+	dataLink, logSet, ok := findRelatedDataSet(snapshot.Elements, stringFilter(plan.Filters["domain"]), stringFilter(plan.Filters["name"]), "log_set", domain, name, plan.EntityData)
 	if !ok {
 		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "related log_set not found", map[string]string{
 			"domain": domain,
 			"name":   name,
 		})
 	}
-	bindings := storageBindingsForDataSet(snapshot.Elements, logSet)
+	bindings := storageBindingsForDataSet(snapshot.Elements, logSet, plan.EntityData)
 	if len(bindings) == 0 {
 		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "log_set storage not found", map[string]string{
 			"domain": domain,
@@ -164,6 +170,36 @@ func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string
 	}
 
 	queryPlan := logQueryPlan(plan, dataLink, logSet, bindings[0])
+	return entitySetAssistantQueryResponse(mustJSON(queryPlan)), nil
+}
+
+func (e *Executor) executeEntitySetGetMetrics(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
+	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	domain := stringFilter(plan.EntityCall.Parameters["domain"])
+	name := stringFilter(plan.EntityCall.Parameters["name"])
+	dataLink, metricSet, ok := findRelatedDataSet(snapshot.Elements, stringFilter(plan.Filters["domain"]), stringFilter(plan.Filters["name"]), "metric_set", domain, name, plan.EntityData)
+	if !ok {
+		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "related metric_set not found", map[string]string{
+			"domain": domain,
+			"name":   name,
+		})
+	}
+	bindings := storageBindingsForDataSet(snapshot.Elements, metricSet, plan.EntityData)
+	if len(bindings) == 0 {
+		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "metric_set storage not found", map[string]string{
+			"domain": domain,
+			"name":   name,
+		})
+	}
+	metrics, err := selectedMetricSpecs(metricSet, stringFilter(plan.EntityCall.Parameters["metric"]))
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+
+	queryPlan := metricQueryPlan(plan, dataLink, metricSet, bindings[0], metrics)
 	return entitySetAssistantQueryResponse(mustJSON(queryPlan)), nil
 }
 
@@ -192,6 +228,7 @@ func entityCallListMethodRows() []map[string]any {
 		methodInfoListMethods(),
 		methodInfoListDataSet(),
 		methodInfoGetLogs(),
+		methodInfoGetMetrics(),
 	} {
 		rows = append(rows, entityCallRowValues([]string{
 			method.Name,
@@ -264,6 +301,35 @@ func methodInfoGetLogs() entityCallMethodInfo {
 	}
 }
 
+func methodInfoGetMetrics() entityCallMethodInfo {
+	return entityCallMethodInfo{
+		Name:        "get_metrics",
+		DisplayName: "Get Metrics",
+		Description: "Get metric query plan from a MetricSet",
+		Params: []assistantParamInfo{
+			{Key: "domain", Type: "varchar", DisplayName: "metric_set Domain", Required: true},
+			{Key: "name", Type: "varchar", DisplayName: "metric_set Name", Required: true},
+			{
+				Key:         "metric",
+				Type:        "varchar",
+				DisplayName: "Metric name",
+				Description: "Optional metric name. When omitted, all metrics in the MetricSet are planned.",
+			},
+			{
+				Key:         "query",
+				Type:        "varchar",
+				DisplayName: "Query expression for metric labels",
+				Description: "Basic SPL where syntax, for example service_id = 'service_a' and environment = 'prod'.",
+			},
+			{Key: "query_type", Type: "varchar", DisplayName: "Prometheus query type", Description: "range or instant. Defaults to the MetricSet/storage preference."},
+			{Key: "step", Type: "varchar", DisplayName: "Range query step", Description: "Range query step, for example 1m."},
+		},
+		Returns: []assistantReturnInfo{
+			{Key: "query", Type: "varchar", DisplayName: "Metric query plan"},
+		},
+	}
+}
+
 func methodInfoListDataSet() entityCallMethodInfo {
 	return entityCallMethodInfo{
 		Name:        "list_data_set",
@@ -289,8 +355,8 @@ func listDataSetHeader() []string {
 	return []string{"data_set_id", "type", "domain", "name", "fields_mapping", "filterable_fields", "fields", "storage_info", "storage_link_info", "data_link_detail", "data_set_detail", "storage_detail", "storage_link_detail"}
 }
 
-func listDataSetValues(elements []model.UModelElement, link model.UModelElement, dataSet model.UModelElement, detail bool) []string {
-	storageInfo, storageLinkInfo, storageDetail, storageLinkDetail := storageDetailsForDataSet(elements, dataSet)
+func listDataSetValues(elements []model.UModelElement, link model.UModelElement, dataSet model.UModelElement, detail bool, entityData *model.EntityData) []string {
+	storageInfo, storageLinkInfo, storageDetail, storageLinkDetail := storageDetailsForDataSet(elements, dataSet, entityData)
 	dataLinkDetail := "{}"
 	dataSetDetail := "{}"
 	if detail {
@@ -318,7 +384,7 @@ func listDataSetValues(elements []model.UModelElement, link model.UModelElement,
 	}
 }
 
-func storageDetailsForDataSet(elements []model.UModelElement, dataSet model.UModelElement) ([]map[string]any, []map[string]any, []model.UModelElement, []model.UModelElement) {
+func storageDetailsForDataSet(elements []model.UModelElement, dataSet model.UModelElement, entityData *model.EntityData) ([]map[string]any, []map[string]any, []model.UModelElement, []model.UModelElement) {
 	storageInfo := []map[string]any{}
 	storageLinkInfo := []map[string]any{}
 	storageDetail := []model.UModelElement{}
@@ -329,6 +395,9 @@ func storageDetailsForDataSet(elements []model.UModelElement, dataSet model.UMod
 		}
 		src := refFromSpec(link.Spec, "src")
 		if src.Domain != dataSet.Domain || src.Kind != dataSet.Kind || src.Name != dataSet.Name {
+			continue
+		}
+		if !filterByEntityAllows(stringValue(link.Spec["filter_by_entity"]), entityData) {
 			continue
 		}
 		dest := refFromSpec(link.Spec, "dest")
@@ -351,7 +420,7 @@ func storageDetailsForDataSet(elements []model.UModelElement, dataSet model.UMod
 	return storageInfo, storageLinkInfo, storageDetail, storageLinkDetail
 }
 
-func findRelatedDataSet(elements []model.UModelElement, entityDomain, entityName, dataSetKind, dataSetDomain, dataSetName string) (model.UModelElement, model.UModelElement, bool) {
+func findRelatedDataSet(elements []model.UModelElement, entityDomain, entityName, dataSetKind, dataSetDomain, dataSetName string, entityData *model.EntityData) (model.UModelElement, model.UModelElement, bool) {
 	for _, link := range elements {
 		if link.Kind != "data_link" {
 			continue
@@ -364,6 +433,9 @@ func findRelatedDataSet(elements []model.UModelElement, entityDomain, entityName
 		if dest.Kind != dataSetKind || dest.Domain != dataSetDomain || dest.Name != dataSetName {
 			continue
 		}
+		if !filterByEntityAllows(stringValue(link.Spec["filter_by_entity"]), entityData) {
+			continue
+		}
 		dataSet, ok := findUModelElement(elements, dest.Kind, dest.Domain, dest.Name)
 		if !ok {
 			continue
@@ -373,7 +445,7 @@ func findRelatedDataSet(elements []model.UModelElement, entityDomain, entityName
 	return model.UModelElement{}, model.UModelElement{}, false
 }
 
-func storageBindingsForDataSet(elements []model.UModelElement, dataSet model.UModelElement) []storageBinding {
+func storageBindingsForDataSet(elements []model.UModelElement, dataSet model.UModelElement, entityData *model.EntityData) []storageBinding {
 	out := []storageBinding{}
 	for _, link := range elements {
 		if link.Kind != "storage_link" {
@@ -381,6 +453,9 @@ func storageBindingsForDataSet(elements []model.UModelElement, dataSet model.UMo
 		}
 		src := refFromSpec(link.Spec, "src")
 		if src.Domain != dataSet.Domain || src.Kind != dataSet.Kind || src.Name != dataSet.Name {
+			continue
+		}
+		if !filterByEntityAllows(stringValue(link.Spec["filter_by_entity"]), entityData) {
 			continue
 		}
 		dest := refFromSpec(link.Spec, "dest")
@@ -426,19 +501,385 @@ func logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet mod
 				"spec":   binding.Link.Spec,
 			},
 		},
-		"query": buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.Limit),
+		"query": buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit),
 	}
 	return queryPlan
 }
 
-func buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, limit int) map[string]any {
+func metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricSet model.UModelElement, binding storageBinding, metrics []map[string]any) map[string]any {
+	dataLinkMapping := mapValue(dataLink.Spec["fields_mapping"])
+	storageLinkMapping := mapValue(binding.Link.Spec["fields_mapping"])
+	entityIDs := stringSliceValue(plan.Filters["ids"])
+	entityQuery := stringFilter(plan.Filters["query"])
+	dataFilter := stringValue(dataLink.Spec["data_filter"])
+	methodQuery := stringFilter(plan.EntityCall.Parameters["query"])
+	queryType := stringFilter(plan.EntityCall.Parameters["query_type"])
+	step := stringFilter(plan.EntityCall.Parameters["step"])
+
+	queryPlan := map[string]any{
+		"operation": "get_metrics",
+		"data_source": map[string]any{
+			"data_set": map[string]any{
+				"domain": metricSet.Domain,
+				"kind":   metricSet.Kind,
+				"name":   metricSet.Name,
+			},
+			"storage": map[string]any{
+				"domain": binding.Storage.Domain,
+				"type":   binding.Storage.Kind,
+				"name":   binding.Storage.Name,
+				"config": binding.Storage.Spec,
+			},
+			"data_link": map[string]any{
+				"domain": dataLink.Domain,
+				"name":   dataLink.Name,
+				"spec":   dataLink.Spec,
+			},
+			"storage_link": map[string]any{
+				"domain": binding.Link.Domain,
+				"name":   binding.Link.Name,
+				"spec":   binding.Link.Spec,
+			},
+		},
+		"query": buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit),
+	}
+	if plan.TimeRange.From != nil || plan.TimeRange.To != nil {
+		queryPlan["time_range"] = plan.TimeRange
+	}
+	return queryPlan
+}
+
+func selectedMetricSpecs(metricSet model.UModelElement, metricName string) ([]map[string]any, error) {
+	items, ok := metricSet.Spec["metrics"].([]any)
+	if !ok || len(items) == 0 {
+		return nil, apperrors.WithDetails(apperrors.CodeQueryPlanError, "metric_set metrics not found", map[string]string{
+			"domain": metricSet.Domain,
+			"name":   metricSet.Name,
+		})
+	}
+	out := []map[string]any{}
+	for _, item := range items {
+		metric, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		if metricName != "" && stringValue(metric["name"]) != metricName {
+			continue
+		}
+		out = append(out, metric)
+	}
+	if len(out) == 0 {
+		return nil, apperrors.WithDetails(apperrors.CodeQueryPlanError, "metric not found in metric_set", map[string]string{
+			"domain": metricSet.Domain,
+			"name":   metricSet.Name,
+			"metric": metricName,
+		})
+	}
+	return out, nil
+}
+
+func buildMetricStorageQuery(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int) map[string]any {
+	switch storage.Kind {
+	case "prometheus", "aliyun_prometheus":
+		return prometheusMetricQuery(metricSet, storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, entityData, queryType, step, limit)
+	default:
+		return map[string]any{
+			"dialect":      storage.Kind,
+			"metrics":      metricQueryItems(metrics),
+			"entity_ids":   entityIDs,
+			"entity_data":  entityDataSummary(entityData),
+			"entity_query": entityQuery,
+			"data_filter":  dataFilter,
+			"query":        methodQuery,
+			"query_type":   firstNonEmpty(queryType, defaultMetricQueryMode(metrics), stringValue(storage.Spec["default_query_type"])),
+			"step":         firstNonEmpty(step, stringValue(storage.Spec["default_step"])),
+			"limit":        limit,
+		}
+	}
+}
+
+type prometheusLabelMatcher struct {
+	Label    string `json:"label"`
+	Operator string `json:"operator"`
+	Value    string `json:"value"`
+}
+
+func prometheusMetricQuery(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int) map[string]any {
+	matchers, rawFilters := prometheusQueryMatchers(storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, entityData)
+	queries := []map[string]any{}
+	for _, metric := range metrics {
+		name := stringValue(metric["name"])
+		promQL := firstNonEmpty(stringValue(metric["generator"]), name)
+		item := metricQueryItem(metric)
+		item["promql"] = renderPromQL(promQL, matchers)
+		queries = append(queries, item)
+	}
+	out := map[string]any{
+		"dialect":        "prometheus_promql",
+		"endpoint":       storage.Spec["endpoint"],
+		"api_prefix":     firstNonEmpty(stringValue(storage.Spec["api_prefix"]), "/api/v1"),
+		"query_type":     firstNonEmpty(queryType, defaultMetricQueryMode(metrics), stringValue(storage.Spec["default_query_type"]), "range"),
+		"step":           firstNonEmpty(step, stringValue(storage.Spec["default_step"])),
+		"lookback_delta": storage.Spec["lookback_delta"],
+		"metrics":        metricQueryItems(metrics),
+		"queries":        queries,
+		"label_matchers": matchers,
+		"limit":          limit,
+	}
+	if len(rawFilters) > 0 {
+		out["raw_filters"] = rawFilters
+	}
+	if tenant := stringValue(storage.Spec["tenant"]); tenant != "" {
+		out["tenant"] = tenant
+	}
+	if tenantHeader := stringValue(storage.Spec["tenant_header"]); tenantHeader != "" {
+		out["tenant_header"] = tenantHeader
+	}
+	if externalLabels, ok := storage.Spec["external_labels"].(map[string]any); ok && len(externalLabels) > 0 {
+		out["external_labels"] = externalLabels
+	}
+	if queryFamily := stringValue(metricSet.Spec["query_type"]); queryFamily != "" {
+		out["query_family"] = queryFamily
+	}
+	return out
+}
+
+func metricQueryItems(metrics []map[string]any) []map[string]any {
+	out := make([]map[string]any, 0, len(metrics))
+	for _, metric := range metrics {
+		out = append(out, metricQueryItem(metric))
+	}
+	return out
+}
+
+func metricQueryItem(metric map[string]any) map[string]any {
+	item := map[string]any{
+		"name": stringValue(metric["name"]),
+	}
+	for _, key := range []string{"unit", "data_format", "type", "query_mode", "aggregator", "display_type"} {
+		if value := stringValue(metric[key]); value != "" {
+			item[key] = value
+		}
+	}
+	if value, ok := metric["golden_metric"].(bool); ok {
+		item["golden_metric"] = value
+	}
+	return item
+}
+
+func defaultMetricQueryMode(metrics []map[string]any) string {
+	for _, metric := range metrics {
+		mode := stringValue(metric["query_mode"])
+		if mode != "" && mode != "both" {
+			return mode
+		}
+	}
+	for _, metric := range metrics {
+		if stringValue(metric["query_mode"]) == "both" {
+			return "range"
+		}
+	}
+	return ""
+}
+
+func prometheusQueryMatchers(storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData) ([]prometheusLabelMatcher, []string) {
+	matchers := []prometheusLabelMatcher{}
+	rawFilters := []string{}
+	if idField := mappedStorageField(dataLinkMapping, storageLinkMapping, "id"); idField != "" && len(entityIDs) > 0 {
+		matchers = append(matchers, prometheusValuesMatcher(idField, entityIDs, false))
+	}
+	matchers = append(matchers, entityDataPrometheusMatchers(entityData, dataLinkMapping, storageLinkMapping)...)
+	for _, item := range []struct {
+		raw    string
+		mapper func(string) string
+	}{
+		{firstNonEmpty(stringValue(storage.Spec["search_filter"]), stringValue(storage.Spec["default_filter"]), stringValue(storage.Spec["query_filter"])), storageFieldMapper()},
+		{dataFilter, dataSetToStorageFieldMapper(storageLinkMapping)},
+		{entityQuery, entityToStorageFieldMapper(dataLinkMapping, storageLinkMapping)},
+		{methodQuery, dataSetToStorageFieldMapper(storageLinkMapping)},
+	} {
+		filterMatchers, unsupported := prometheusMatchersFromFilter(item.raw, item.mapper)
+		matchers = append(matchers, filterMatchers...)
+		rawFilters = append(rawFilters, unsupported...)
+	}
+	return dedupePrometheusMatchers(matchers), rawFilters
+}
+
+func prometheusMatchersFromFilter(raw string, fieldMapper func(string) string) ([]prometheusLabelMatcher, []string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "*" {
+		return nil, nil
+	}
+	expr, err := parseLogFilterExpression(raw)
+	if err != nil {
+		return nil, []string{raw}
+	}
+	matchers, ok := logFilterToPrometheusMatchers(expr, fieldMapper)
+	if !ok {
+		return nil, []string{raw}
+	}
+	return matchers, nil
+}
+
+func logFilterToPrometheusMatchers(node *logFilterNode, fieldMapper func(string) string) ([]prometheusLabelMatcher, bool) {
+	if node == nil {
+		return nil, true
+	}
+	switch node.Kind {
+	case "and":
+		out := []prometheusLabelMatcher{}
+		for _, child := range node.Children {
+			matchers, ok := logFilterToPrometheusMatchers(child, fieldMapper)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, matchers...)
+		}
+		return out, true
+	case "comparison":
+		field := node.Field
+		if fieldMapper != nil {
+			field = fieldMapper(field)
+		}
+		switch node.Operator {
+		case "=", ":", "==":
+			return []prometheusLabelMatcher{{Label: field, Operator: "=", Value: stringValue(node.Value)}}, true
+		case "!=":
+			return []prometheusLabelMatcher{{Label: field, Operator: "!=", Value: stringValue(node.Value)}}, true
+		case "in":
+			return []prometheusLabelMatcher{prometheusValuesMatcher(field, stringSliceValue(node.Value), false)}, true
+		case "not in":
+			return []prometheusLabelMatcher{prometheusValuesMatcher(field, stringSliceValue(node.Value), true)}, true
+		default:
+			return nil, false
+		}
+	default:
+		return nil, false
+	}
+}
+
+func prometheusValuesMatcher(label string, values []string, negative bool) prometheusLabelMatcher {
+	if len(values) == 1 {
+		operator := "="
+		if negative {
+			operator = "!="
+		}
+		return prometheusLabelMatcher{Label: label, Operator: operator, Value: values[0]}
+	}
+	escaped := make([]string, 0, len(values))
+	for _, value := range values {
+		escaped = append(escaped, regexp.QuoteMeta(value))
+	}
+	operator := "=~"
+	if negative {
+		operator = "!~"
+	}
+	return prometheusLabelMatcher{Label: label, Operator: operator, Value: strings.Join(escaped, "|")}
+}
+
+func entityDataPrometheusMatchers(entityData *model.EntityData, dataLinkMapping, storageLinkMapping map[string]any) []prometheusLabelMatcher {
+	valuesByField := entityDataStorageValues(entityData, dataLinkMapping, storageLinkMapping)
+	if len(valuesByField) == 0 {
+		return nil
+	}
+	fields := make([]string, 0, len(valuesByField))
+	for field := range valuesByField {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
+	matchers := make([]prometheusLabelMatcher, 0, len(fields))
+	for _, field := range fields {
+		matchers = append(matchers, prometheusValuesMatcher(field, valuesByField[field], false))
+	}
+	return matchers
+}
+
+func dedupePrometheusMatchers(matchers []prometheusLabelMatcher) []prometheusLabelMatcher {
+	out := []prometheusLabelMatcher{}
+	seen := map[string]struct{}{}
+	for _, matcher := range matchers {
+		if matcher.Label == "" || matcher.Value == "" {
+			continue
+		}
+		key := matcher.Label + "\x00" + matcher.Operator + "\x00" + matcher.Value
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, matcher)
+	}
+	return out
+}
+
+func renderPromQL(promQL string, matchers []prometheusLabelMatcher) string {
+	remaining := []prometheusLabelMatcher{}
+	for _, matcher := range matchers {
+		placeholder := "$" + matcher.Label
+		if strings.Contains(promQL, placeholder) {
+			if matcher.Operator == "=" {
+				promQL = strings.ReplaceAll(promQL, placeholder, escapePromQLStringContent(matcher.Value))
+				continue
+			}
+			pattern := matcher.Label + `="` + placeholder + `"`
+			if strings.Contains(promQL, pattern) {
+				promQL = strings.ReplaceAll(promQL, pattern, matcher.Label+matcher.Operator+strconv.Quote(matcher.Value))
+				continue
+			}
+		}
+		if promQLSelectorHasLabel(promQL, matcher.Label) {
+			continue
+		}
+		remaining = append(remaining, matcher)
+	}
+	return injectPromQLMatchers(promQL, remaining)
+}
+
+func promQLSelectorHasLabel(promQL, label string) bool {
+	for _, op := range []string{"=~", "!~", "!=", "="} {
+		if strings.Contains(promQL, label+op) {
+			return true
+		}
+	}
+	return false
+}
+
+func injectPromQLMatchers(promQL string, matchers []prometheusLabelMatcher) string {
+	if len(matchers) == 0 {
+		return promQL
+	}
+	matcherText := prometheusMatcherText(matchers)
+	open := strings.Index(promQL, "{")
+	if open < 0 {
+		return promQL
+	}
+	if open+1 < len(promQL) && promQL[open+1] == '}' {
+		return promQL[:open+1] + matcherText + promQL[open+1:]
+	}
+	return promQL[:open+1] + matcherText + "," + promQL[open+1:]
+}
+
+func prometheusMatcherText(matchers []prometheusLabelMatcher) string {
+	parts := make([]string, 0, len(matchers))
+	for _, matcher := range matchers {
+		parts = append(parts, matcher.Label+matcher.Operator+strconv.Quote(matcher.Value))
+	}
+	return strings.Join(parts, ",")
+}
+
+func escapePromQLStringContent(value string) string {
+	replacer := strings.NewReplacer(`\`, `\\`, `"`, `\"`, "\n", `\n`)
+	return replacer.Replace(value)
+}
+
+func buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) map[string]any {
 	switch storage.Kind {
 	case "elasticsearch":
-		return elasticsearchLogQuery(logSet, storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, limit)
+		return elasticsearchLogQuery(logSet, storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, entityData, limit)
 	default:
 		return map[string]any{
 			"dialect":      storage.Kind,
 			"entity_ids":   entityIDs,
+			"entity_data":  entityDataSummary(entityData),
 			"entity_query": entityQuery,
 			"data_filter":  dataFilter,
 			"query":        methodQuery,
@@ -447,7 +888,7 @@ func buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElemen
 	}
 }
 
-func elasticsearchLogQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, limit int) map[string]any {
+func elasticsearchLogQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) map[string]any {
 	dataSetMapper := dataSetToStorageFieldMapper(storageLinkMapping)
 	timeField := stringValue(storage.Spec["time_field"])
 	if timeField == "" {
@@ -471,6 +912,9 @@ func elasticsearchLogQuery(logSet model.UModelElement, storage model.UModelEleme
 		} else {
 			filters = append(filters, map[string]any{"terms": map[string]any{idField: entityIDs}})
 		}
+	}
+	if entityFilter := entityDataElasticsearchFilter(entityData, dataLinkMapping, storageLinkMapping); entityFilter != nil {
+		filters = append(filters, entityFilter)
 	}
 	filters = appendLogQueryFilter(filters, firstNonEmpty(stringValue(storage.Spec["search_filter"]), stringValue(storage.Spec["default_filter"]), stringValue(storage.Spec["query_filter"])), storageMapper)
 	filters = appendLogQueryFilter(filters, dataFilter, dataSetMapper)
@@ -506,6 +950,162 @@ func mappedStorageField(dataLinkMapping, storageLinkMapping map[string]any, enti
 		return dataSetField
 	}
 	return storageField
+}
+
+func mappedStorageFieldForEntityData(dataLinkMapping, storageLinkMapping map[string]any, entityField string) string {
+	if stringValue(dataLinkMapping[entityField]) == "" {
+		return ""
+	}
+	return mappedStorageField(dataLinkMapping, storageLinkMapping, entityField)
+}
+
+func entityDataStorageValues(entityData *model.EntityData, dataLinkMapping, storageLinkMapping map[string]any) map[string][]string {
+	if entityData == nil || entityData.Empty() {
+		return nil
+	}
+	valuesByField := map[string]map[string]struct{}{}
+	for idx, entityField := range entityData.Header {
+		storageField := mappedStorageFieldForEntityData(dataLinkMapping, storageLinkMapping, entityField)
+		if storageField == "" {
+			continue
+		}
+		if _, ok := valuesByField[storageField]; !ok {
+			valuesByField[storageField] = map[string]struct{}{}
+		}
+		for _, row := range entityData.Data {
+			if idx >= len(row) || row[idx] == "" {
+				continue
+			}
+			valuesByField[storageField][row[idx]] = struct{}{}
+		}
+	}
+	out := make(map[string][]string, len(valuesByField))
+	for field, set := range valuesByField {
+		values := make([]string, 0, len(set))
+		for value := range set {
+			values = append(values, value)
+		}
+		sort.Strings(values)
+		out[field] = values
+	}
+	return out
+}
+
+func entityDataElasticsearchFilter(entityData *model.EntityData, dataLinkMapping, storageLinkMapping map[string]any) map[string]any {
+	if entityData == nil || entityData.Empty() {
+		return nil
+	}
+	fieldMappings := entityDataFieldMappings(entityData.Header, dataLinkMapping, storageLinkMapping)
+	if len(fieldMappings) == 0 {
+		return nil
+	}
+	rowFilters := []map[string]any{}
+	for _, row := range entityData.Data {
+		fieldFilters := []map[string]any{}
+		for idx, storageField := range fieldMappings {
+			if idx >= len(row) || row[idx] == "" {
+				continue
+			}
+			fieldFilters = append(fieldFilters, map[string]any{"term": map[string]any{storageField: row[idx]}})
+		}
+		if len(fieldFilters) == 0 {
+			continue
+		}
+		if len(fieldFilters) == 1 {
+			rowFilters = append(rowFilters, fieldFilters[0])
+			continue
+		}
+		rowFilters = append(rowFilters, map[string]any{"bool": map[string]any{"filter": fieldFilters}})
+	}
+	if len(rowFilters) == 0 {
+		return nil
+	}
+	if len(rowFilters) == 1 {
+		return rowFilters[0]
+	}
+	return map[string]any{"bool": map[string]any{"should": rowFilters, "minimum_should_match": 1}}
+}
+
+func entityDataFieldMappings(header []string, dataLinkMapping, storageLinkMapping map[string]any) map[int]string {
+	out := map[int]string{}
+	for idx, entityField := range header {
+		if storageField := mappedStorageFieldForEntityData(dataLinkMapping, storageLinkMapping, entityField); storageField != "" {
+			out[idx] = storageField
+		}
+	}
+	return out
+}
+
+func entityDataSummary(entityData *model.EntityData) map[string]any {
+	if entityData == nil || entityData.Empty() {
+		return nil
+	}
+	return map[string]any{
+		"header": entityData.Header,
+		"rows":   len(entityData.Data),
+	}
+}
+
+func filterByEntityAllows(raw string, entityData *model.EntityData) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || entityData == nil || entityData.Empty() {
+		return true
+	}
+	expr, err := parseLogFilterExpression(raw)
+	if err != nil {
+		return false
+	}
+	for _, row := range entityData.ToArrayMap() {
+		if evalFilterByEntity(expr, row) {
+			return true
+		}
+	}
+	return false
+}
+
+func evalFilterByEntity(node *logFilterNode, row map[string]string) bool {
+	if node == nil {
+		return true
+	}
+	switch node.Kind {
+	case "and":
+		for _, child := range node.Children {
+			if !evalFilterByEntity(child, row) {
+				return false
+			}
+		}
+		return true
+	case "or":
+		for _, child := range node.Children {
+			if evalFilterByEntity(child, row) {
+				return true
+			}
+		}
+		return false
+	case "not":
+		return len(node.Children) == 0 || !evalFilterByEntity(node.Children[0], row)
+	case "comparison":
+		return evalFilterByEntityComparison(node, row)
+	default:
+		return false
+	}
+}
+
+func evalFilterByEntityComparison(node *logFilterNode, row map[string]string) bool {
+	value := row[node.Field]
+	expected := stringValue(node.Value)
+	switch node.Operator {
+	case "=", "==", ":":
+		return value == expected
+	case "!=":
+		return value != expected
+	case "in":
+		return containsString(stringSliceValue(node.Value), value)
+	case "not in":
+		return !containsString(stringSliceValue(node.Value), value)
+	default:
+		return false
+	}
 }
 
 func appendLogQueryFilter(filters []map[string]any, raw string, fieldMapper func(string) string) []map[string]any {

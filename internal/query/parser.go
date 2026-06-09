@@ -133,6 +133,7 @@ func planFromAST(req model.QueryRequest, ast AST) model.QueryPlan {
 		TopK:       topk,
 		TimeRange:  req.TimeRange,
 		Params:     req.Params,
+		EntityData: req.EntityFilterData(),
 		Limit:      limit,
 		Depth:      depth,
 		TimeoutMS:  req.TimeoutMS,
@@ -231,7 +232,7 @@ func validateAST(ast AST) error {
 			return nil
 		}
 	}
-	return apperrors.New(apperrors.CodeQueryParseError, ".entity_set requires entity-call __list_method__(), list_data_set(...), or get_logs(...)")
+	return apperrors.New(apperrors.CodeQueryParseError, ".entity_set requires entity-call __list_method__(), list_data_set(...), get_logs(...), or get_metrics(...)")
 }
 
 func hasSourceBoundary(queryText string, pos int) bool {

@@ -151,7 +151,7 @@ func TestExecuteEntitySetListMethodsReturnsAssistantRawData(t *testing.T) {
 		t.Fatalf("unexpected __list_method__ header: %#v", row["header"])
 	}
 	data, ok := row["data"].([]map[string]any)
-	if !ok || len(data) != 3 {
+	if !ok || len(data) != 4 {
 		t.Fatalf("unexpected __list_method__ data: %#v", row["data"])
 	}
 	values, ok := data[1]["values"].([]string)
@@ -161,6 +161,10 @@ func TestExecuteEntitySetListMethodsReturnsAssistantRawData(t *testing.T) {
 	values, ok = data[2]["values"].([]string)
 	if !ok || len(values) == 0 || values[0] != "get_logs" {
 		t.Fatalf("expected get_logs method row, got %#v", data[2])
+	}
+	values, ok = data[3]["values"].([]string)
+	if !ok || len(values) == 0 || values[0] != "get_metrics" {
+		t.Fatalf("expected get_metrics method row, got %#v", data[3])
 	}
 }
 
@@ -271,6 +275,222 @@ func TestExecuteEntitySetGetLogAliasReturnsQueryPlan(t *testing.T) {
 	}
 }
 
+func TestExecuteEntitySetGetMetricsReturnsQueryPlan(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  metricQueryPlanElements(),
+	})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service', ids=['svc-1'], query='environment = \"prod\"') | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
+	})
+	if err != nil {
+		t.Fatalf("execute get_metrics: %v", err)
+	}
+	row := result.Rows[0]
+	if row["responseType"] != 1 {
+		t.Fatalf("expected responseType=1 query plan, got %+v", row)
+	}
+	queryText, ok := row["query"].(string)
+	if !ok || queryText == "" {
+		t.Fatalf("expected query string, got %#v", row["query"])
+	}
+	for _, want := range []string{"get_metrics", "devops.metric.service", "devops.prometheus.core", "prometheus_promql", "request_count", "service_id", "svc-1", "environment", "prod", "30s"} {
+		if !strings.Contains(queryText, want) {
+			t.Fatalf("expected get_metrics query plan to contain %q, got %s", want, queryText)
+		}
+	}
+	var queryPlan map[string]any
+	if err := json.Unmarshal([]byte(queryText), &queryPlan); err != nil {
+		t.Fatalf("decode query plan: %v", err)
+	}
+	query, ok := queryPlan["query"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected query object, got %#v", queryPlan["query"])
+	}
+	if query["dialect"] != "prometheus_promql" || query["query_type"] != "range" || query["step"] != "30s" {
+		t.Fatalf("unexpected metric query metadata: %#v", query)
+	}
+	queries, ok := query["queries"].([]any)
+	if !ok || len(queries) != 1 {
+		t.Fatalf("expected one PromQL query, got %#v", query["queries"])
+	}
+	first, ok := queries[0].(map[string]any)
+	if !ok {
+		t.Fatalf("unexpected PromQL query item: %#v", queries[0])
+	}
+	promQL := stringValue(first["promql"])
+	for _, want := range []string{`service_id="svc-1"`, `environment="prod"`, "devops_service_request_total"} {
+		if !strings.Contains(promQL, want) {
+			t.Fatalf("expected rendered PromQL to contain %q, got %s", want, promQL)
+		}
+	}
+	if result.Explain == nil || result.Explain.EntityCall == nil || result.Explain.EntityCall.Name != "get_metrics" {
+		t.Fatalf("expected canonical get_metrics in explain, got %+v", result.Explain)
+	}
+}
+
+func TestExecuteEntitySetGetMetricsUsesFilterByEntities(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  metricQueryPlanElements(),
+	})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
+		FilterByEntities: &model.EntityData{
+			Version: 1,
+			Header:  []string{"id", "environment", "ignored"},
+			Data: [][]string{
+				{"svc-1", "prod", "x"},
+				{"svc-2", "prod", "y"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("execute get_metrics with filterByEntities: %v", err)
+	}
+	queryText := stringValue(result.Rows[0]["query"])
+	var queryPlan map[string]any
+	if err := json.Unmarshal([]byte(queryText), &queryPlan); err != nil {
+		t.Fatalf("decode query plan: %v", err)
+	}
+	query := queryPlan["query"].(map[string]any)
+	queries := query["queries"].([]any)
+	promQL := stringValue(queries[0].(map[string]any)["promql"])
+	for _, want := range []string{`service_id=~"svc-1|svc-2"`, `environment="prod"`} {
+		if !strings.Contains(promQL, want) {
+			t.Fatalf("expected filterByEntities matcher %q in PromQL, got %s", want, promQL)
+		}
+	}
+	if strings.Contains(promQL, "ignored") {
+		t.Fatalf("unmapped entity_data field should not be pushed down, got %s", promQL)
+	}
+}
+
+func TestExecuteEntitySetGetLogsUsesEntityDataByEntity(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  logQueryPlanElements(),
+	})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call get_logs('devops', 'devops.log.service')",
+		EntityData: &model.EntityData{
+			Version: 1,
+			Header:  []string{"id", "environment"},
+			Data: [][]string{
+				{"svc-1", "prod"},
+				{"svc-2", "staging"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("execute get_logs with entity_data: %v", err)
+	}
+	queryText := stringValue(result.Rows[0]["query"])
+	var queryPlan map[string]any
+	if err := json.Unmarshal([]byte(queryText), &queryPlan); err != nil {
+		t.Fatalf("decode query plan: %v", err)
+	}
+	query := queryPlan["query"].(map[string]any)
+	body := query["body"].(map[string]any)
+	bodyQuery := mustJSON(body["query"])
+	for _, want := range []string{"minimum_should_match", "svc_id", "env", "svc-1", "prod", "svc-2", "staging"} {
+		if !strings.Contains(bodyQuery, want) {
+			t.Fatalf("expected entity_data filter to contain %q, got %s", want, bodyQuery)
+		}
+	}
+}
+
+func TestEntitySetFilterByEntitySelectsRelatedDataSet(t *testing.T) {
+	ctx := context.Background()
+	elements := metricQueryPlanElements()
+	elements[1].Spec["filter_by_entity"] = "environment = 'prod'"
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  elements,
+	})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	_, err = svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call get_metrics('devops', 'devops.metric.service', 'request_count')",
+		FilterByEntities: &model.EntityData{
+			Header: []string{"id", "environment"},
+			Data:   [][]string{{"svc-1", "staging"}},
+		},
+	})
+	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
+		t.Fatalf("expected filter_by_entity mismatch to hide related metric_set, got %v", err)
+	}
+
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call get_metrics('devops', 'devops.metric.service', 'request_count')",
+		FilterByEntities: &model.EntityData{
+			Header: []string{"id", "environment"},
+			Data:   [][]string{{"svc-1", "prod"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected filter_by_entity match to select metric_set: %v", err)
+	}
+	if result.Rows[0]["responseType"] != 1 {
+		t.Fatalf("expected responseType=1 query plan, got %+v", result.Rows[0])
+	}
+}
+
+func TestExecuteEntitySetGetMetricAliasReturnsQueryPlan(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  metricQueryPlanElements(),
+	})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call get_metric(domain='devops', name='devops.metric.service', metric='error_count')",
+	})
+	if err != nil {
+		t.Fatalf("execute get_metric alias: %v", err)
+	}
+	if result.Rows[0]["responseType"] != 1 {
+		t.Fatalf("expected responseType=1 alias query plan, got %+v", result.Rows[0])
+	}
+	queryText := stringValue(result.Rows[0]["query"])
+	if !strings.Contains(queryText, "error_count") || strings.Contains(queryText, "request_count") {
+		t.Fatalf("expected get_metric alias to select only error_count, got %s", queryText)
+	}
+	if result.Explain == nil || result.Explain.EntityCall == nil || result.Explain.EntityCall.Name != "get_metrics" {
+		t.Fatalf("expected get_metric alias to normalize to get_metrics, got %+v", result.Explain)
+	}
+}
+
 func TestExecuteEntitySetRejectsPlaceholderMethod(t *testing.T) {
 	ctx := context.Background()
 	svc := NewService(graphstore.NewMemoryStore())
@@ -283,7 +503,7 @@ func TestExecuteEntitySetRejectsPlaceholderMethod(t *testing.T) {
 func TestExecuteEntitySetRejectsUnsupportedMethod(t *testing.T) {
 	ctx := context.Background()
 	svc := NewService(graphstore.NewMemoryStore())
-	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call get_metric('apm', 'devops.metric.service', 'request_count')"})
+	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call get_metricz('apm', 'devops.metric.service', 'request_count')"})
 	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
 		t.Fatalf("expected query plan error for unsupported method, got %v", err)
 	}
@@ -545,6 +765,76 @@ func logQueryPlanElements() []model.UModelElement {
 				"query_dialect": "elasticsearch_dsl",
 				"time_field":    "event_time",
 				"default_size":  1000,
+			},
+		},
+	}
+}
+
+func metricQueryPlanElements() []model.UModelElement {
+	return []model.UModelElement{
+		{Kind: "entity_set", Domain: "devops", Name: "devops.service"},
+		{
+			Kind:   "data_link",
+			Domain: "devops",
+			Name:   "devops.service_related_to_devops.metric.service",
+			Spec: map[string]any{
+				"src":            map[string]any{"domain": "devops", "kind": "entity_set", "name": "devops.service"},
+				"dest":           map[string]any{"domain": "devops", "kind": "metric_set", "name": "devops.metric.service"},
+				"fields_mapping": map[string]any{"id": "service_id", "environment": "environment"},
+			},
+		},
+		{
+			Kind:   "metric_set",
+			Domain: "devops",
+			Name:   "devops.metric.service",
+			Spec: map[string]any{
+				"query_type": "prom",
+				"labels": map[string]any{
+					"keys": []any{
+						map[string]any{"name": "service_id", "type": "string"},
+						map[string]any{"name": "environment", "type": "string"},
+					},
+				},
+				"metrics": []any{
+					map[string]any{
+						"name":          "request_count",
+						"unit":          "count",
+						"query_mode":    "range",
+						"generator":     `sum(rate(devops_service_request_total{service_id="$service_id"}[1m]))`,
+						"aggregator":    "sum",
+						"golden_metric": true,
+					},
+					map[string]any{
+						"name":          "error_count",
+						"unit":          "count",
+						"query_mode":    "range",
+						"generator":     `sum(rate(devops_service_error_total{service_id="$service_id"}[1m]))`,
+						"aggregator":    "sum",
+						"golden_metric": true,
+					},
+				},
+			},
+		},
+		{
+			Kind:   "storage_link",
+			Domain: "devops",
+			Name:   "devops.metric.service_to_prometheus",
+			Spec: map[string]any{
+				"src":            map[string]any{"domain": "devops", "kind": "metric_set", "name": "devops.metric.service"},
+				"dest":           map[string]any{"domain": "devops", "kind": "prometheus", "name": "devops.prometheus.core"},
+				"fields_mapping": map[string]any{"service_id": "service_id", "environment": "environment"},
+			},
+		},
+		{
+			Kind:   "prometheus",
+			Domain: "devops",
+			Name:   "devops.prometheus.core",
+			Spec: map[string]any{
+				"endpoint":           "http://prometheus.devops.example:9090",
+				"api_prefix":         "/api/v1",
+				"default_query_type": "range",
+				"default_step":       "1m",
+				"lookback_delta":     "5m",
 			},
 		},
 	}
