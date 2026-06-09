@@ -52,6 +52,19 @@ func TestLadybugOptionalBusinessFlowPersistsAcrossRestart(t *testing.T) {
 		}
 	}()
 
+	workspacePage := e2eGet(t, reopenedServer.URL+"/api/v1/workspaces")
+	workspaces, ok := workspacePage["items"].([]any)
+	if !ok {
+		t.Fatalf("workspace list has no items: %+v", workspacePage)
+	}
+	if len(workspaces) != 1 {
+		t.Fatalf("expected persisted ladybug workspace metadata after restart, got %+v", workspacePage)
+	}
+	workspace, ok := workspaces[0].(map[string]any)
+	if !ok || workspace["id"] != "ladybug-demo" {
+		t.Fatalf("expected ladybug-demo workspace metadata after restart, got %+v", workspacePage)
+	}
+
 	umodelRows := e2eRows(t, e2ePost(t, reopenedServer.URL+"/api/v1/query/ladybug-demo/execute", map[string]any{
 		"query": ".umodel with(kind='entity_set', domain='devops', name='devops.service') | limit 5",
 	}))

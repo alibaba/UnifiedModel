@@ -19,6 +19,11 @@ import (
 
 var workspaceIDPattern = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$`)
 
+const (
+	providerTypeFileMemory = "file.memory"
+	providerTypeLadybug    = "local.ladybug"
+)
+
 type Service struct {
 	mu          sync.RWMutex
 	root        string
@@ -45,12 +50,18 @@ func NewService(root string, configRules WorkspaceConfigValidator) *Service {
 }
 
 func NewPersistentService(root string, configRules WorkspaceConfigValidator) (*Service, error) {
+	return NewPersistentServiceForProvider(root, configRules, providerTypeFileMemory)
+}
+
+// NewPersistentServiceForProvider creates a persistent workspace metadata
+// service and recovers missing metadata from provider-specific storage paths.
+func NewPersistentServiceForProvider(root string, configRules WorkspaceConfigValidator, providerType string) (*Service, error) {
 	s := NewService(root, configRules)
 	s.statePath = filepath.Join(s.rootOrDefault(), "workspaces.json")
 	if err := s.loadLocked(); err != nil {
 		return nil, err
 	}
-	recovered, err := s.recoverFileMemoryWorkspaceDirsLocked()
+	recovered, err := s.recoverProviderWorkspaceDirsLocked(providerType)
 	if err != nil {
 		return nil, err
 	}
@@ -331,14 +342,32 @@ func (s *Service) loadLocked() error {
 	return nil
 }
 
+func (s *Service) recoverProviderWorkspaceDirsLocked(providerType string) (bool, error) {
+	switch providerType {
+	case "", providerTypeFileMemory:
+		return s.recoverFileMemoryWorkspaceDirsLocked()
+	case providerTypeLadybug:
+		return s.recoverLadybugWorkspaceDirsLocked()
+	default:
+		return false, nil
+	}
+}
+
 func (s *Service) recoverFileMemoryWorkspaceDirsLocked() (bool, error) {
-	root := filepath.Join(s.rootOrDefault(), "graphstore", "file-memory", "workspaces")
+	return s.recoverWorkspaceDirsLocked(
+		filepath.Join(s.rootOrDefault(), "graphstore", "file-memory", "workspaces"),
+		"file memory workspace directories",
+	)
+}
+
+func (s *Service) recoverLadybugWorkspaceDirsLocked() (bool, error) {
+	root := filepath.Join(s.rootOrDefault(), "instances")
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
-		return false, fmt.Errorf("read file memory workspace directories: %w", err)
+		return false, fmt.Errorf("read ladybug workspace root: %w", err)
 	}
 
 	recovered := false
@@ -347,32 +376,74 @@ func (s *Service) recoverFileMemoryWorkspaceDirsLocked() (bool, error) {
 			continue
 		}
 		id := entry.Name()
-		if _, exists := s.workspaces[id]; exists {
+		graphPath := filepath.Join(root, id, "storage", "graph", "local", "ladybug")
+		info, err := os.Stat(graphPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return false, fmt.Errorf("stat ladybug workspace directory: %w", err)
+		}
+		if !info.IsDir() {
 			continue
 		}
-		if err := validateWorkspaceID(id); err != nil {
+		didRecover, err := s.recoverWorkspaceDirLocked(id, info)
+		if err != nil {
 			return false, err
+		}
+		recovered = recovered || didRecover
+	}
+	return recovered, nil
+}
+
+func (s *Service) recoverWorkspaceDirsLocked(root string, description string) (bool, error) {
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("read %s: %w", description, err)
+	}
+
+	recovered := false
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
 		}
 		info, err := entry.Info()
 		if err != nil {
-			return false, fmt.Errorf("read file memory workspace directory info: %w", err)
+			return false, fmt.Errorf("read %s info: %w", description, err)
 		}
-		now := info.ModTime().UTC()
-		if now.IsZero() {
-			now = time.Now().UTC()
+		didRecover, err := s.recoverWorkspaceDirLocked(entry.Name(), info)
+		if err != nil {
+			return false, err
 		}
-		s.workspaces[id] = model.WorkspaceMetadata{
-			ID:              id,
-			Name:            id,
-			Paths:           model.WorkspacePaths{Root: s.workspaceRoot(id), Tmp: s.workspaceRoot(id) + "/tmp"},
-			Status:          model.WorkspaceStatusActive,
-			ResourceVersion: 1,
-			CreatedAt:       now,
-			UpdatedAt:       now,
-		}
-		recovered = true
+		recovered = recovered || didRecover
 	}
 	return recovered, nil
+}
+
+func (s *Service) recoverWorkspaceDirLocked(id string, info os.FileInfo) (bool, error) {
+	if _, exists := s.workspaces[id]; exists {
+		return false, nil
+	}
+	if err := validateWorkspaceID(id); err != nil {
+		return false, err
+	}
+	now := info.ModTime().UTC()
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	s.workspaces[id] = model.WorkspaceMetadata{
+		ID:              id,
+		Name:            id,
+		Paths:           model.WorkspacePaths{Root: s.workspaceRoot(id), Tmp: s.workspaceRoot(id) + "/tmp"},
+		Status:          model.WorkspaceStatusActive,
+		ResourceVersion: 1,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	return true, nil
 }
 
 func (s *Service) normalizeMetadata(metadata *model.WorkspaceMetadata) {

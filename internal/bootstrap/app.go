@@ -64,10 +64,15 @@ func NewAppWithGraphStore(dataRoot string, config graphstore.ProviderConfig) (*A
 	if config.DataRoot == "" {
 		config.DataRoot = dataRoot
 	}
+	providerType := config.Type
+	if providerType == "" {
+		providerType = graphstore.DefaultProviderType
+		config.Type = providerType
+	}
 	workspaceSvc := workspace.NewService(dataRoot, nil)
-	if config.Type == graphstore.ProviderTypeFileMemory {
+	if providerType == graphstore.ProviderTypeFileMemory || providerType == graphstore.ProviderTypeLadybug {
 		var err error
-		workspaceSvc, err = workspace.NewPersistentService(dataRoot, nil)
+		workspaceSvc, err = workspace.NewPersistentServiceForProvider(dataRoot, nil, providerType)
 		if err != nil {
 			return nil, fmt.Errorf("create workspace metadata store: %w", err)
 		}

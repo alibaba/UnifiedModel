@@ -144,3 +144,61 @@ func TestPersistentWorkspaceMetadataRecoversFileMemoryDirectories(t *testing.T) 
 		t.Fatalf("expected recovered demo workspace, got %+v", page.Items)
 	}
 }
+
+func TestPersistentWorkspaceMetadataRecoversLadybugDirectories(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "instances", "demo", "storage", "graph", "local", "ladybug"), 0o755); err != nil {
+		t.Fatalf("create ladybug workspace dir: %v", err)
+	}
+
+	svc, err := NewPersistentServiceForProvider(root, nil, providerTypeLadybug)
+	if err != nil {
+		t.Fatalf("new persistent service: %v", err)
+	}
+	page, err := svc.ListWorkspaces(ctx, model.WorkspaceListRequest{})
+	if err != nil {
+		t.Fatalf("list workspaces: %v", err)
+	}
+	if len(page.Items) != 1 || page.Items[0].ID != "demo" || page.Items[0].Status != model.WorkspaceStatusActive {
+		t.Fatalf("expected recovered demo workspace, got %+v", page.Items)
+	}
+}
+
+func TestPersistentWorkspaceMetadataDoesNotReviveDeletedLadybugWorkspace(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+
+	first, err := NewPersistentServiceForProvider(root, nil, providerTypeLadybug)
+	if err != nil {
+		t.Fatalf("new persistent service: %v", err)
+	}
+	if _, err := first.CreateWorkspace(ctx, model.CreateWorkspaceRequest{ID: "demo"}); err != nil {
+		t.Fatalf("create workspace: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "instances", "demo", "storage", "graph", "local", "ladybug"), 0o755); err != nil {
+		t.Fatalf("create ladybug workspace dir: %v", err)
+	}
+	if _, err := first.DeleteWorkspace(ctx, "demo"); err != nil {
+		t.Fatalf("delete workspace: %v", err)
+	}
+
+	second, err := NewPersistentServiceForProvider(root, nil, providerTypeLadybug)
+	if err != nil {
+		t.Fatalf("reopen persistent service: %v", err)
+	}
+	activeOnly, err := second.ListWorkspaces(ctx, model.WorkspaceListRequest{})
+	if err != nil {
+		t.Fatalf("list active workspaces: %v", err)
+	}
+	if len(activeOnly.Items) != 0 {
+		t.Fatalf("deleted workspace should not be revived, got %+v", activeOnly.Items)
+	}
+	withDeleted, err := second.ListWorkspaces(ctx, model.WorkspaceListRequest{IncludeDeleted: true})
+	if err != nil {
+		t.Fatalf("list deleted workspaces: %v", err)
+	}
+	if len(withDeleted.Items) != 1 || withDeleted.Items[0].Status != model.WorkspaceStatusDeleted {
+		t.Fatalf("expected persisted tombstone, got %+v", withDeleted.Items)
+	}
+}
