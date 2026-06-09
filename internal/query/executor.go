@@ -118,31 +118,11 @@ func (e *Executor) executeEntitySetListDataSet(ctx context.Context, workspace st
 	if err != nil {
 		return model.QueryResult{}, err
 	}
-	dataSetTypes := stringSet(stringSliceValue(plan.EntityCall.Parameters["data_set_types"]))
+	dataSetTypes := dataSetTypeSet(stringSliceValue(plan.EntityCall.Parameters["data_set_types"]))
 	detail := boolValue(plan.EntityCall.Parameters["detail"])
 	rows := make([]map[string]any, 0)
-	for _, link := range snapshot.Elements {
-		if link.Kind != "data_link" {
-			continue
-		}
-		src := refFromSpec(link.Spec, "src")
-		dest := refFromSpec(link.Spec, "dest")
-		if src.Kind != "entity_set" || src.Domain != stringFilter(plan.Filters["domain"]) || src.Name != stringFilter(plan.Filters["name"]) {
-			continue
-		}
-		if len(dataSetTypes) > 0 {
-			if _, ok := dataSetTypes[dest.Kind]; !ok {
-				continue
-			}
-		}
-		dataSet, ok := findUModelElement(snapshot.Elements, dest.Kind, dest.Domain, dest.Name)
-		if !ok {
-			continue
-		}
-		if !filterByEntityAllows(stringValue(link.Spec["filter_by_entity"]), plan.EntityData) {
-			continue
-		}
-		rows = append(rows, entityCallRowValues(listDataSetValues(snapshot.Elements, link, dataSet, detail, plan.EntityData)))
+	for _, related := range relatedDataSetsForEntitySet(snapshot.Elements, stringFilter(plan.Filters["domain"]), stringFilter(plan.Filters["name"]), dataSetTypes, plan.EntityData) {
+		rows = append(rows, entityCallRowValues(listDataSetValues(snapshot.Elements, related, detail, plan.EntityData)))
 	}
 	return entitySetAssistantRawResponse(listDataSetHeader(), rows), nil
 }
@@ -212,6 +192,13 @@ type setRef struct {
 type storageBinding struct {
 	Link    model.UModelElement
 	Storage model.UModelElement
+}
+
+type relatedDataSet struct {
+	Link                  model.UModelElement
+	HasLink               bool
+	DataSet               model.UModelElement
+	FilterStorageByEntity bool
 }
 
 func entityCallRowValues(values []string) map[string]any {
@@ -355,12 +342,18 @@ func listDataSetHeader() []string {
 	return []string{"data_set_id", "type", "domain", "name", "fields_mapping", "filterable_fields", "fields", "storage_info", "storage_link_info", "data_link_detail", "data_set_detail", "storage_detail", "storage_link_detail"}
 }
 
-func listDataSetValues(elements []model.UModelElement, link model.UModelElement, dataSet model.UModelElement, detail bool, entityData *model.EntityData) []string {
-	storageInfo, storageLinkInfo, storageDetail, storageLinkDetail := storageDetailsForDataSet(elements, dataSet, entityData)
+func listDataSetValues(elements []model.UModelElement, related relatedDataSet, detail bool, entityData *model.EntityData) []string {
+	link := related.Link
+	dataSet := related.DataSet
+	storageInfo, storageLinkInfo, storageDetail, storageLinkDetail := storageDetailsForDataSet(elements, dataSet, entityData, related.FilterStorageByEntity)
 	dataLinkDetail := "{}"
 	dataSetDetail := "{}"
 	if detail {
-		dataLinkDetail = mustJSON(link)
+		if related.HasLink {
+			dataLinkDetail = mustJSON(link)
+		} else {
+			dataLinkDetail = "null"
+		}
 		dataSetDetail = mustJSON(dataSet)
 	} else {
 		storageDetail = []model.UModelElement{}
@@ -374,7 +367,7 @@ func listDataSetValues(elements []model.UModelElement, link model.UModelElement,
 		dataSet.Name,
 		mustJSON(fieldsMapping),
 		mustJSON(filterableFields(dataSet)),
-		mustJSON(dataSet.Spec["fields"]),
+		mustJSON(dataSetFields(dataSet)),
 		mustJSON(storageInfo),
 		mustJSON(storageLinkInfo),
 		dataLinkDetail,
@@ -384,7 +377,47 @@ func listDataSetValues(elements []model.UModelElement, link model.UModelElement,
 	}
 }
 
-func storageDetailsForDataSet(elements []model.UModelElement, dataSet model.UModelElement, entityData *model.EntityData) ([]map[string]any, []map[string]any, []model.UModelElement, []model.UModelElement) {
+func relatedDataSetsForEntitySet(elements []model.UModelElement, entityDomain, entityName string, dataSetTypes map[string]struct{}, entityData *model.EntityData) []relatedDataSet {
+	out := []relatedDataSet{}
+	seen := map[string]struct{}{}
+	for _, link := range elements {
+		if link.Kind != "data_link" {
+			continue
+		}
+		src := refFromSpec(link.Spec, "src")
+		dest := refFromSpec(link.Spec, "dest")
+		if src.Kind != "entity_set" || src.Domain != entityDomain || src.Name != entityName {
+			continue
+		}
+		if !dataSetTypeAllowed(dataSetTypes, dest.Kind) {
+			continue
+		}
+		dataSet, ok := findUModelElement(elements, dest.Kind, dest.Domain, dest.Name)
+		if !ok {
+			continue
+		}
+		if !filterByEntityAllows(filterByEntityExpression(link.Spec), entityData) {
+			continue
+		}
+		out = append(out, relatedDataSet{Link: link, HasLink: true, DataSet: dataSet, FilterStorageByEntity: true})
+		seen[uniqueID(dataSet.Domain, dataSet.Kind, dataSet.Name)] = struct{}{}
+	}
+
+	for _, dataSet := range elements {
+		if dataSet.Domain != "default" || !dataSetTypeAllowed(dataSetTypes, dataSet.Kind) {
+			continue
+		}
+		id := uniqueID(dataSet.Domain, dataSet.Kind, dataSet.Name)
+		if _, exists := seen[id]; exists {
+			continue
+		}
+		out = append(out, relatedDataSet{DataSet: dataSet})
+		seen[id] = struct{}{}
+	}
+	return out
+}
+
+func storageDetailsForDataSet(elements []model.UModelElement, dataSet model.UModelElement, entityData *model.EntityData, filterByEntity bool) ([]map[string]any, []map[string]any, []model.UModelElement, []model.UModelElement) {
 	storageInfo := []map[string]any{}
 	storageLinkInfo := []map[string]any{}
 	storageDetail := []model.UModelElement{}
@@ -397,7 +430,7 @@ func storageDetailsForDataSet(elements []model.UModelElement, dataSet model.UMod
 		if src.Domain != dataSet.Domain || src.Kind != dataSet.Kind || src.Name != dataSet.Name {
 			continue
 		}
-		if !filterByEntityAllows(stringValue(link.Spec["filter_by_entity"]), entityData) {
+		if filterByEntity && !filterByEntityAllows(filterByEntityExpression(link.Spec), entityData) {
 			continue
 		}
 		dest := refFromSpec(link.Spec, "dest")
@@ -433,7 +466,7 @@ func findRelatedDataSet(elements []model.UModelElement, entityDomain, entityName
 		if dest.Kind != dataSetKind || dest.Domain != dataSetDomain || dest.Name != dataSetName {
 			continue
 		}
-		if !filterByEntityAllows(stringValue(link.Spec["filter_by_entity"]), entityData) {
+		if !filterByEntityAllows(filterByEntityExpression(link.Spec), entityData) {
 			continue
 		}
 		dataSet, ok := findUModelElement(elements, dest.Kind, dest.Domain, dest.Name)
@@ -455,7 +488,7 @@ func storageBindingsForDataSet(elements []model.UModelElement, dataSet model.UMo
 		if src.Domain != dataSet.Domain || src.Kind != dataSet.Kind || src.Name != dataSet.Name {
 			continue
 		}
-		if !filterByEntityAllows(stringValue(link.Spec["filter_by_entity"]), entityData) {
+		if !filterByEntityAllows(filterByEntityExpression(link.Spec), entityData) {
 			continue
 		}
 		dest := refFromSpec(link.Spec, "dest")
@@ -1063,6 +1096,21 @@ func filterByEntityAllows(raw string, entityData *model.EntityData) bool {
 	return false
 }
 
+func filterByEntityExpression(spec map[string]any) string {
+	for _, key := range []string{"filter_by_entity", "filterByEntity", "FilterByEntity"} {
+		if raw := strings.TrimSpace(stringValue(spec[key])); raw != "" {
+			return raw
+		}
+	}
+	src := mapValue(spec["src"])
+	for _, key := range []string{"filter", "Filter"} {
+		if raw := strings.TrimSpace(stringValue(src[key])); raw != "" {
+			return raw
+		}
+	}
+	return ""
+}
+
 func evalFilterByEntity(node *logFilterNode, row map[string]string) bool {
 	if node == nil {
 		return true
@@ -1092,7 +1140,10 @@ func evalFilterByEntity(node *logFilterNode, row map[string]string) bool {
 }
 
 func evalFilterByEntityComparison(node *logFilterNode, row map[string]string) bool {
-	value := row[node.Field]
+	value, ok := row[node.Field]
+	if !ok {
+		return false
+	}
 	expected := stringValue(node.Value)
 	switch node.Operator {
 	case "=", "==", ":":
@@ -1187,6 +1238,24 @@ func findUModelElement(elements []model.UModelElement, kind, domain, name string
 }
 
 func filterableFields(element model.UModelElement) []string {
+	if element.Kind == "metric_set" {
+		labels := mapValue(element.Spec["labels"])
+		keys, ok := labels["keys"].([]any)
+		if !ok {
+			return []string{}
+		}
+		out := []string{}
+		for _, field := range keys {
+			item, ok := field.(map[string]any)
+			if !ok {
+				continue
+			}
+			if name := stringValue(item["name"]); name != "" {
+				out = append(out, name)
+			}
+		}
+		return out
+	}
 	fields, ok := element.Spec["fields"].([]any)
 	if !ok {
 		return []string{}
@@ -1204,6 +1273,55 @@ func filterableFields(element model.UModelElement) []string {
 	return out
 }
 
+func dataSetFields(element model.UModelElement) any {
+	if element.Kind == "metric_set" {
+		metrics, ok := element.Spec["metrics"].([]any)
+		if !ok {
+			return nil
+		}
+		out := make([]map[string]any, 0, len(metrics))
+		for _, metric := range metrics {
+			item, ok := metric.(map[string]any)
+			if !ok {
+				continue
+			}
+			field := map[string]any{
+				"name": stringValue(item["name"]),
+				"type": "metric",
+			}
+			copyFieldInfo(field, item)
+			out = append(out, field)
+		}
+		return out
+	}
+	fields, ok := element.Spec["fields"].([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]map[string]any, 0, len(fields))
+	for _, raw := range fields {
+		item, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		field := map[string]any{
+			"name": stringValue(item["name"]),
+			"type": stringValue(item["type"]),
+		}
+		copyFieldInfo(field, item)
+		out = append(out, field)
+	}
+	return out
+}
+
+func copyFieldInfo(dst, src map[string]any) {
+	for _, key := range []string{"display_name", "description", "data_format", "unit"} {
+		if value, ok := src[key]; ok && stringValue(value) != "" {
+			dst[key] = value
+		}
+	}
+}
+
 func mapValue(value any) map[string]any {
 	if typed, ok := value.(map[string]any); ok {
 		return typed
@@ -1217,6 +1335,18 @@ func stringSet(values []string) map[string]struct{} {
 		out[value] = struct{}{}
 	}
 	return out
+}
+
+func dataSetTypeSet(values []string) map[string]struct{} {
+	if len(values) == 0 {
+		return stringSet([]string{"metric_set", "log_set", "trace_set", "event_set", "profile_set"})
+	}
+	return stringSet(values)
+}
+
+func dataSetTypeAllowed(typeFilter map[string]struct{}, kind string) bool {
+	_, ok := typeFilter[kind]
+	return ok
 }
 
 func uniqueID(domain, kind, name string) string {

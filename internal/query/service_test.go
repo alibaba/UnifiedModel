@@ -192,6 +192,178 @@ func TestExecuteEntitySetListDataSetAliasReturnsAssistantRawData(t *testing.T) {
 	}
 }
 
+func TestExecuteEntitySetListDataSetUsesFilterByEntityAndSrcFilter(t *testing.T) {
+	ctx := context.Background()
+	elements := append(metricQueryPlanElements(),
+		testMetricSetElement("devops.metric.premium", "latency"),
+		model.UModelElement{
+			Kind:   "data_link",
+			Domain: "devops",
+			Name:   "devops.service_related_to_devops.metric.premium",
+			Spec: map[string]any{
+				"src":              map[string]any{"domain": "devops", "kind": "entity_set", "name": "devops.service"},
+				"dest":             map[string]any{"domain": "devops", "kind": "metric_set", "name": "devops.metric.premium"},
+				"fields_mapping":   map[string]any{"id": "service_id", "environment": "environment"},
+				"filter_by_entity": "environment = 'prod'",
+			},
+		},
+		testMetricSetElement("devops.metric.legacy", "throughput"),
+		model.UModelElement{
+			Kind:   "data_link",
+			Domain: "devops",
+			Name:   "devops.service_related_to_devops.metric.legacy",
+			Spec: map[string]any{
+				"src":            map[string]any{"domain": "devops", "kind": "entity_set", "name": "devops.service", "filter": "environment = 'prod'"},
+				"dest":           map[string]any{"domain": "devops", "kind": "metric_set", "name": "devops.metric.legacy"},
+				"fields_mapping": map[string]any{"id": "service_id", "environment": "environment"},
+			},
+		},
+	)
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{Workspace: "demo", Elements: elements})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	staging, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set'], false)",
+		FilterByEntities: &model.EntityData{
+			Header: []string{"id", "environment"},
+			Data:   [][]string{{"svc-1", "staging"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("execute list_data_set with non-matching entity data: %v", err)
+	}
+	stagingRows := listDataSetRowsByName(t, staging)
+	if _, ok := stagingRows["devops.metric.service"]; !ok {
+		t.Fatalf("unfiltered metric_set should still be listed, got %+v", stagingRows)
+	}
+	if _, ok := stagingRows["devops.metric.premium"]; ok {
+		t.Fatalf("top-level filter_by_entity metric_set should be filtered out, got %+v", stagingRows)
+	}
+	if _, ok := stagingRows["devops.metric.legacy"]; ok {
+		t.Fatalf("src.filter metric_set should be filtered out, got %+v", stagingRows)
+	}
+
+	prod, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set'], false)",
+		FilterByEntities: &model.EntityData{
+			Header: []string{"id", "environment"},
+			Data:   [][]string{{"svc-1", "prod"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("execute list_data_set with matching entity data: %v", err)
+	}
+	prodRows := listDataSetRowsByName(t, prod)
+	for _, name := range []string{"devops.metric.service", "devops.metric.premium", "devops.metric.legacy"} {
+		if _, ok := prodRows[name]; !ok {
+			t.Fatalf("expected %s to be listed for matching entity data, got %+v", name, prodRows)
+		}
+	}
+	if got := prodRows["devops.metric.service"][5]; !strings.Contains(got, "service_id") || !strings.Contains(got, "environment") {
+		t.Fatalf("metric_set filterable_fields should come from labels, got %s", got)
+	}
+	if got := prodRows["devops.metric.service"][6]; !strings.Contains(got, `"type":"metric"`) || !strings.Contains(got, "request_count") {
+		t.Fatalf("metric_set fields should come from metrics, got %s", got)
+	}
+
+	noEntityData, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set'], false)",
+	})
+	if err != nil {
+		t.Fatalf("execute list_data_set without entity data: %v", err)
+	}
+	noEntityRows := listDataSetRowsByName(t, noEntityData)
+	for _, name := range []string{"devops.metric.premium", "devops.metric.legacy"} {
+		if _, ok := noEntityRows[name]; !ok {
+			t.Fatalf("expected %s to be listed when entity_data is absent, got %+v", name, noEntityRows)
+		}
+	}
+}
+
+func TestExecuteEntitySetListDataSetKeepsDataSetWhenStorageFilterMisses(t *testing.T) {
+	ctx := context.Background()
+	elements := metricQueryPlanElements()
+	for i := range elements {
+		if elements[i].Kind == "storage_link" {
+			elements[i].Spec["filter_by_entity"] = "region = 'cn-hangzhou'"
+		}
+	}
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{Workspace: "demo", Elements: elements})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set'], true)",
+		FilterByEntities: &model.EntityData{
+			Header: []string{"id"},
+			Data:   [][]string{{"svc-1"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("execute list_data_set with storage filter miss: %v", err)
+	}
+	rows := listDataSetRowsByName(t, result)
+	values, ok := rows["devops.metric.service"]
+	if !ok {
+		t.Fatalf("data_set should remain visible when only storage filter misses, got %+v", rows)
+	}
+	for _, idx := range []int{7, 8, 11, 12} {
+		if values[idx] != "[]" {
+			t.Fatalf("expected storage field %d to be empty array, got %s", idx, values[idx])
+		}
+	}
+}
+
+func TestExecuteEntitySetListDataSetIncludesDefaultDomainDataSets(t *testing.T) {
+	ctx := context.Background()
+	elements := append(metricQueryPlanElements(),
+		testMetricSetElementWithDomain("default", "default.metric.common", "health_score"),
+		model.UModelElement{
+			Kind:   "storage_link",
+			Domain: "default",
+			Name:   "default.metric.common_to_prometheus",
+			Spec: map[string]any{
+				"src":              map[string]any{"domain": "default", "kind": "metric_set", "name": "default.metric.common"},
+				"dest":             map[string]any{"domain": "devops", "kind": "prometheus", "name": "devops.prometheus.core"},
+				"fields_mapping":   map[string]any{"service_id": "service_id"},
+				"filter_by_entity": "region = 'cn-hangzhou'",
+			},
+		},
+	)
+	store := graphstore.NewMemoryStore()
+	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{Workspace: "demo", Elements: elements})
+	if err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set'], false)",
+		FilterByEntities: &model.EntityData{
+			Header: []string{"id"},
+			Data:   [][]string{{"svc-1"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("execute list_data_set with default data_set: %v", err)
+	}
+	rows := listDataSetRowsByName(t, result)
+	values, ok := rows["default.metric.common"]
+	if !ok {
+		t.Fatalf("expected default domain metric_set to be listed, got %+v", rows)
+	}
+	if values[2] != "default" || values[9] != "{}" || !strings.Contains(values[7], "devops.prometheus.core") {
+		t.Fatalf("unexpected default domain metric_set row: %#v", values)
+	}
+}
+
 func TestExecuteEntitySetGetLogsReturnsQueryPlan(t *testing.T) {
 	ctx := context.Background()
 	store := graphstore.NewMemoryStore()
@@ -714,6 +886,53 @@ func entityPayload(id, displayName string) model.EntityPayload {
 		"__first_observed_time__": int64(100),
 		"__last_observed_time__":  int64(200),
 		"display_name":            displayName,
+	}
+}
+
+func listDataSetRowsByName(t *testing.T, result model.QueryResult) map[string][]string {
+	t.Helper()
+	if len(result.Rows) != 1 {
+		t.Fatalf("expected one assistant raw response row, got %+v", result.Rows)
+	}
+	row := result.Rows[0]
+	if row["responseType"] != 2 || row["query"] != "" {
+		t.Fatalf("expected assistant raw data response, got %+v", row)
+	}
+	data, ok := row["data"].([]map[string]any)
+	if !ok {
+		t.Fatalf("unexpected list_data_set data: %#v", row["data"])
+	}
+	out := map[string][]string{}
+	for _, item := range data {
+		values, ok := item["values"].([]string)
+		if !ok || len(values) != len(listDataSetHeader()) {
+			t.Fatalf("unexpected list_data_set row: %#v", item)
+		}
+		out[values[3]] = values
+	}
+	return out
+}
+
+func testMetricSetElement(name, metricName string) model.UModelElement {
+	return testMetricSetElementWithDomain("devops", name, metricName)
+}
+
+func testMetricSetElementWithDomain(domain, name, metricName string) model.UModelElement {
+	return model.UModelElement{
+		Kind:   "metric_set",
+		Domain: domain,
+		Name:   name,
+		Spec: map[string]any{
+			"labels": map[string]any{
+				"keys": []any{
+					map[string]any{"name": "service_id", "type": "string"},
+					map[string]any{"name": "environment", "type": "string"},
+				},
+			},
+			"metrics": []any{
+				map[string]any{"name": metricName, "unit": "count"},
+			},
+		},
 	}
 }
 
