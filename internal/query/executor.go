@@ -510,6 +510,8 @@ func logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet mod
 	methodQuery := stringFilter(plan.EntityCall.Parameters["query"])
 
 	queryPlan := map[string]any{
+		"mode":      "plan",
+		"version":   "v1",
 		"operation": "get_logs",
 		"data_source": map[string]any{
 			"data_set": map[string]any{
@@ -534,7 +536,11 @@ func logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet mod
 				"spec":   binding.Link.Spec,
 			},
 		},
-		"query": buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit),
+		"params_echo": echoParams(plan.EntityCall.Parameters),
+		"query":       buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit),
+	}
+	if plan.TimeRange.From != nil || plan.TimeRange.To != nil {
+		queryPlan["time_range"] = plan.TimeRange
 	}
 	return queryPlan
 }
@@ -550,6 +556,8 @@ func metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricS
 	step := stringFilter(plan.EntityCall.Parameters["step"])
 
 	queryPlan := map[string]any{
+		"mode":      "plan",
+		"version":   "v1",
 		"operation": "get_metrics",
 		"data_source": map[string]any{
 			"data_set": map[string]any{
@@ -574,12 +582,39 @@ func metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricS
 				"spec":   binding.Link.Spec,
 			},
 		},
-		"query": buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit),
+		"params_echo": echoParams(plan.EntityCall.Parameters),
+		"query":       buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit),
 	}
 	if plan.TimeRange.From != nil || plan.TimeRange.To != nil {
 		queryPlan["time_range"] = plan.TimeRange
 	}
 	return queryPlan
+}
+
+// echoParams returns the entity-call parameters that the caller actually
+// supplied, with nil and empty-string values stripped. Plan v1 includes this
+// echo so an executor (e.g. umodel-assistant) can recover the full call
+// context — including parameters declared in the method signature but not
+// consumed by the open-source planner (aggregate, storage_*).
+func echoParams(params map[string]any) map[string]any {
+	if len(params) == 0 {
+		return map[string]any{}
+	}
+	out := make(map[string]any, len(params))
+	for k, v := range params {
+		switch val := v.(type) {
+		case nil:
+			continue
+		case string:
+			if val == "" {
+				continue
+			}
+			out[k] = val
+		default:
+			out[k] = v
+		}
+	}
+	return out
 }
 
 func selectedMetricSpecs(metricSet model.UModelElement, metricName string) ([]map[string]any, error) {
