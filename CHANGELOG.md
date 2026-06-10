@@ -11,7 +11,7 @@ The project follows a simple changelog structure until stable releases are publi
 - `Removed` for removed behavior.
 - `Security` for vulnerability fixes.
 
-## 0.2.0 - Unreleased
+## 0.2.0 - 2026-06-10
 
 ### Added
 

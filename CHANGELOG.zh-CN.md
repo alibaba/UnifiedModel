@@ -13,7 +13,7 @@ English version: [CHANGELOG.md](CHANGELOG.md)
 - `Removed`：已移除的行为。
 - `Security`：安全修复。
 
-## 0.2.0 - Unreleased
+## 0.2.0 - 2026-06-10
 
 ### Added
 
