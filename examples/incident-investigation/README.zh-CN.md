@@ -252,7 +252,7 @@ go run ./cmd/umodel-mcp --quickstart \
 }
 ```
 
-详细的远程部署指南（SSH 隧道、Nginx 代理、Docker、故障排查）参见 [远程 MCP 连接操作手册](../../docs/zh/guides/remote-mcp.md)。
+传输方式（stdio、Streamable HTTP、HTTP+SSE）、tools、resources 以及本地冒烟测试参见 [MCP 参考](../../docs/zh/reference/mcp.md)。
 
 ## 目录结构
 

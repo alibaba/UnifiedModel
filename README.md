@@ -102,7 +102,7 @@ Start with the bilingual documentation index: [docs/README.md](docs/README.md).
 | Guides | [Model Authoring](docs/en/guides/model-authoring.md), [Entity And Relation Writes](docs/en/guides/entity-relation-writes.md), [Query Service](docs/en/guides/query-service.md), [Web UI](docs/en/guides/web-ui.md), [SDK And Client Guide](docs/en/guides/sdk-clients.md) |
 | Architecture | [Architecture Overview](docs/en/architecture/overview.md), [Runtime Flow](docs/en/architecture/runtime-flow.md), [Query And Agent Architecture](docs/en/architecture/query-and-agent.md) |
 | Reference | [CLI](docs/en/reference/cli.md), [MCP](docs/en/reference/mcp.md), [REST OpenAPI](api/openapi/openapi.yaml), [MCP Tool And Resource Schema](api/mcp/tools.schema.json) |
-| Examples | [Multi-Domain Quickstart Example Pack](examples/quickstart-multidomain/README.md) |
+| Examples | [Multi-Domain Quickstart Example Pack](examples/quickstart-multidomain/README.md), [Incident Investigation Demo (AI agent)](examples/incident-investigation/README.md) |
 | Deployment | [Docker And Compose](deployments/README.md) |
 
 Chinese documentation: [docs/zh/README.md](docs/zh/README.md).

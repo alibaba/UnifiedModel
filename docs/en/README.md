@@ -36,6 +36,11 @@ Documentation root: [docs/README.md](../README.md)
 - [SDK And Client Guide](guides/sdk-clients.md) - REST, CLI, MCP, generated model SDKs, and integration examples.
 - [MCP Examples](../../examples/mcp/README.md) - stdio, Streamable HTTP, HTTP+SSE, and TOON payload examples.
 
+## Examples
+
+- [Multi-Domain Quickstart Example Pack](../../examples/quickstart-multidomain/README.md) - five domains connected in one workspace; the default `make quickstart` sample.
+- [Incident Investigation Demo](../../examples/incident-investigation/README.md) - scenario-driven, AI-agent-assisted root-cause analysis of a payment-gateway SLO breach across business, platform, and runtime domains, with a runbook-guided diagnosis path.
+
 ## Architecture
 
 - [Architecture Overview](architecture/overview.md) - system view, layers, public contracts, and guardrails.

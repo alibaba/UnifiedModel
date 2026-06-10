@@ -252,7 +252,7 @@ Connect from `.mcp.json`:
 }
 ```
 
-See [Remote MCP Connection Guide](../../docs/en/guides/remote-mcp.md) for SSH tunnels, Nginx proxy, Docker, and troubleshooting.
+See the [MCP Reference](../../docs/en/reference/mcp.md) for transports (stdio, Streamable HTTP, HTTP+SSE), tools, resources, and a local smoke test.
 
 ## Contents
 

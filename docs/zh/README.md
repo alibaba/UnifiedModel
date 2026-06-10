@@ -36,6 +36,11 @@ English: [UModel Documentation](../en/README.md)
 - [SDK 与客户端指南](guides/sdk-clients.md) - REST、CLI、MCP、生成模型 SDK 和集成示例。
 - [MCP 示例](../../examples/mcp/README.zh-CN.md) - stdio、Streamable HTTP、HTTP+SSE 和 TOON payload 示例。
 
+## 示例
+
+- [多域 Quickstart 示例包](../../examples/quickstart-multidomain/README.zh-CN.md) - 一个 workspace 里连接五个 domain；`make quickstart` 默认样例。
+- [故障排查 Demo](../../examples/incident-investigation/README.zh-CN.md) - 场景驱动、AI Agent 辅助的根因分析：跨业务、平台、运行时三个 domain 排查支付网关 SLO 违约，演示 runbook 引导的诊断路径。
+
 ## 架构
 
 - [架构总览](architecture/overview.md) - 系统视图、分层、公共契约和 guardrails。
