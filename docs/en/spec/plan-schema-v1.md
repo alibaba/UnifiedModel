@@ -218,6 +218,98 @@ Both projects MUST keep contract tests that:
 
 Any test failure in this set blocks merge on both repos.
 
+## 7. v1.1 — Agent envelope
+
+Status: **available alongside v1**, opt-in. The default classic envelope (responseType=1 tuple wrapped by `NewQueryExecuteResponse`) is unchanged.
+
+### Trigger
+
+Clients opt in via the `format` request field or `?format=` query parameter:
+
+```http
+POST /api/v1/query/{workspace}/execute?format=agent
+Content-Type: application/json
+
+{ "query": ".entity_set with(...) | entity-call get_metrics(...)" }
+```
+
+Supported values are `""` (FormatAssistant, default) and `"agent"` (FormatAgent). Any other value is rejected with `INVALID_ARGUMENT`. Servers advertise the supported set via `/api/v1/capabilities`:
+
+```json
+{ "service": "unified-model", "modes_supported": ["plan"], "default_mode": "plan",
+  "formats_supported": ["", "agent"], "default_format": "" }
+```
+
+### Differences from v1 classic envelope
+
+When `format=agent` is honored, the response differs from the classic envelope in four ways:
+
+| Aspect | v1 classic | v1.1 agent |
+|---|---|---|
+| HTTP body | `{code, data: {data: [[1, "<JSON-string>", [], []]], header, ...}, message, success}` | The plan **object** at the top level — no envelope, no string encoding |
+| Top-level `version` field inside the plan | `"v1"` | `"v1.1"` |
+| `data_source.{data_set, storage, data_link, storage_link}` | Full `{domain, kind/type, name, spec/config}` objects | Compact `{ref: "domain/name", kind/type}` references; `spec` / `config` omitted by default |
+| Discovery via `__list_method__` and method signature contract (§3) | Unchanged | Unchanged |
+
+### Compact reference shape
+
+For each `data_source.*` element the agent envelope emits:
+
+```jsonc
+{ "ref": "<domain>/<name>", "kind": "metric_set" }    // data_set
+{ "ref": "<domain>/<name>", "type": "prometheus" }    // storage uses "type"
+{ "ref": "<domain>/<name>", "kind": "data_link" }     // data_link
+{ "ref": "<domain>/<name>", "kind": "storage_link" }  // storage_link
+```
+
+`ref` is `"<domain>/<name>"` and serves as the stable identifier an agent can pass back to subsequent calls or display to a user. `kind` (or `type` on storage) names the element kind so the agent knows what shape it is looking at without external context.
+
+### Opting back into full specs
+
+A debugging, diagnostic, or migration agent that does need the full Storage config or Link specs can set `?include=spec` (or `"include_spec": true` in the body). When set, the agent envelope additionally emits:
+
+- `data_source.storage.config` — full Storage element spec
+- `data_source.data_link.spec` — full DataLink spec
+- `data_source.storage_link.spec` — full StorageLink spec
+
+`?include=spec` is all-or-none in v1.1. Granular selection (e.g. `?include=data_link.spec,storage.config`) may be introduced in v1.2 if a real need surfaces.
+
+### Non-plan queries under `format=agent`
+
+`format=agent` only applies to entity-call methods that emit a plan: today `get_metrics` and `get_logs`. For non-plan queries (`.umodel`, `.entity`, `.topo` rows, `__list_method__`, `list_data_set`, errors) the server **falls back to the classic envelope** rather than erroring. This lets clients set `format=agent` as a session-wide default without dispatching per query type.
+
+### Errors under `format=agent`
+
+Errors continue to use the standard `{error: {code, message, retryable, details}}` shape unchanged. The `format` parameter does not modify error responses — error shapes are already structured and agent-friendly.
+
+### Compatibility
+
+v1.1 is a SemVer minor bump within the v1 contract. The agent envelope is purely opt-in; consumers that do not send `format=agent` see exactly the v1 envelope they saw before. Both versions are first-class and must coexist indefinitely until a v2 breaking change is gated by an RFC.
+
+### Minimal `curl` comparison
+
+```bash
+# Classic v1 envelope (default)
+curl -s -X POST "http://localhost:8080/api/v1/query/demo/execute" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":".entity_set with(domain=\"devops\", name=\"devops.service\", ids=[\"...\"]) | entity-call get_metrics(\"devops\", \"devops.metric.service\", \"request_count\", step=\"30s\")"}'
+# → {"code":"200","data":{"data":[[1,"{\"mode\":\"plan\",\"version\":\"v1\",...}",[],[]]],...},"message":"successful","success":true}
+
+# Agent v1.1 envelope, folded refs
+curl -s -X POST "http://localhost:8080/api/v1/query/demo/execute?format=agent" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"..."}'
+# → {"mode":"plan","version":"v1.1","operation":"get_metrics","description":"...",
+#    "data_source":{"storage":{"ref":"devops/devops.prometheus.core","type":"prometheus"},...},
+#    "params_echo":{...},"query":{...}}
+
+# Agent v1.1 envelope, full specs expanded
+curl -s -X POST "http://localhost:8080/api/v1/query/demo/execute?format=agent&include=spec" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"..."}'
+# → same as above, plus data_source.storage.config, data_link.spec, storage_link.spec
+```
+
 ## See also
 
 - [Query Service Guide](../guides/query-service.md)
