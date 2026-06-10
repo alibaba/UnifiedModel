@@ -119,6 +119,51 @@ func TestHTTPAgentFormatFallsBackForNonPlanQueries(t *testing.T) {
 	}
 }
 
+// TestHTTPFormatAgentWithIncludeSpec verifies the ?include=spec query param
+// re-expands the folded data_source fields so a debugging/diagnostic agent
+// can see the full storage config and link specs.
+func TestHTTPFormatAgentWithIncludeSpec(t *testing.T) {
+	app := setupQuickstartApp(t)
+	handler := app.Handler()
+
+	body := `{"query":".entity_set with(domain=\"devops\", name=\"devops.service\", ids=[\"10000000000000000000000000000101\"]) | entity-call get_metrics(\"devops\", \"devops.metric.service\", \"request_count\", step=\"30s\")"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/query/demo/execute?format=agent&include=spec", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d (body=%s)", rr.Code, http.StatusOK, rr.Body.String())
+	}
+
+	var plan map[string]any
+	if err := json.Unmarshal(rr.Body.Bytes(), &plan); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	dataSource, _ := plan["data_source"].(map[string]any)
+	storage, _ := dataSource["storage"].(map[string]any)
+	config, ok := storage["config"].(map[string]any)
+	if !ok || len(config) == 0 {
+		t.Fatalf("with ?include=spec, storage[config] should be populated; got %#v", storage["config"])
+	}
+
+	// Without ?include=spec the same query should NOT carry config (sanity
+	// guard that the opt-in is actually doing the gating, not always-on).
+	req2 := httptest.NewRequest(http.MethodPost, "/api/v1/query/demo/execute?format=agent", strings.NewReader(body))
+	req2.Header.Set("Content-Type", "application/json")
+	rr2 := httptest.NewRecorder()
+	handler.ServeHTTP(rr2, req2)
+	var folded map[string]any
+	if err := json.Unmarshal(rr2.Body.Bytes(), &folded); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	storage2, _ := folded["data_source"].(map[string]any)["storage"].(map[string]any)
+	if _, present := storage2["config"]; present {
+		t.Fatalf("without ?include=spec, storage[config] should be absent; got %#v", storage2["config"])
+	}
+}
+
 // TestHTTPRejectsBogusFormat verifies format validation is enforced at the
 // HTTP boundary and surfaces a structured error.
 func TestHTTPRejectsBogusFormat(t *testing.T) {

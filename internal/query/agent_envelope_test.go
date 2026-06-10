@@ -169,6 +169,85 @@ func TestAgentFormatPreservesV1AdditiveFields(t *testing.T) {
 	}
 }
 
+// TestGetMetricsAgentFormatIncludeSpec verifies that IncludeSpec=true
+// re-expands the folded data_source fields so a debugging or diagnostic agent
+// can see the full storage config, data_link spec, and storage_link spec
+// without having to round-trip through a separate model lookup.
+func TestGetMetricsAgentFormatIncludeSpec(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  metricQueryPlanElements(),
+	}); err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query:       ".entity_set with(domain='devops', name='devops.service', ids=['svc-1']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
+		Format:      model.FormatAgent,
+		IncludeSpec: true,
+	})
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+
+	plan := model.AgentPlanPayload(result)
+	if plan == nil {
+		t.Fatalf("AgentPlanPayload nil; result=%+v", result)
+	}
+	dataSource, _ := plan["data_source"].(map[string]any)
+
+	storage, _ := dataSource["storage"].(map[string]any)
+	if storage["ref"] != "devops/devops.prometheus.core" {
+		t.Fatalf("storage[ref] = %#v, want devops/devops.prometheus.core", storage["ref"])
+	}
+	config, ok := storage["config"].(map[string]any)
+	if !ok || len(config) == 0 {
+		t.Fatalf("with IncludeSpec, storage[config] should hold the full storage spec; got %#v", storage["config"])
+	}
+
+	dataLink, _ := dataSource["data_link"].(map[string]any)
+	if _, present := dataLink["spec"]; !present {
+		t.Fatalf("with IncludeSpec, data_link[spec] should be populated; got %+v", dataLink)
+	}
+
+	storageLink, _ := dataSource["storage_link"].(map[string]any)
+	if _, present := storageLink["spec"]; !present {
+		t.Fatalf("with IncludeSpec, storage_link[spec] should be populated; got %+v", storageLink)
+	}
+}
+
+// TestGetLogsAgentFormatIncludeSpec is the get_logs counterpart.
+func TestGetLogsAgentFormatIncludeSpec(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  logQueryPlanElements(),
+	}); err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
+		Query:       ".entity_set with(domain='devops', name='devops.service') | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')",
+		Format:      model.FormatAgent,
+		IncludeSpec: true,
+	})
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+
+	plan := model.AgentPlanPayload(result)
+	dataSource, _ := plan["data_source"].(map[string]any)
+	storage, _ := dataSource["storage"].(map[string]any)
+	if _, present := storage["config"]; !present {
+		t.Fatalf("with IncludeSpec, storage[config] should be populated for get_logs; got %+v", storage)
+	}
+}
+
 // TestClassicFormatUnchangedByV1Point1 verifies that the v1.1 agent envelope
 // work does not break the classic (default) envelope: version is still "v1"
 // and data_source.storage.config is still the full spec.
