@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/alibaba/UnifiedModel/internal/graphstore"
@@ -119,6 +120,80 @@ func TestEchoParamsStripsEmptyAndNil(t *testing.T) {
 		if _, ok := out[k]; ok {
 			t.Fatalf("expected %q to be stripped, got %+v", k, out)
 		}
+	}
+}
+
+// TestPlanV1AgentFriendlyFieldsForGetMetrics verifies that the agent-friendly
+// additions land in the metric plan: a human-readable description, a
+// next_action hint, and an echo of the original SPL source query.
+func TestPlanV1AgentFriendlyFieldsForGetMetrics(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  metricQueryPlanElements(),
+	}); err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	const spl = `.entity_set with(domain='devops', name='devops.service', ids=['svc-1']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')`
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: spl})
+	if err != nil {
+		t.Fatalf("execute get_metrics: %v", err)
+	}
+
+	plan := unmarshalPlan(t, result.Rows[0]["query"])
+	desc, _ := plan["description"].(string)
+	if desc == "" {
+		t.Fatalf("plan[description] missing or empty: %#v", plan["description"])
+	}
+	for _, want := range []string{"request_count", "devops.metric.service", "umodel-assistant"} {
+		if !strings.Contains(desc, want) {
+			t.Fatalf("description should mention %q, got %q", want, desc)
+		}
+	}
+	if plan["next_action"] != "forward_to_executor" {
+		t.Fatalf("plan[next_action] = %#v, want forward_to_executor", plan["next_action"])
+	}
+	if plan["source_query"] != spl {
+		t.Fatalf("plan[source_query] = %#v, want %q", plan["source_query"], spl)
+	}
+}
+
+// TestPlanV1AgentFriendlyFieldsForGetLogs verifies the same for logs.
+func TestPlanV1AgentFriendlyFieldsForGetLogs(t *testing.T) {
+	ctx := context.Background()
+	store := graphstore.NewMemoryStore()
+	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
+		Workspace: "demo",
+		Elements:  logQueryPlanElements(),
+	}); err != nil {
+		t.Fatalf("put umodel: %v", err)
+	}
+
+	svc := NewService(store)
+	const spl = `.entity_set with(domain='devops', name='devops.service') | entity-call get_logs('devops', 'devops.log.service', query='level = "ERROR"')`
+	result, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: spl})
+	if err != nil {
+		t.Fatalf("execute get_logs: %v", err)
+	}
+
+	plan := unmarshalPlan(t, result.Rows[0]["query"])
+	desc, _ := plan["description"].(string)
+	if desc == "" {
+		t.Fatalf("plan[description] missing or empty: %#v", plan["description"])
+	}
+	for _, want := range []string{"devops.log.service", `level = "ERROR"`, "umodel-assistant"} {
+		if !strings.Contains(desc, want) {
+			t.Fatalf("description should mention %q, got %q", want, desc)
+		}
+	}
+	if plan["next_action"] != "forward_to_executor" {
+		t.Fatalf("plan[next_action] = %#v, want forward_to_executor", plan["next_action"])
+	}
+	if plan["source_query"] != spl {
+		t.Fatalf("plan[source_query] = %#v, want %q", plan["source_query"], spl)
 	}
 }
 

@@ -15,6 +15,10 @@ const ModePlan = "plan"
 // normalizeMode applies the unified-model mode policy: empty becomes "plan",
 // "plan" passes through, anything else is rejected. unified-model never
 // executes plans against real storage.
+//
+// On rejection the error carries migration_* keys in Details so an AI agent
+// (or any structured client) can act on the failure programmatically rather
+// than parsing the message.
 func normalizeMode(mode string) (string, error) {
 	switch mode {
 	case "", ModePlan:
@@ -23,7 +27,13 @@ func normalizeMode(mode string) (string, error) {
 		return "", apperrors.WithDetails(
 			apperrors.CodeNotImplemented,
 			"unified-model only supports mode=plan. To execute queries against real storage, use umodel-assistant.",
-			map[string]string{"requested_mode": mode, "supported_modes": ModePlan},
+			map[string]string{
+				"requested_mode":     mode,
+				"supported_modes":    ModePlan,
+				"migration_service":  "umodel-assistant",
+				"migration_action":   "switch_endpoint_to_umodel_assistant",
+				"migration_docs_url": "https://github.com/alibaba/UnifiedModel/blob/main/docs/en/spec/plan-schema-v1.md",
+			},
 		)
 	}
 }

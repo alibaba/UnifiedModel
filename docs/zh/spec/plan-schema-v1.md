@@ -45,7 +45,15 @@ Content-Type: application/json
 | `plan`  | 返回查询计划，不执行              | 支持          | 支持             |
 | `data`  | 执行计划，返回真实数据            | 拒绝          | 支持             |
 
-unified-model 收到 `mode=data` 时返回 HTTP 4xx + 错误码 `NOT_IMPLEMENTED`。错误消息必须指向 umodel-assistant，便于客户端迁移。
+unified-model 收到 `mode=data` 时返回 HTTP 4xx + 错误码 `NOT_IMPLEMENTED`。错误结构 `details` 里必须带结构化迁移信息，便于 AI agent 直接消费而非解析自然语言：
+
+| Key                   | 示例                                                                     |
+|-----------------------|--------------------------------------------------------------------------|
+| `requested_mode`      | `"data"`                                                                 |
+| `supported_modes`     | `"plan"`                                                                 |
+| `migration_service`   | `"umodel-assistant"`                                                     |
+| `migration_action`    | `"switch_endpoint_to_umodel_assistant"`                                  |
+| `migration_docs_url`  | 本规范或 umodel-assistant 迁移指南的 URL                                 |
 
 ### 能力发现
 
@@ -82,6 +90,9 @@ Plan 响应被包装在标准的 assistant query 信封里：
   "mode": "plan",                     // 模式判别字段；plan 模式下永远是 "plan"
   "version": "v1",                    // schema 版本，遵循 SemVer
   "operation": "get_metrics",         // entity-call 方法的规范名
+  "description": "Retrieve metric \"request_count\" from MetricSet devops/devops.metric.service with step 30s (storage: prometheus/devops.prometheus.core). Forward this plan to a UModel data executor (e.g. umodel-assistant) to fetch real time series.",
+  "next_action": "forward_to_executor", // 给 agent 的下一步建议
+  "source_query": ".entity_set with(...) | entity-call get_metrics(...)", // 原始 SPL 回显
   "data_source": {
     "data_set":    { "domain", "kind", "name" },
     "storage":     { "domain", "type", "name", "config" },
@@ -103,15 +114,26 @@ Plan 响应被包装在标准的 assistant query 信封里：
 
 ### 顶层字段
 
-| 字段          | 类型   | 必填 | 备注                                            |
-|---------------|--------|------|-------------------------------------------------|
-| `mode`        | string | 是   | 永远 `"plan"`，镜像请求 mode。                  |
+| 字段           | 类型   | 必填 | 备注                                            |
+|----------------|--------|------|-------------------------------------------------|
+| `mode`         | string | 是   | 永远 `"plan"`，镜像请求 mode。                  |
 | `version`     | string | 是   | 当前规范为 `"v1"`，遵循 SemVer。                |
-| `operation`   | string | 是   | entity-call 规范名（`get_metrics` 等）。        |
-| `data_source` | object | 是   | 解析后的 DataSet / Storage / DataLink / StorageLink。 |
-| `params_echo` | object | 是   | 调用方实际传入的参数，剔除 nil 与空字符串。     |
-| `query`       | object | 是   | 存储侧可执行的具体查询。                        |
-| `time_range`  | object | 否   | 请求带时间范围时出现。                          |
+| `operation`    | string | 是   | entity-call 规范名（`get_metrics` 等）。        |
+| `description`  | string | 是   | 一句话描述 plan 做什么，便于 agent 复述。       |
+| `next_action`  | string | 是   | 给 agent 的下一步建议。当前固定 `"forward_to_executor"`。|
+| `source_query` | string | 是   | 调用方提交的原始 SPL 回显。                     |
+| `data_source`  | object | 是   | 解析后的 DataSet / Storage / DataLink / StorageLink。 |
+| `params_echo`  | object | 是   | 调用方实际传入的参数，剔除 nil 与空字符串。     |
+| `query`        | object | 是   | 存储侧可执行的具体查询。                        |
+| `time_range`   | object | 否   | 请求带时间范围时出现。                          |
+
+### Agent 友好字段
+
+`description` / `next_action` / `source_query` 这三个字段是给 AI Agent 准备的，避免 agent 自己反向解析存储侧 query 或者推断用户意图：
+
+- **`description`** —— 一句话总结，agent 可以直接复述给用户。包含 metric / log set、过滤条件（用 `[...]` 包裹）以及存储信息。
+- **`next_action`** —— agent 用来判别下一步动作的字段。`"forward_to_executor"` 表示：不要自己执行存储侧 query，把 plan 转发给 UModel data executor（如 umodel-assistant）。后续可能加入 `"render_to_user"`、`"prompt_for_consent"` 等。
+- **`source_query`** —— 调用方提交的原始 SPL。多 agent 协作场景里，下游 agent 没有用户输入的上下文时靠这个字段恢复。
 
 ### `data_source` 子结构
 

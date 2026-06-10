@@ -45,7 +45,15 @@ When both the body field and the query parameter are present, the body wins. Whe
 | `plan`  | Return a query plan; do not execute        | supported     | supported        |
 | `data`  | Execute the plan; return rows of data      | rejected      | supported        |
 
-unified-model rejects `mode=data` with HTTP 4xx and error code `NOT_IMPLEMENTED`. The error message must include a pointer to umodel-assistant so clients can migrate.
+unified-model rejects `mode=data` with HTTP 4xx and error code `NOT_IMPLEMENTED`. The error MUST also carry structured migration hints in `details` so an AI agent can act on the failure without parsing the message:
+
+| Key                   | Example                                                                  |
+|-----------------------|--------------------------------------------------------------------------|
+| `requested_mode`      | `"data"`                                                                 |
+| `supported_modes`     | `"plan"`                                                                 |
+| `migration_service`   | `"umodel-assistant"`                                                     |
+| `migration_action`    | `"switch_endpoint_to_umodel_assistant"`                                  |
+| `migration_docs_url`  | URL of this spec or the umodel-assistant migration guide                 |
 
 ### Capabilities discovery
 
@@ -82,6 +90,9 @@ The `query` field is a JSON-encoded string. After decoding, the plan must confor
   "mode": "plan",                     // discriminator; always "plan" in plan mode
   "version": "v1",                    // schema version; follows SemVer
   "operation": "get_metrics",         // entity-call method canonical name
+  "description": "Retrieve metric \"request_count\" from MetricSet devops/devops.metric.service with step 30s (storage: prometheus/devops.prometheus.core). Forward this plan to a UModel data executor (e.g. umodel-assistant) to fetch real time series.",
+  "next_action": "forward_to_executor", // recommended next step for an agent
+  "source_query": ".entity_set with(...) | entity-call get_metrics(...)", // echo of the original SPL
   "data_source": {
     "data_set":    { "domain", "kind", "name" },
     "storage":     { "domain", "type", "name", "config" },
@@ -103,15 +114,26 @@ The `query` field is a JSON-encoded string. After decoding, the plan must confor
 
 ### Top-level fields
 
-| Field         | Type   | Required | Notes                                              |
-|---------------|--------|----------|----------------------------------------------------|
-| `mode`        | string | yes      | Always `"plan"`. Mirrors request mode.             |
-| `version`     | string | yes      | `"v1"` for this spec. Bumps follow SemVer.         |
-| `operation`   | string | yes      | Canonical entity-call name (`get_metrics`, etc.).  |
-| `data_source` | object | yes      | Resolved DataSet, Storage, DataLink, StorageLink.  |
-| `params_echo` | object | yes      | Caller-supplied params, nil/empty stripped.        |
-| `query`       | object | yes      | Storage-specific executable query.                 |
-| `time_range`  | object | no       | Present when the request supplied a time range.    |
+| Field          | Type   | Required | Notes                                              |
+|----------------|--------|----------|----------------------------------------------------|
+| `mode`         | string | yes      | Always `"plan"`. Mirrors request mode.             |
+| `version`      | string | yes      | `"v1"` for this spec. Bumps follow SemVer.         |
+| `operation`    | string | yes      | Canonical entity-call name (`get_metrics`, etc.).  |
+| `description`  | string | yes      | One-line human-readable summary of the plan.       |
+| `next_action`  | string | yes      | Recommended next step. Currently `"forward_to_executor"`. |
+| `source_query` | string | yes      | Echo of the original SPL the caller submitted.     |
+| `data_source`  | object | yes      | Resolved DataSet, Storage, DataLink, StorageLink.  |
+| `params_echo`  | object | yes      | Caller-supplied params, nil/empty stripped.        |
+| `query`        | object | yes      | Storage-specific executable query.                 |
+| `time_range`   | object | no       | Present when the request supplied a time range.    |
+
+### Agent-facing fields
+
+`description`, `next_action`, and `source_query` exist so an AI agent can act on a plan without parsing the inner storage query or re-deriving the user's intent:
+
+- **`description`** — one-line summary the agent can relay back to the user. Includes the metric/log set, filter clause (in `[...]`), and storage info.
+- **`next_action`** — discriminator the agent uses to decide what to do next. `"forward_to_executor"` means: do not try to execute the storage query yourself; hand the plan off to a UModel data executor (e.g. umodel-assistant). Future values may include `"render_to_user"` or `"prompt_for_consent"`.
+- **`source_query`** — the original SPL the caller submitted. Useful in multi-agent pipelines where the agent receiving the plan did not originate the query.
 
 ### `data_source` substructure
 
