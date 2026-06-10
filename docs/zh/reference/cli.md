@@ -14,8 +14,15 @@ go run ./cmd/umctl --addr http://localhost:8080 help
 构建本地二进制：
 
 ```bash
-go build -o umctl ./cmd/umctl
-./umctl --addr http://localhost:8080 help
+make build-cli
+./bin/umctl --addr http://localhost:8080 help
+```
+
+将 `umctl` 安装到当前 Go bin 目录，便于通过 `PATH` 直接识别：
+
+```bash
+make install-cli
+umctl --addr http://localhost:8080 help
 ```
 
 ## 全局参数

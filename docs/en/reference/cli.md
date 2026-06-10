@@ -13,8 +13,15 @@ go run ./cmd/umctl --addr http://localhost:8080 help
 Build a local binary:
 
 ```bash
-go build -o umctl ./cmd/umctl
-./umctl --addr http://localhost:8080 help
+make build-cli
+./bin/umctl --addr http://localhost:8080 help
+```
+
+Install `umctl` into the active Go bin directory so it can be found from `PATH`:
+
+```bash
+make install-cli
+umctl --addr http://localhost:8080 help
 ```
 
 ## Global Options

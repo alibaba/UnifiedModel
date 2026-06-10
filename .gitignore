@@ -17,6 +17,11 @@ web/dist/
 
 # Generated build/test output
 generated/java/target/
+/bin/
+/cmd/bin/
+/cmd/**/bin/
+/umctl
+/umctl.exe
 
 # Python local environment and caches
 .venv/
