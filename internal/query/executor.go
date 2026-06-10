@@ -281,6 +281,9 @@ func methodInfoGetLogs() entityCallMethodInfo {
 				DisplayName: "Query expression for the log set",
 				Description: "Basic SPL where syntax, for example service_id = 'service_a' and level in ['ERROR', 'WARN'].",
 			},
+			{Key: "storage_domain", Type: "varchar", DisplayName: "Storage Domain", Description: "Optional storage domain used to select a specific StorageLink target."},
+			{Key: "storage_name", Type: "varchar", DisplayName: "Storage Name", Description: "Optional storage name used to select a specific StorageLink target."},
+			{Key: "storage_kind", Type: "varchar", DisplayName: "Storage Kind", Description: "Optional storage kind used to select a specific StorageLink target."},
 		},
 		Returns: []assistantReturnInfo{
 			{Key: "query", Type: "varchar", DisplayName: "Log query plan"},
@@ -310,6 +313,10 @@ func methodInfoGetMetrics() entityCallMethodInfo {
 			},
 			{Key: "query_type", Type: "varchar", DisplayName: "Prometheus query type", Description: "range or instant. Defaults to the MetricSet/storage preference."},
 			{Key: "step", Type: "varchar", DisplayName: "Range query step", Description: "Range query step, for example 1m."},
+			{Key: "aggregate", Type: "boolean", DisplayName: "Aggregate time series", Description: "Whether to aggregate the time series.", Default: true},
+			{Key: "storage_domain", Type: "varchar", DisplayName: "Storage Domain", Description: "Optional storage domain used to select a specific StorageLink target."},
+			{Key: "storage_name", Type: "varchar", DisplayName: "Storage Name", Description: "Optional storage name used to select a specific StorageLink target."},
+			{Key: "storage_kind", Type: "varchar", DisplayName: "Storage Kind", Description: "Optional storage kind used to select a specific StorageLink target."},
 		},
 		Returns: []assistantReturnInfo{
 			{Key: "query", Type: "varchar", DisplayName: "Metric query plan"},
