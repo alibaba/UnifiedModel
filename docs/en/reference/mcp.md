@@ -132,3 +132,7 @@ Expected output is one JSON-RPC response per input line. Successful responses co
 - Query tools are the default read path.
 - Write tools must remain disabled unless a caller explicitly opts in through the server-side policy.
 - TOON is used inside MCP content blocks. The MCP transport envelope stays JSON-RPC for protocol compatibility.
+
+## See Also
+
+- [Agent Integration Guide](../guides/agent-integration.md) - how an agent connects and uses the query surface, with a worked incident-investigation walkthrough.

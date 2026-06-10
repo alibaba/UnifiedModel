@@ -34,6 +34,7 @@ English: [UModel Documentation](../en/README.md)
 - [Query Service 指南](guides/query-service.md)
 - [Web UI 指南](guides/web-ui.md)
 - [SDK 与客户端指南](guides/sdk-clients.md) - REST、CLI、MCP、生成模型 SDK 和集成示例。
+- [Agent 集成指南](guides/agent-integration.md) - 接入 MCP 客户端、Agent 的工具/资源接口、Agent 使用的查询面，以及一个完整的故障排查样例。
 - [MCP 示例](../../examples/mcp/README.zh-CN.md) - stdio、Streamable HTTP、HTTP+SSE 和 TOON payload 示例。
 
 ## 示例

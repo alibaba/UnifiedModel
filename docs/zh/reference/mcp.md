@@ -133,3 +133,7 @@ printf '%s\n' \
 - Query tools 是默认读取路径。
 - 写 tools 必须保持默认关闭，除非调用方通过服务端策略显式启用。
 - TOON 用在 MCP content block 内部。MCP transport 外壳保持 JSON-RPC，以保证协议兼容。
+
+## 相关文档
+
+- [Agent 集成指南](../guides/agent-integration.md) - Agent 如何接入并使用查询面，附完整的故障排查样例。

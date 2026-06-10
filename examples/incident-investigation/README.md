@@ -182,6 +182,8 @@ umctl query run demo ".umodel with(kind='runbook_set', name='platform.service.op
 
 ## Agent Integration
 
+> For the general how-to (connecting an MCP client, the agent tool/resource surface, the query surface, and `?format=agent`), see the [Agent Integration Guide](../../docs/en/guides/agent-integration.md). This section is the scenario-specific flow.
+
 Connect an MCP client and ask:
 
 > "payment-gateway SLO breached, help me investigate."

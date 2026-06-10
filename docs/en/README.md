@@ -34,6 +34,7 @@ Documentation root: [docs/README.md](../README.md)
 - [Query Service Guide](guides/query-service.md)
 - [Web UI Guide](guides/web-ui.md)
 - [SDK And Client Guide](guides/sdk-clients.md) - REST, CLI, MCP, generated model SDKs, and integration examples.
+- [Agent Integration Guide](guides/agent-integration.md) - connect an MCP client, the agent tool/resource surface, the query surface an agent uses, and a worked incident-investigation walkthrough.
 - [MCP Examples](../../examples/mcp/README.md) - stdio, Streamable HTTP, HTTP+SSE, and TOON payload examples.
 
 ## Examples

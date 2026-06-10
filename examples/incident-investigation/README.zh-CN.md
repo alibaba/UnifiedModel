@@ -182,6 +182,8 @@ umctl query run demo ".umodel with(kind='runbook_set', name='platform.service.op
 
 ## Agent 集成
 
+> 通用接入方法（连接 MCP 客户端、Agent 的工具/资源接口、查询面、`?format=agent`）见 [Agent 集成指南](../../docs/zh/guides/agent-integration.md)。本节是该场景特定的流程。
+
 连接 MCP 客户端后，输入：
 
 > "payment-gateway SLO 告警了，帮我排查。"
