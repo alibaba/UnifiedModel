@@ -273,6 +273,10 @@ type QueryRequest struct {
 	EntityData       *EntityData    `json:"entity_data,omitempty"`
 	EntityDataCamel  *EntityData    `json:"entityData,omitempty"`
 	FilterByEntities *EntityData    `json:"filterByEntities,omitempty"`
+	// Mode selects between returning a query plan and executing the plan against
+	// real storage. unified-model only supports "plan"; umodel-assistant supports
+	// "plan" and "data". Empty defaults to the server's default_mode (plan for OSS).
+	Mode string `json:"mode,omitempty"`
 }
 
 func (r QueryRequest) EntityFilterData() *EntityData {

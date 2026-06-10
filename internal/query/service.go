@@ -3,8 +3,30 @@ package query
 import (
 	"context"
 
+	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
+
+// ModePlan is the only query mode supported by unified-model. umodel-assistant
+// additionally supports "data". See docs/en/spec/plan-schema-v1.md for the
+// shared mode protocol.
+const ModePlan = "plan"
+
+// normalizeMode applies the unified-model mode policy: empty becomes "plan",
+// "plan" passes through, anything else is rejected. unified-model never
+// executes plans against real storage.
+func normalizeMode(mode string) (string, error) {
+	switch mode {
+	case "", ModePlan:
+		return ModePlan, nil
+	default:
+		return "", apperrors.WithDetails(
+			apperrors.CodeNotImplemented,
+			"unified-model only supports mode=plan. To execute queries against real storage, use umodel-assistant.",
+			map[string]string{"requested_mode": mode, "supported_modes": ModePlan},
+		)
+	}
+}
 
 type graphStore interface {
 	GetUModelSnapshot(ctx context.Context, req model.UModelSnapshotRequest) (model.UModelSnapshot, error)
@@ -38,6 +60,11 @@ func NewServiceWithSearch(graph graphStore, search searchService) *Service {
 }
 
 func (s *Service) Execute(ctx context.Context, workspace string, req model.QueryRequest) (model.QueryResult, error) {
+	mode, err := normalizeMode(req.Mode)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	req.Mode = mode
 	plan, caps, health, err := s.plan(ctx, workspace, req)
 	if err != nil {
 		return model.QueryResult{}, err
@@ -65,6 +92,11 @@ func (s *Service) Execute(ctx context.Context, workspace string, req model.Query
 }
 
 func (s *Service) Explain(ctx context.Context, workspace string, req model.QueryRequest) (model.QueryExplain, error) {
+	mode, err := normalizeMode(req.Mode)
+	if err != nil {
+		return model.QueryExplain{}, err
+	}
+	req.Mode = mode
 	plan, caps, health, err := s.plan(ctx, workspace, req)
 	if err != nil {
 		return model.QueryExplain{}, err
