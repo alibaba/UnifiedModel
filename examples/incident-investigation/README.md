@@ -103,6 +103,26 @@ umctl query run demo \
 
 Expected: `payment-gateway | degraded | payments-backend | platinum`
 
+### Step 1.5: Pull the service's own telemetry
+
+The service entity links to a MetricSet and a LogSet, so the agent can read the actual signals — not just the entity's `status` field. `get_metrics` / `get_logs` return an executable query *plan* (UModel open source is plan-only; a downstream executor runs it against real storage).
+
+```bash
+# P99 latency metric → returns a Prometheus query plan
+umctl query run demo \
+  ".entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c']) \
+  | entity-call get_metrics('platform', 'platform.service.metrics', 'latency_p99_ms', step='30s')"
+
+# Error logs → returns an Elasticsearch query plan
+umctl query run demo \
+  ".entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c']) \
+  | entity-call get_logs('platform', 'platform.service.logs', query='level = \"ERROR\"')"
+```
+
+The metric plan renders the PromQL `histogram_quantile(0.99, …{service_id="63718b78…"}…)` with the service ID substituted from the entity — the object graph turns "the degraded service" into the exact telemetry query without the agent hand-writing PromQL.
+
+For agent clients, add `?format=agent` to the request (or `mode='agent'`) to get the compact v1.1 envelope — the plan as a top-level object with `data_source` folded to `{ref, type}`. See [Plan Schema v1](../../docs/en/spec/plan-schema-v1.md).
+
 ### Step 2: Check upstream callers via topology
 
 ```bash
@@ -266,6 +286,11 @@ See the [MCP Reference](../../docs/en/reference/mcp.md) for transports (stdio, S
 | Cross-domain links | `cross-domain/link/entity_set_link/` | 3 | Platform-Runtime, Platform-Business topology |
 | Runbook set | `platform/runbook_set/` | 1 | Service operations runbook |
 | Runbook link | `platform/link/runbook_link/` | 1 | Links platform.service to its ops runbook |
+| Metric set | `platform/metric_set/` | 1 | Service golden metrics (P99 latency, QPS, error rate) |
+| Log set | `platform/log_set/` | 1 | Service application logs |
+| Storage | `platform/storage/` | 2 | Prometheus (metrics) and Elasticsearch (logs) endpoints |
+| Data links | `platform/link/data_link/` | 2 | Connect platform.service to its metric/log sets |
+| Storage links | `platform/link/storage_link/` | 2 | Connect metric/log sets to their storage |
 | Sample entities | `sample-data/entities.json` | 65 | Runtime entity payloads |
 | Sample relations | `sample-data/relations.json` | 83 | Runtime topology payloads |
 | Manifest | `sample-data/manifest.json` | — | Sample metadata, seed entities, scenario description |

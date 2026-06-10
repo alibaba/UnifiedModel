@@ -1,0 +1,28 @@
+kind: prometheus
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "platform.prometheus.core"
+  domain: platform
+  display_name:
+    en_us: "Platform Prometheus"
+    zh_cn: "Platform Prometheus"
+  description:
+    en_us: "Prometheus-compatible metrics endpoint used by the incident-investigation service metric set."
+    zh_cn: "故障排查 Demo 服务指标集使用的 Prometheus 兼容指标端点。"
+spec:
+  endpoint: "http://prometheus.platform.example:9090"
+  api_prefix: "/api/v1"
+  default_query_type: range
+  default_step: 1m
+  lookback_delta: 5m
+  tenant: incident-investigation
+  tenant_header: "X-Scope-OrgID"
+  tls_verify: true
+  external_labels:
+    workspace: incident-investigation
+    domain: platform
+  tags:
+    sample: incident-investigation
+    role: metrics

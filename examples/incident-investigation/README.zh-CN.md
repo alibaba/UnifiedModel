@@ -103,6 +103,26 @@ umctl query run demo \
 
 预期输出：`payment-gateway | degraded | payments-backend | platinum`
 
+### 第 1.5 步：拉取服务自身的可观测信号
+
+服务实体关联了一个 MetricSet 和一个 LogSet，Agent 因此能读到真实信号，而不只是实体的 `status` 字段。`get_metrics` / `get_logs` 返回的是可执行的查询 *计划*（UModel 开源版只产出计划，由下游 executor 针对真实存储执行）。
+
+```bash
+# P99 延迟指标 → 返回 Prometheus 查询计划
+umctl query run demo \
+  ".entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c']) \
+  | entity-call get_metrics('platform', 'platform.service.metrics', 'latency_p99_ms', step='30s')"
+
+# 错误日志 → 返回 Elasticsearch 查询计划
+umctl query run demo \
+  ".entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c']) \
+  | entity-call get_logs('platform', 'platform.service.logs', query='level = \"ERROR\"')"
+```
+
+指标计划会渲染出 PromQL `histogram_quantile(0.99, …{service_id="63718b78…"}…)`，`service_id` 直接从实体取值——对象图把"那个 degraded 的服务"翻译成精确的可观测查询，Agent 无需手写 PromQL。
+
+Agent 客户端在请求上加 `?format=agent`（或 `mode='agent'`）即可拿到紧凑的 v1.1 信封——计划作为顶层对象返回，`data_source` 折叠为 `{ref, type}`。详见 [Plan Schema v1](../../docs/zh/spec/plan-schema-v1.md)。
+
 ### 第 2 步：查看上游调用方（拓扑查询）
 
 ```bash
@@ -266,6 +286,11 @@ go run ./cmd/umodel-mcp --quickstart \
 | 跨域关系 | `cross-domain/link/entity_set_link/` | 3 | Platform-Runtime, Platform-Business 拓扑 |
 | Runbook 集 | `platform/runbook_set/` | 1 | 服务运维手册 |
 | Runbook 链接 | `platform/link/runbook_link/` | 1 | 将 platform.service 链接到运维手册 |
+| 指标集 | `platform/metric_set/` | 1 | 服务黄金指标（P99 延迟、QPS、错误率） |
+| 日志集 | `platform/log_set/` | 1 | 服务应用日志 |
+| 存储 | `platform/storage/` | 2 | Prometheus（指标）和 Elasticsearch（日志）端点 |
+| 数据链接 | `platform/link/data_link/` | 2 | 将 platform.service 连接到其指标/日志集 |
+| 存储链接 | `platform/link/storage_link/` | 2 | 将指标/日志集连接到对应存储 |
 | 运行时实体 | `sample-data/entities.json` | 65 | 实体数据 |
 | 运行时关系 | `sample-data/relations.json` | 83 | 拓扑数据 |
 | 清单 | `sample-data/manifest.json` | — | 样例元数据、种子实体、场景描述 |

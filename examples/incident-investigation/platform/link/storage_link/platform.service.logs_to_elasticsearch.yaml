@@ -1,0 +1,26 @@
+kind: storage_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "platform.service.logs_to_elasticsearch"
+  domain: platform
+  display_name:
+    en_us: "Service logs stored in Elasticsearch"
+    zh_cn: "服务日志存储在 Elasticsearch"
+spec:
+  src:
+    domain: platform
+    kind: log_set
+    name: platform.service.logs
+  dest:
+    domain: platform
+    kind: elasticsearch
+    name: platform.elasticsearch.logs
+  fields_mapping:
+    timestamp: timestamp
+    service_id: svc_id
+    environment: env
+    level: severity
+    message: log_message
+    trace_id: trace_id

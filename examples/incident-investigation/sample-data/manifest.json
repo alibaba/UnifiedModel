@@ -31,9 +31,11 @@
     "entity_set_links": 11,
     "runbook_sets": 1,
     "runbook_links": 1,
-    "data_sets": 0,
-    "data_links": 0,
-    "storage_links": 0,
+    "metric_sets": 1,
+    "log_sets": 1,
+    "storages": 2,
+    "data_links": 2,
+    "storage_links": 2,
     "entities": 65,
     "relations": 83
   },
@@ -41,15 +43,17 @@
     "entity_set",
     "entity_set_link",
     "runbook_set",
-    "runbook_link"
-  ],
-  "excluded_kinds": [
+    "runbook_link",
     "metric_set",
     "log_set",
-    "trace_set",
-    "event_set",
-    "profile_set",
+    "prometheus",
+    "elasticsearch",
     "data_link",
     "storage_link"
+  ],
+  "excluded_kinds": [
+    "trace_set",
+    "event_set",
+    "profile_set"
   ]
 }
