@@ -263,9 +263,29 @@ type ExpireRequest struct {
 	Reason    string   `json:"reason,omitempty"`
 }
 
+// Response envelope format constants for QueryRequest.Format. See the Format
+// field doc comment for full semantics.
+const (
+	FormatAssistant = ""      // legacy assistant envelope (default)
+	FormatAgent     = "agent" // agent-native envelope (plan schema v1.1)
+)
+
 type QueryRequest struct {
-	Query            string         `json:"query"`
-	TimeRange        TimeRange      `json:"time_range,omitempty"`
+	Query     string    `json:"query"`
+	TimeRange TimeRange `json:"time_range,omitempty"`
+	// Format selects the response envelope shape.
+	//
+	//   ""        FormatAssistant: legacy envelope. responseType=1 row, plan
+	//             JSON-encoded into the `query` column, wrapped by
+	//             NewQueryExecuteResponse into {code, data, message, success}.
+	//             Plan schema version "v1". Existing clients see no change.
+	//   "agent"   FormatAgent: plan returned as a JSON object at the top level
+	//             of the HTTP body, with data_source.* spec/config fields
+	//             folded to compact {ref, kind} refs. Plan schema version
+	//             "v1.1". Combine with ?include=spec to expand.
+	//
+	// unified-model supports only these two values; any other value is
+	// rejected at the service layer with INVALID_ARGUMENT.
 	Format           string         `json:"format,omitempty"`
 	Limit            int            `json:"limit,omitempty"`
 	TimeoutMS        int            `json:"timeout_ms,omitempty"`
@@ -277,6 +297,10 @@ type QueryRequest struct {
 	// real storage. unified-model only supports "plan"; umodel-assistant supports
 	// "plan" and "data". Empty defaults to the server's default_mode (plan for OSS).
 	Mode string `json:"mode,omitempty"`
+	// IncludeSpec opts in to fully expanding folded fields under
+	// data_source.* (storage.config, data_link.spec, storage_link.spec) when
+	// Format is FormatAgent. No effect when Format is FormatAssistant.
+	IncludeSpec bool `json:"include_spec,omitempty"`
 }
 
 func (r QueryRequest) EntityFilterData() *EntityData {
@@ -593,24 +617,26 @@ type QueryPipelineOperator struct {
 }
 
 type QueryPlan struct {
-	Workspace  string
-	Source     string
-	Query      string
-	Filters    map[string]any
-	Operators  []string
-	Pipeline   []QueryPipelineOperator
-	Predicates []QueryPredicate
-	Project    []string
-	Sort       []QuerySort
-	GraphCall  *GraphCallPlan
-	EntityCall *EntityCallPlan
-	TopK       int
-	TimeRange  TimeRange
-	Params     map[string]any
-	EntityData *EntityData
-	Limit      int
-	Depth      int
-	TimeoutMS  int
+	Workspace   string
+	Source      string
+	Query       string
+	Filters     map[string]any
+	Operators   []string
+	Pipeline    []QueryPipelineOperator
+	Predicates  []QueryPredicate
+	Project     []string
+	Sort        []QuerySort
+	GraphCall   *GraphCallPlan
+	EntityCall  *EntityCallPlan
+	TopK        int
+	TimeRange   TimeRange
+	Params      map[string]any
+	EntityData  *EntityData
+	Limit       int
+	Depth       int
+	TimeoutMS   int
+	Format      string // mirrors QueryRequest.Format; threaded to the executor for envelope selection
+	IncludeSpec bool   // mirrors QueryRequest.IncludeSpec; threaded to the executor for spec expansion
 }
 
 type EntityQueryPlan = QueryPlan

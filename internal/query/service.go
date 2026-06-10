@@ -12,6 +12,25 @@ import (
 // shared mode protocol.
 const ModePlan = "plan"
 
+// normalizeFormat applies the unified-model format policy: empty becomes the
+// default assistant envelope, "agent" passes through, anything else is
+// rejected. See model.QueryRequest.Format for the response shape difference.
+func normalizeFormat(format string) (string, error) {
+	switch format {
+	case model.FormatAssistant, model.FormatAgent:
+		return format, nil
+	default:
+		return "", apperrors.WithDetails(
+			apperrors.CodeInvalidArgument,
+			`unsupported format. unified-model supports format="" (default assistant envelope) or format="agent" (agent-native envelope).`,
+			map[string]string{
+				"requested_format":  format,
+				"supported_formats": `"" (assistant), "agent"`,
+			},
+		)
+	}
+}
+
 // normalizeMode applies the unified-model mode policy: empty becomes "plan",
 // "plan" passes through, anything else is rejected. unified-model never
 // executes plans against real storage.
@@ -75,6 +94,11 @@ func (s *Service) Execute(ctx context.Context, workspace string, req model.Query
 		return model.QueryResult{}, err
 	}
 	req.Mode = mode
+	format, err := normalizeFormat(req.Format)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	req.Format = format
 	plan, caps, health, err := s.plan(ctx, workspace, req)
 	if err != nil {
 		return model.QueryResult{}, err
@@ -107,6 +131,11 @@ func (s *Service) Explain(ctx context.Context, workspace string, req model.Query
 		return model.QueryExplain{}, err
 	}
 	req.Mode = mode
+	format, err := normalizeFormat(req.Format)
+	if err != nil {
+		return model.QueryExplain{}, err
+	}
+	req.Format = format
 	plan, caps, health, err := s.plan(ctx, workspace, req)
 	if err != nil {
 		return model.QueryExplain{}, err

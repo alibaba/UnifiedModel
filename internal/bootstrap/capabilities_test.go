@@ -23,10 +23,12 @@ func TestCapabilitiesReportsPlanOnly(t *testing.T) {
 	}
 
 	var payload struct {
-		Service        string   `json:"service"`
-		Version        string   `json:"version"`
-		ModesSupported []string `json:"modes_supported"`
-		DefaultMode    string   `json:"default_mode"`
+		Service          string   `json:"service"`
+		Version          string   `json:"version"`
+		ModesSupported   []string `json:"modes_supported"`
+		DefaultMode      string   `json:"default_mode"`
+		FormatsSupported []string `json:"formats_supported"`
+		DefaultFormat    string   `json:"default_format"`
 	}
 	if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode body: %v", err)
@@ -43,6 +45,19 @@ func TestCapabilitiesReportsPlanOnly(t *testing.T) {
 	}
 	if payload.Version == "" {
 		t.Fatalf("version should not be empty")
+	}
+	if payload.DefaultFormat != "" {
+		t.Fatalf("default_format = %q, want %q", payload.DefaultFormat, "")
+	}
+	if len(payload.FormatsSupported) != 2 {
+		t.Fatalf("formats_supported should list 2 values, got %+v", payload.FormatsSupported)
+	}
+	gotFormats := map[string]bool{}
+	for _, f := range payload.FormatsSupported {
+		gotFormats[f] = true
+	}
+	if !gotFormats[""] || !gotFormats["agent"] {
+		t.Fatalf("formats_supported should include \"\" and \"agent\", got %+v", payload.FormatsSupported)
 	}
 }
 
