@@ -391,6 +391,10 @@ func (a *App) handleQuery(w http.ResponseWriter, r *http.Request) {
 			writeError(w, err)
 			return
 		}
+		if req.Format == model.FormatAgent && model.IsAgentPlanResult(result) {
+			writeJSON(w, http.StatusOK, model.AgentPlanPayload(result))
+			return
+		}
 		writeJSON(w, http.StatusOK, model.NewQueryExecuteResponse(result))
 	case "explain":
 		explain, err := a.Query.Explain(r.Context(), workspaceID, req)

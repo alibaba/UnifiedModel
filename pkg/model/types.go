@@ -270,6 +270,32 @@ const (
 	FormatAgent     = "agent" // agent-native envelope (plan schema v1.1)
 )
 
+// AgentPlanResultColumn is the sentinel QueryResult column name that flags a
+// row whose only value is the agent-format plan map. The HTTP layer detects
+// this column to bypass the standard QueryExecuteResponse envelope and write
+// the plan object directly as the response body. See
+// model.IsAgentPlanResult for the detection helper.
+const AgentPlanResultColumn = "__agent_plan__"
+
+// IsAgentPlanResult reports whether result was produced for an
+// agent-format request and should be written as a top-level plan object
+// rather than wrapped in the standard QueryExecuteResponse envelope.
+func IsAgentPlanResult(result QueryResult) bool {
+	return len(result.Columns) == 1 && result.Columns[0] == AgentPlanResultColumn
+}
+
+// AgentPlanPayload returns the plan map carried by an agent-format result.
+// Returns nil if result is not an agent-format payload.
+func AgentPlanPayload(result QueryResult) map[string]any {
+	if !IsAgentPlanResult(result) || len(result.Rows) == 0 {
+		return nil
+	}
+	if plan, ok := result.Rows[0][AgentPlanResultColumn].(map[string]any); ok {
+		return plan
+	}
+	return nil
+}
+
 type QueryRequest struct {
 	Query     string    `json:"query"`
 	TimeRange TimeRange `json:"time_range,omitempty"`

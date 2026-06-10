@@ -113,6 +113,83 @@ func entitySetAssistantQueryResponse(query string) model.QueryResult {
 	}
 }
 
+// agentPlanResult wraps a plan map for transport from executor to HTTP layer.
+// The HTTP layer detects model.AgentPlanResultColumn via model.IsAgentPlanResult
+// and writes the plan object directly as the response body, bypassing the
+// assistant envelope and NewQueryExecuteResponse matrix wrapping.
+// Plan schema v1.1.
+func agentPlanResult(plan map[string]any) model.QueryResult {
+	return model.QueryResult{
+		Columns: []string{model.AgentPlanResultColumn},
+		Rows:    []map[string]any{{model.AgentPlanResultColumn: plan}},
+	}
+}
+
+// agentDataSetRef returns the data_source.data_set substructure.
+//   - Classic (isAgent=false):                                 {domain, kind, name}
+//   - Agent + folded (isAgent=true, includeSpec=false):        {ref, kind}
+//   - Agent + expanded (isAgent=true, includeSpec=true):       {ref, kind, spec}
+func agentDataSetRef(elem model.UModelElement, isAgent, includeSpec bool) map[string]any {
+	if !isAgent {
+		return map[string]any{
+			"domain": elem.Domain,
+			"kind":   elem.Kind,
+			"name":   elem.Name,
+		}
+	}
+	out := map[string]any{
+		"ref":  fmt.Sprintf("%s/%s", elem.Domain, elem.Name),
+		"kind": elem.Kind,
+	}
+	if includeSpec {
+		out["spec"] = elem.Spec
+	}
+	return out
+}
+
+// agentStorageRef returns the data_source.storage substructure. Storage uses
+// "type" (not "kind") and carries the storage "config" payload, mirroring the
+// classic shape's field naming.
+func agentStorageRef(elem model.UModelElement, isAgent, includeSpec bool) map[string]any {
+	if !isAgent {
+		return map[string]any{
+			"domain": elem.Domain,
+			"type":   elem.Kind,
+			"name":   elem.Name,
+			"config": elem.Spec,
+		}
+	}
+	out := map[string]any{
+		"ref":  fmt.Sprintf("%s/%s", elem.Domain, elem.Name),
+		"type": elem.Kind,
+	}
+	if includeSpec {
+		out["config"] = elem.Spec
+	}
+	return out
+}
+
+// agentLinkRef returns a DataLink or StorageLink substructure. Link kinds are
+// carried in elem.Kind ("data_link" / "storage_link") so the agent always
+// knows which side it's looking at.
+func agentLinkRef(elem model.UModelElement, isAgent, includeSpec bool) map[string]any {
+	if !isAgent {
+		return map[string]any{
+			"domain": elem.Domain,
+			"name":   elem.Name,
+			"spec":   elem.Spec,
+		}
+	}
+	out := map[string]any{
+		"ref":  fmt.Sprintf("%s/%s", elem.Domain, elem.Name),
+		"kind": elem.Kind,
+	}
+	if includeSpec {
+		out["spec"] = elem.Spec
+	}
+	return out
+}
+
 func (e *Executor) executeEntitySetListDataSet(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
 	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
 	if err != nil {
@@ -150,6 +227,9 @@ func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string
 	}
 
 	queryPlan := logQueryPlan(plan, dataLink, logSet, bindings[0])
+	if plan.Format == model.FormatAgent {
+		return agentPlanResult(queryPlan), nil
+	}
 	return entitySetAssistantQueryResponse(mustJSON(queryPlan)), nil
 }
 
@@ -180,6 +260,9 @@ func (e *Executor) executeEntitySetGetMetrics(ctx context.Context, workspace str
 	}
 
 	queryPlan := metricQueryPlan(plan, dataLink, metricSet, bindings[0], metrics)
+	if plan.Format == model.FormatAgent {
+		return agentPlanResult(queryPlan), nil
+	}
 	return entitySetAssistantQueryResponse(mustJSON(queryPlan)), nil
 }
 
@@ -516,35 +599,24 @@ func logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet mod
 	dataFilter := stringValue(dataLink.Spec["data_filter"])
 	methodQuery := stringFilter(plan.EntityCall.Parameters["query"])
 
+	isAgent := plan.Format == model.FormatAgent
+	version := "v1"
+	if isAgent {
+		version = "v1.1"
+	}
+
 	queryPlan := map[string]any{
 		"mode":         "plan",
-		"version":      "v1",
+		"version":      version,
 		"operation":    "get_logs",
 		"description":  describeLogPlan(logSet, binding.Storage, methodQuery),
 		"next_action":  nextActionForwardToExecutor,
 		"source_query": plan.Query,
 		"data_source": map[string]any{
-			"data_set": map[string]any{
-				"domain": logSet.Domain,
-				"kind":   logSet.Kind,
-				"name":   logSet.Name,
-			},
-			"storage": map[string]any{
-				"domain": binding.Storage.Domain,
-				"type":   binding.Storage.Kind,
-				"name":   binding.Storage.Name,
-				"config": binding.Storage.Spec,
-			},
-			"data_link": map[string]any{
-				"domain": dataLink.Domain,
-				"name":   dataLink.Name,
-				"spec":   dataLink.Spec,
-			},
-			"storage_link": map[string]any{
-				"domain": binding.Link.Domain,
-				"name":   binding.Link.Name,
-				"spec":   binding.Link.Spec,
-			},
+			"data_set":     agentDataSetRef(logSet, isAgent, plan.IncludeSpec),
+			"storage":      agentStorageRef(binding.Storage, isAgent, plan.IncludeSpec),
+			"data_link":    agentLinkRef(dataLink, isAgent, plan.IncludeSpec),
+			"storage_link": agentLinkRef(binding.Link, isAgent, plan.IncludeSpec),
 		},
 		"params_echo": echoParams(plan.EntityCall.Parameters),
 		"query":       buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit),
@@ -566,35 +638,25 @@ func metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricS
 	step := stringFilter(plan.EntityCall.Parameters["step"])
 
 	metricName := stringFilter(plan.EntityCall.Parameters["metric"])
+
+	isAgent := plan.Format == model.FormatAgent
+	version := "v1"
+	if isAgent {
+		version = "v1.1"
+	}
+
 	queryPlan := map[string]any{
 		"mode":         "plan",
-		"version":      "v1",
+		"version":      version,
 		"operation":    "get_metrics",
 		"description":  describeMetricPlan(metricSet, binding.Storage, metricName, methodQuery, queryType, step),
 		"next_action":  nextActionForwardToExecutor,
 		"source_query": plan.Query,
 		"data_source": map[string]any{
-			"data_set": map[string]any{
-				"domain": metricSet.Domain,
-				"kind":   metricSet.Kind,
-				"name":   metricSet.Name,
-			},
-			"storage": map[string]any{
-				"domain": binding.Storage.Domain,
-				"type":   binding.Storage.Kind,
-				"name":   binding.Storage.Name,
-				"config": binding.Storage.Spec,
-			},
-			"data_link": map[string]any{
-				"domain": dataLink.Domain,
-				"name":   dataLink.Name,
-				"spec":   dataLink.Spec,
-			},
-			"storage_link": map[string]any{
-				"domain": binding.Link.Domain,
-				"name":   binding.Link.Name,
-				"spec":   binding.Link.Spec,
-			},
+			"data_set":     agentDataSetRef(metricSet, isAgent, plan.IncludeSpec),
+			"storage":      agentStorageRef(binding.Storage, isAgent, plan.IncludeSpec),
+			"data_link":    agentLinkRef(dataLink, isAgent, plan.IncludeSpec),
+			"storage_link": agentLinkRef(binding.Link, isAgent, plan.IncludeSpec),
 		},
 		"params_echo": echoParams(plan.EntityCall.Parameters),
 		"query":       buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit),
