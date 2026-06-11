@@ -29,6 +29,9 @@ umctl --addr http://localhost:8080 help
 | Option | Default | Description |
 |---|---|---|
 | `--addr` | `http://localhost:8080` | Base URL for `umodel-server`. |
+| `--output`, `-o` | `json` | Output format. Use `text` for a readable key/value view. |
+
+Commands return a non-zero exit code for HTTP errors and for successful HTTP responses whose top-level `failed` field is greater than `0`.
 
 ## Server Quickstart Flags
 

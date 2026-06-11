@@ -30,6 +30,9 @@ umctl --addr http://localhost:8080 help
 | 参数 | 默认值 | 描述 |
 |---|---|---|
 | `--addr` | `http://localhost:8080` | `umodel-server` 的 base URL。 |
+| `--output`, `-o` | `json` | 输出格式。使用 `text` 输出更易读的 key/value 文本。 |
+
+当 HTTP 请求失败，或 HTTP 成功但响应顶层 `failed` 字段大于 `0` 时，命令会返回非 0 退出码。
 
 ## Server Quickstart 参数
 

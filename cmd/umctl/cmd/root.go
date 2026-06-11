@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -30,6 +31,9 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip config loading if apiClient already set (test mode)
 		if apiClient != nil {
+			if flagOutput != "" {
+				output.SetFormat(flagOutput)
+			}
 			return nil
 		}
 
@@ -50,6 +54,11 @@ var rootCmd = &cobra.Command{
 		}
 
 		addr := cfg.ResolveAddr(flagAddr, os.Getenv("UMCTL_ADDR"))
+		if strings.TrimSpace(addr) == "" {
+			response.ExitWithError(response.ExitParam,
+				"No UModel server address configured.",
+				"Run 'umctl configure' to set a server address, or pass '--addr http://localhost:8080'.")
+		}
 		apiClient = client.NewClient(addr)
 		return nil
 	},

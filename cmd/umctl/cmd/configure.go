@@ -69,9 +69,11 @@ func runConfigure(cmd *cobra.Command, args []string) {
 
 	fmt.Fprintf(os.Stderr, "Configuring profile: %s\n\n", profileName)
 
-	profile.Addr = prompt("Server Address", profile.Addr)
+	scanner := bufio.NewScanner(os.Stdin)
 
-	cfg.OutputFormat = prompt("Default Output Format (json/text)", cfg.OutputFormat)
+	profile.Addr = prompt(scanner, "Server Address", profile.Addr)
+
+	cfg.OutputFormat = prompt(scanner, "Default Output Format (json/text)", cfg.OutputFormat)
 	if cfg.OutputFormat != "json" && cfg.OutputFormat != "text" {
 		cfg.OutputFormat = "json"
 	}
@@ -100,7 +102,7 @@ func runConfigureList(cmd *cobra.Command, args []string) {
 		if name == cfg.Current {
 			marker = "* "
 		}
-		fmt.Fprintf(os.Stderr, "%s%-16s addr=%s\n", marker, name, profile.Addr)
+		fmt.Fprintf(os.Stdout, "%s%-16s addr=%s\n", marker, name, profile.Addr)
 	}
 }
 
@@ -120,18 +122,17 @@ func runConfigureShow(cmd *cobra.Command, args []string) {
 		response.ExitWithError(response.ExitNotFound, fmt.Sprintf("Profile %q not found", profileName), "Use 'umctl configure list' to see available profiles.")
 	}
 
-	fmt.Fprintf(os.Stderr, "Profile:       %s\n", profileName)
-	fmt.Fprintf(os.Stderr, "Server Addr:   %s\n", profile.Addr)
-	fmt.Fprintf(os.Stderr, "Output Format: %s\n", cfg.OutputFormat)
+	fmt.Fprintf(os.Stdout, "Profile:       %s\n", profileName)
+	fmt.Fprintf(os.Stdout, "Server Addr:   %s\n", profile.Addr)
+	fmt.Fprintf(os.Stdout, "Output Format: %s\n", cfg.OutputFormat)
 }
 
-func prompt(label, current string) string {
+func prompt(scanner *bufio.Scanner, label, current string) string {
 	if current != "" {
 		fmt.Fprintf(os.Stderr, "%s [%s]: ", label, current)
 	} else {
 		fmt.Fprintf(os.Stderr, "%s: ", label)
 	}
-	scanner := bufio.NewScanner(os.Stdin)
 	if scanner.Scan() {
 		val := strings.TrimSpace(scanner.Text())
 		if val != "" {

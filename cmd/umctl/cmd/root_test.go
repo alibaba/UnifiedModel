@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -29,6 +30,9 @@ func setupTestEnv(t *testing.T, handler http.Handler) func() {
 	t.Helper()
 	server := httptest.NewServer(handler)
 	apiClient = client.NewClient(server.URL)
+	flagAddr = ""
+	flagOutput = ""
+	flagProfile = ""
 	output.SetFormat("json")
 
 	oldExit := response.ExitFunc
@@ -40,14 +44,47 @@ func setupTestEnv(t *testing.T, handler http.Handler) func() {
 		server.Close()
 		response.ExitFunc = oldExit
 		apiClient = nil
+		flagAddr = ""
+		flagOutput = ""
+		flagProfile = ""
+		output.SetFormat("json")
+	}
+}
+
+func setupExitOnlyEnv(t *testing.T) func() {
+	t.Helper()
+	apiClient = nil
+	flagAddr = ""
+	flagOutput = ""
+	flagProfile = ""
+	output.SetFormat("json")
+
+	oldExit := response.ExitFunc
+	response.ExitFunc = func(code int) {
+		panic(&exitError{code: code})
+	}
+
+	return func() {
+		response.ExitFunc = oldExit
+		apiClient = nil
+		flagAddr = ""
+		flagOutput = ""
+		flagProfile = ""
+		output.SetFormat("json")
 	}
 }
 
 func captureStdout(t *testing.T, fn func()) string {
+	out, _ := captureStdoutAndExitCode(t, fn)
+	return out
+}
+
+func captureStdoutAndExitCode(t *testing.T, fn func()) (string, int) {
 	t.Helper()
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
+	exitCode := 0
 
 	defer func() {
 		os.Stdout = old
@@ -57,7 +94,9 @@ func captureStdout(t *testing.T, fn func()) string {
 	func() {
 		defer func() {
 			if rv := recover(); rv != nil {
-				if _, ok := rv.(*exitError); !ok {
+				if e, ok := rv.(*exitError); ok {
+					exitCode = e.code
+				} else {
 					panic(rv)
 				}
 			}
@@ -68,7 +107,7 @@ func captureStdout(t *testing.T, fn func()) string {
 	w.Close()
 	var buf bytes.Buffer
 	buf.ReadFrom(r)
-	return buf.String()
+	return buf.String(), exitCode
 }
 
 func TestCLICommandsRouteToCorrectEndpoints(t *testing.T) {
@@ -398,6 +437,149 @@ func TestCLIHandlesServerError(t *testing.T) {
 	}
 	if !strings.Contains(resp.Error, "boom") {
 		t.Fatalf("expected server error in response, got %q", resp.Error)
+	}
+}
+
+func TestCLIFailsFastWhenConfiguredAddrIsMissing(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	configDir := filepath.Join(home, ".umctl")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	configPath := filepath.Join(configDir, "config.yaml")
+	configData := []byte("current: manual\nprofiles:\n  manual: {}\n")
+	if err := os.WriteFile(configPath, configData, 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	cleanup := setupExitOnlyEnv(t)
+	defer cleanup()
+
+	out, code := captureStdoutAndExitCode(t, func() {
+		rootCmd.SetArgs([]string{"health"})
+		rootCmd.Execute()
+	})
+
+	if code != response.ExitParam {
+		t.Fatalf("expected exit code %d, got %d; output=%s", response.ExitParam, code, out)
+	}
+	if !strings.Contains(out, "No UModel server address configured") || !strings.Contains(out, "umctl configure") {
+		t.Fatalf("expected missing addr guidance, got %q", out)
+	}
+}
+
+func TestCLIExitsNonZeroOnBusinessFailure(t *testing.T) {
+	cleanup := setupTestEnv(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"accepted":0,"failed":1,"items":[{"id":"x","ok":false,"code":"NOT_IMPLEMENTED"}]}`))
+	}))
+	defer cleanup()
+
+	out, code := captureStdoutAndExitCode(t, func() {
+		rootCmd.SetArgs([]string{"workspace", "list"})
+		rootCmd.Execute()
+	})
+
+	if code != response.ExitOperation {
+		t.Fatalf("expected exit code %d, got %d; output=%s", response.ExitOperation, code, out)
+	}
+	if !strings.Contains(out, `"failed":1`) || !strings.Contains(out, "NOT_IMPLEMENTED") {
+		t.Fatalf("expected original failure response in output, got %q", out)
+	}
+}
+
+func TestTextOutputUsesReadableFallback(t *testing.T) {
+	cleanup := setupTestEnv(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"ok","graphstore":{"provider":"memory","status":"ok"}}`))
+	}))
+	defer cleanup()
+
+	out, code := captureStdoutAndExitCode(t, func() {
+		rootCmd.SetArgs([]string{"--output", "text", "health"})
+		rootCmd.Execute()
+	})
+
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d; output=%s", code, out)
+	}
+	if !strings.Contains(out, "status: ok") || strings.HasPrefix(strings.TrimSpace(out), "{") {
+		t.Fatalf("expected readable text output, got %q", out)
+	}
+}
+
+func TestConfigureShowAndListWriteToStdout(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	configDir := filepath.Join(home, ".umctl")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	configPath := filepath.Join(configDir, "config.yaml")
+	configData := []byte("current: manual\noutput_format: text\nprofiles:\n  manual:\n    addr: http://example.test\n")
+	if err := os.WriteFile(configPath, configData, 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	cleanup := setupTestEnv(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("configure show/list should not hit the server")
+	}))
+	defer cleanup()
+
+	showOut := captureStdout(t, func() {
+		rootCmd.SetArgs([]string{"configure", "show"})
+		rootCmd.Execute()
+	})
+	if !strings.Contains(showOut, "Profile:       manual") || !strings.Contains(showOut, "Server Addr:   http://example.test") {
+		t.Fatalf("expected configure show on stdout, got %q", showOut)
+	}
+
+	listOut := captureStdout(t, func() {
+		rootCmd.SetArgs([]string{"configure", "list"})
+		rootCmd.Execute()
+	})
+	if !strings.Contains(listOut, "* manual") || !strings.Contains(listOut, "addr=http://example.test") {
+		t.Fatalf("expected configure list on stdout, got %q", listOut)
+	}
+}
+
+func TestConfigureReadsMultiplePromptValuesFromOneInputStream(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	cleanup := setupTestEnv(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("configure should not hit the server")
+	}))
+	defer cleanup()
+
+	oldStdin := os.Stdin
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.WriteString("http://example.test\ntext\n"); err != nil {
+		t.Fatal(err)
+	}
+	w.Close()
+	os.Stdin = r
+	defer func() {
+		os.Stdin = oldStdin
+		r.Close()
+	}()
+
+	captureStdout(t, func() {
+		rootCmd.SetArgs([]string{"--profile", "manual", "configure"})
+		rootCmd.Execute()
+	})
+
+	data, err := os.ReadFile(filepath.Join(home, ".umctl", "config.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	configText := string(data)
+	if !strings.Contains(configText, "addr: http://example.test") || !strings.Contains(configText, "output_format: text") {
+		t.Fatalf("expected both prompt values saved, got:\n%s", configText)
 	}
 }
 

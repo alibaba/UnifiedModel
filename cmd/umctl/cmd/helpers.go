@@ -20,7 +20,7 @@ func doRequest(method, path string, payload any, ctx hint.ErrorContext) {
 	if statusCode >= 400 {
 		hint.HandleHTTPError(statusCode, body, ctx)
 	}
-	response.ExitWithSuccess(json.RawMessage(body))
+	exitWithResponse(body)
 }
 
 func doRawRequest(method, path string, rawBody []byte, ctx hint.ErrorContext) {
@@ -31,7 +31,36 @@ func doRawRequest(method, path string, rawBody []byte, ctx hint.ErrorContext) {
 	if statusCode >= 400 {
 		hint.HandleHTTPError(statusCode, body, ctx)
 	}
+	exitWithResponse(body)
+}
+
+func exitWithResponse(body []byte) {
+	if responseHasFailures(body) {
+		response.ExitWithCode(response.ExitOperation, json.RawMessage(body))
+	}
 	response.ExitWithSuccess(json.RawMessage(body))
+}
+
+func responseHasFailures(body []byte) bool {
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return false
+	}
+	failed, ok := payload["failed"]
+	if !ok {
+		return false
+	}
+	switch v := failed.(type) {
+	case float64:
+		return v > 0
+	case int:
+		return v > 0
+	case json.Number:
+		n, err := v.Int64()
+		return err == nil && n > 0
+	default:
+		return false
+	}
 }
 
 func readJSONFile(path string) (map[string]any, error) {

@@ -15,6 +15,7 @@ const (
 	ExitQuota      = 4 // reserved: quota exceeded
 	ExitServer     = 5 // server error (5xx)
 	ExitInputError = 6 // file not found, JSON/YAML parse failure, stdin format error
+	ExitOperation  = 7 // HTTP succeeded, but the operation response reported failed items
 )
 
 // ExitFunc is the function called to terminate the process.
@@ -28,8 +29,12 @@ type ErrorResponse struct {
 }
 
 func ExitWithSuccess(data any) {
+	ExitWithCode(0, data)
+}
+
+func ExitWithCode(code int, data any) {
 	output.Print(data)
-	ExitFunc(0)
+	ExitFunc(code)
 }
 
 func ExitWithError(code int, errMsg, suggest string) {
