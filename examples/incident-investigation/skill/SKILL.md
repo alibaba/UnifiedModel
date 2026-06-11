@@ -1,173 +1,208 @@
 ---
-name: umodel-investigation
+name: umodel
 description: >-
-  Autonomous root-cause analysis over a UModel object-graph semantic layer.
-  Use when asked to diagnose an incident, find why a service or system is
-  degraded / slow / failing / breaching SLO, or investigate an alert. The skill
-  teaches the agent to autonomously explore the object graph, decide and fetch
-  the telemetry it needs (autonomous retrieval), traverse typed relationships
-  across domains, and reason from evidence to a root cause — the agent chooses
-  the path; this skill provides the method and the toolkit. Triggers include:
-  incident, root cause, RCA, SLO breach, "why is X slow / degraded / erroring",
-  outage, postmortem, 故障排查, 根因分析, 告警定位, 为什么慢.
+  Read and reason over a UModel object-graph semantic layer, primarily through
+  the `umctl` CLI. Three capabilities: (1) read entity and relationship/topology
+  data (returns real rows; against a PaaS-backed endpoint the same calls return
+  the PaaS API's data); (2) read the UModel model itself — entity sets, datasets,
+  links, runbooks; (3) use the model to guide autonomous data fetching and
+  root-cause analysis over the object graph. Use when asked to query UModel
+  entities/relations/topology/model, fetch a service's metrics or logs, or
+  diagnose an incident / find a root cause. Triggers: UModel, object graph,
+  .entity / .topo / .umodel, query entities, topology, root cause, RCA, incident,
+  SLO breach, why is X slow / degraded, 实体查询, 关系/拓扑, 读模型, 根因分析, 故障排查.
 ---
 
-# Autonomous Root-Cause Analysis with UModel
+# UModel — read the object graph, fetch data, analyze
 
-You are an SRE investigation agent. UModel gives you an **object graph**: services,
-dependencies, deployments, config changes, promotions, metrics, logs, runbooks —
-connected by **typed relationships** (`calls`, `runs-on`, `affects`, `triggers`,
-`impacts`, …). Your job: given a symptom, **investigate autonomously to a root cause.**
+UModel is an **object-graph semantic layer**: enterprise objects (services, Pods,
+deployments, config changes, promotions, …), their typed relationships
+(`calls`, `runs-on`, `affects`, `triggers`, `impacts`, …), and the datasets
+(metrics, logs) that hang off them — all queryable through one SPL surface.
 
-You decide the path. This skill gives you the method and the tools — not a fixed
-script. Two things you must be able to do well:
+This skill teaches you (an agent) to use it. **Prefer the `umctl` CLI for all
+reads**; an MCP alternative is noted at the end.
 
-1. **Autonomous retrieval (自主取数)** — decide what data you need and fetch it.
-   The object graph tells you *what data exists* and *how to query it*, so you
-   never hand-write a PromQL or guess a service ID.
-2. **Autonomous analysis (智能分析)** — reason over the graph + the data you
-   fetched to separate root cause from coincidence and explain the mechanism.
+## Setup (CLI-first)
 
-## Connect
+Point `umctl` at a running UModel server (open source, or a PaaS-backed
+endpoint). For the bundled demo:
 
-The object graph is served over MCP by `umodel-mcp`. Your client config:
-
-```json
-{
-  "mcpServers": {
-    "umodel": {
-      "command": "go",
-      "args": ["run", "./cmd/umodel-mcp", "--quickstart",
-               "--quickstart-sample", "examples/incident-investigation",
-               "--graphstore", "memory"]
-    }
-  }
-}
+```bash
+make quickstart QUICKSTART_SAMPLE=examples/incident-investigation   # serves http://localhost:8080
 ```
 
-All reads go through one tool: **`query_spl_execute`** with arguments
-`{ "workspace": "demo", "query": "<SPL>" }`.
+Every read is one command — **always pass `-o json`** so you get machine-readable rows:
 
-> The argument key is **`query`**, not `spl`. Other tools: `query_spl_explain`
-> (see a plan without running it), `query_spl_examples` (safe starter queries).
-> Write tools are disabled — you investigate read-only.
+```bash
+umctl query run <workspace> "<SPL>" -o json     # execute
+umctl query explain <workspace> "<SPL>"          # see the plan/providers without running
+umctl --addr http://<host>:8080 query run …       # target a specific server (e.g. a PaaS endpoint)
+```
 
-## Your toolkit — the query surface
+**Response shape** (parse this): rows live in `data.data` (a matrix), column names
+in `data.header`.
 
-You compose investigations from four SPL sources. Use them as primitives:
+```jsonc
+{ "code": "200", "success": true,
+  "data": {
+    "header": ["display_name", "status", "owner", "sla_tier"],
+    "data":   [ ["payment-gateway", "degraded", "payments-backend", "platinum"] ]
+  } }
+```
 
-| Intent | SPL | What you get |
-|---|---|---|
-| **Discover what exists** | `.umodel with(kind='entity_set')` / `with(kind='runbook_set')` | object types, datasets, runbooks in the workspace |
-| **Discover an entity's abilities** | `.entity_set with(domain=…, name=…, ids=[…]) \| entity-call __list_method__()` | the methods this EntitySet supports |
-| **Discover attached telemetry** | `… \| entity-call list_data_set(['metric_set','log_set'], true)` | which metric/log sets hang off this entity |
-| **Find entities** | `.entity with(domain=…, name=…, query='…')` (add `mode='vector'\|'hyper'`, `topk=`) | entities matching a full-text / semantic search |
-| **Traverse relationships** | `.topo \| graph-call getNeighborNodes('full', 1, [(:"<domain>@<type>" {__entity_id__:'…'})]) \| with(__relation_type__='calls')` | neighbors along a relationship (multi-hop by raising the hop count) |
-| **Fetch a metric (自主取数)** | `… \| entity-call get_metrics('<domain>','<metric_set>','<metric>', step='30s')` | a query plan that resolves the metric for THIS entity — `service_id` is filled in from the object graph for you |
-| **Fetch logs (自主取数)** | `… \| entity-call get_logs('<domain>','<log_set>', query='level = "ERROR"')` | a log query plan, entity-scoped |
-| **Load a runbook** | `.umodel with(kind='runbook_set', name='…')` | a structured diagnostic protocol, if one is linked |
+So: `columns = data.header`, `rows = data.data`. Zip them to read records.
 
-Discover before you assume. If you don't know a service's id, find it with `.entity`.
-If you don't know what telemetry exists, ask `list_data_set`. The graph is
-self-describing — let it tell you what to do next.
+---
 
-## The autonomous loop
+## Capability 1 — Read entity & relationship data
 
-Run this loop; let the evidence, not a script, drive your next query.
+These return **real data rows directly** (from EntityStore / GraphStore), in open
+source and against a PaaS endpoint alike. *(Against a PaaS-backed `--addr`, the
+same commands return the PaaS API's data response — same SPL, same shape.)*
 
-1. **ORIENT.** Locate the symptomatic entity (`.entity … query='degraded'` or the
-   incident's affected service). Discover its methods, datasets, neighbors, and
-   whether a runbook is linked. Build a mental map before acting.
+### Entities — `.entity`
 
-2. **CHARACTERIZE (自主取数).** Fetch the entity's *own* signals to confirm and
-   quantify the symptom — `get_metrics` for the relevant golden metric (e.g. P99
-   latency, error rate), `get_logs` for error signatures. You decide which metric
-   matters from the symptom.
+```bash
+umctl query run demo ".entity with(domain='platform', name='platform.service', query='degraded') | project display_name, status, owner, sla_tier" -o json
+# → ["payment-gateway","degraded","payments-backend","platinum"]
+```
 
-3. **HYPOTHESIZE.** From the symptom and the graph's shape, list candidate causes.
-   The usual families: an **upstream dependency** misbehaving, a **recent change**
-   (config / deployment), a **capacity / traffic** driver, a **downstream**
-   resource. Keep several alive at once.
+- `query='…'` is full-text over all entity fields. Add `mode='vector'` or
+  `mode='hyper'` for semantic / hybrid search, `topk=N` to bound matches.
+- `with(ids=['<entity_id>'])` fetches specific entities by id.
+- Pipe `| project a,b,c`, `| where …`, `| sort …`, `| limit N`.
 
-4. **GATHER EVIDENCE (multi-hop, cross-domain).** For each hypothesis, traverse the
-   graph to the entities that would prove or kill it, and fetch their data:
-   - upstream callers (`.topo getNeighborNodes … 'calls'`) and *their* recent
-     `config_change` / `deployment` entities;
-   - **cross-domain** drivers — follow relationships into the *business* domain
-     (promotions, traffic) or the *runtime* domain (nodes, pods) when platform
-     evidence points there. Cross-domain reach is where the object graph beats a
-     flat metrics dump.
+### Relationships & topology — `.topo`
 
-5. **CORRELATE & DISCRIMINATE.** Put change events × topology × telemetry × business
-   context on one timeline. Then **separate root cause from coincidence**:
-   - a recent deployment is **not guilty just because it's recent** — read what it
-     actually changed (`change_summary`); rule out trivial ones fast (the *red
-     herring* trap);
-   - prefer a cause with a **mechanism you can state** (and ideally quantify) over
-     a mere correlation.
+```bash
+# neighbors along a relationship (raise the hop count for multi-hop)
+umctl query run demo ".topo | graph-call getNeighborNodes('full', 1, [(:\"platform@platform.service\" {__entity_id__:'63718b78868895d2590551b27ec6f51c'})]) | with(__relation_type__='calls')" -o json
 
-6. **CONCLUDE.** Produce a diagnosis (format below): root cause, the evidence chain
-   with the **graph path** for each link, a quantified mechanism if you have one,
-   a confidence level, and a **reversible, confirmation-required** recommended
-   action.
+# direct relations of a node; or full Cypher
+umctl query run demo ".topo | graph-call getDirectRelations([(:\"platform@platform.service\" {__entity_id__:'…'})])" -o json
+umctl query run demo ".topo | graph-call cypher(\`MATCH (s)-[r]->(d) RETURN properties(s), type(r), properties(d) LIMIT 20\`)" -o json
+```
 
-## Using a runbook (if one is linked)
+Each relation row carries the source ref, relation type, destination ref, and
+edge properties. **Topology rows reference entities by ID** — resolve display
+names with a follow-up `.entity … with(ids=[…])` when you need them.
 
-If the affected entity links a `runbook_set`, load it and use its **observations**
-as a reasoning scaffold — each observation is a hypothesis plus how to check it and
-a conclusion rule. Use them to structure your reasoning; you are still free to form
-hypotheses the runbook didn't list. The runbook also carries `knowledge` (failure
-patterns, triage guides) and `toolkits` (allowed remediation tools) — cite them.
+---
 
-## Output format
+## Capability 2 — Read the UModel model (`.umodel`)
+
+The model is your **map**: what object types, datasets, links, and runbooks exist,
+and how they connect. Read it before you assume structure.
+
+```bash
+# what object types / datasets / runbooks exist
+umctl query run demo ".umodel with(kind='entity_set') | project domain, name" -o json
+umctl query run demo ".umodel with(kind='runbook_set', name='platform.service.ops')" -o json
+
+# what can a given EntitySet do, and what telemetry hangs off it
+umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['…']) | entity-call __list_method__()" -o json
+umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['…']) | entity-call list_data_set(['metric_set','log_set'], true)" -o json
+```
+
+Kinds you can list: `entity_set`, `metric_set`, `log_set`, `event_set`,
+`entity_set_link`, `data_link`, `storage_link`, `runbook_set`. Use `.umodel` +
+`__list_method__` + `list_data_set` to discover capabilities instead of guessing.
+
+---
+
+## Capability 3 — Model-guided data fetch + root-cause analysis
+
+This is the hard, valuable one: use what the model tells you to **autonomously
+fetch the right data and reason to a root cause.** You decide the path.
+
+### Model-guided data fetch (autonomous retrieval)
+
+`get_metrics` / `get_logs` are driven by the object graph: the model knows which
+metric/log set hangs off an entity and the `fields_mapping`, so it **fills in
+`service_id` for you** — you never hand-write PromQL or guess an ID.
+
+```bash
+umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c']) | entity-call get_metrics('platform','platform.service.metrics','latency_p99_ms', step='30s')" -o json
+umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['…']) | entity-call get_logs('platform','platform.service.logs', query='level = \"ERROR\"')" -o json
+```
+
+> **Open source returns a query *plan*** (the rendered PromQL / ES query, with the
+> id substituted) — a downstream executor runs it. **Against a PaaS-backed
+> endpoint** (`umctl --addr <paas>` with `mode='data'`), the same call returns the
+> **actual rows** as the PaaS API response (`{__labels__, __ts__, __value__}` for
+> metrics). Either way, the object graph produced the exact, correctly-scoped query.
+
+### The autonomous RCA loop
+
+Run this loop; let evidence — not a fixed script — drive your next query:
+
+1. **ORIENT** — locate the symptomatic entity (`.entity … query='degraded'`).
+   Read its methods, datasets, neighbors, linked runbook (Capability 2).
+2. **CHARACTERIZE (fetch)** — pull its own signals (`get_metrics`/`get_logs`) to
+   confirm and quantify the symptom.
+3. **HYPOTHESIZE** — candidate causes: upstream dependency, recent change
+   (config/deploy), capacity/traffic, downstream resource. Keep several alive.
+4. **GATHER EVIDENCE (multi-hop, cross-domain)** — traverse `.topo` to upstream
+   callers and *their* recent `config_change`/`deployment`; follow links into the
+   **business** domain (promotions/traffic) or **runtime** domain (nodes/pods).
+   Cross-domain reach is where the object graph beats a flat metrics dump.
+5. **CORRELATE & DISCRIMINATE** — line up changes × topology × telemetry ×
+   business context on a timeline. Separate root cause from coincidence: a recent
+   deploy is **not guilty just because it's recent** — read its `change_summary`
+   and rule out trivial ones (the *red herring* trap). Prefer a cause with a
+   **stated, ideally quantified, mechanism**.
+6. **CONCLUDE** — root cause + evidence chain (cite the graph path per link) +
+   quantified mechanism + confidence + a **reversible, confirmation-required**
+   recommendation.
+
+### Runbook as scaffold
+
+If the entity links a `runbook_set`, load it and use its **observations** as a
+reasoning frame (each = a hypothesis + how to check it + a conclusion rule). Use
+it to structure reasoning; you may still form hypotheses it didn't list. Cite its
+`knowledge` (failure patterns) and `toolkits` (allowed remediation tools).
+
+### Output
 
 ```
 ## Diagnosis
-
 Symptom: <what's broken, quantified>
-
 Evidence chain:
-- <finding>  ← <SPL / graph path you traversed>
-- <finding>  ← …
-
+- <finding>  ← <SPL / graph path traversed>
 Root cause: <cause>, mechanism: <stated / quantified>
 Ruled out: <red herrings and why>
 Confidence: <high|medium|low>
-
 Recommended action: <tool> — <input> (risk, requires confirmation, ETA)
 ```
 
+---
+
+## Worked example — incident-investigation demo (a TEST of the method, not a script)
+
+Symptom: `payment-gateway` (platinum SLO) is `degraded`. A good agent reaches the
+root cause **without** being told the steps:
+
+- ORIENT: `.entity … query='degraded'` → payment-gateway (`63718b78…`), links
+  runbook `platform.service.ops` + datasets `platform.service.metrics`/`.logs`.
+- CHARACTERIZE: `get_metrics(… 'latency_p99_ms' …)` → P99 breaching; `get_logs(… level="ERROR")` → upstream-timeout signatures.
+- GATHER: `.topo getNeighborNodes … 'calls'` → upstream `checkout-service` (`149632df…`);
+  `.entity … platform.config_change query='checkout'` → `cfg-checkout-retry`, `max_retries 2→5` 24h ago.
+- DISCRIMINATE: `.entity … platform.deployment query='payment'` → `payment-gw v3.2.1`, trivial logging change → **ruled out** (red herring).
+- CROSS-DOMAIN: `.entity … business.promotion query='active'` → `618 Flash Sale`, actual 38000 vs expected 12000 QPS (3.5×).
+- CONCLUDE: retry amplification (×2.5) × promotion traffic (×3.5) = **8.75×** load → recommend `rollback_config_change` (medium risk, confirm first).
+
+---
+
 ## Notes & gotchas
 
-- `get_metrics` / `get_logs` return a query **plan** in open-source UModel (a
-  downstream executor runs it against real storage; the data shape is
-  `{__labels__, __ts__, __value__}`). For the demo you reason over the plan and
-  the curated signals; in production the same call returns rows. The point that
-  matters: **the object graph turned "this degraded service" into the exact,
-  correctly-scoped query — you never wrote PromQL.**
-- Add `?format=agent` (or `mode='agent'` in the request) for a compact plan
-  envelope (`data_source` folded to `{ref, type}`) that costs less context.
-- Topology rows carry entity **IDs**, not display names — resolve names with a
-  follow-up `.entity` when you need them for the write-up.
-- Stay read-only. Recommend remediation; do not execute it.
-
-## Worked example — the incident-investigation demo (a TEST of the method, not a script)
-
-Symptom: `payment-gateway` (platinum SLO) is `degraded`. Run the loop:
-
-- ORIENT: `.entity … platform.service query='degraded'` → payment-gateway
-  (`__entity_id__ 63718b78868895d2590551b27ec6f51c`); it links runbook
-  `platform.service.ops` and datasets `platform.service.metrics` / `.logs`.
-- CHARACTERIZE: `get_metrics('platform','platform.service.metrics','latency_p99_ms', step='30s')`
-  → P99 breaching; `get_logs(… level="ERROR")` → upstream-timeout signatures.
-- GATHER: `.topo getNeighborNodes … 'calls'` → upstream `checkout-service`;
-  `.entity … platform.config_change query='checkout'` → `cfg-checkout-retry`,
-  `max_retries 2→5` 24h ago.
-- DISCRIMINATE: `.entity … platform.deployment query='payment'` → `payment-gw
-  v3.2.1`, `change_summary` = trivial logging change → **ruled out** (red herring).
-- CROSS-DOMAIN: `.entity … business.promotion query='active'` → `618 Flash Sale`,
-  actual 38000 vs expected 12000 QPS (3.5× traffic).
-- CONCLUDE: retry amplification (×2.5) × promotion traffic (×3.5) = **8.75×**
-  effective load → recommend `rollback_config_change` (medium risk, confirm first).
-
-A good agent reaches this **without** being told the steps — the graph leads it there.
+- **Always `-o json`**; parse `rows = data.data`, `columns = data.header`.
+- **Real-data vs plan**: `.entity` / `.topo` / `.umodel` reads return real rows in
+  open source. `get_metrics` / `get_logs` return a *plan* in open source and
+  *data* against a PaaS endpoint (`mode='data'`) — the PaaS API return.
+- Topology rows carry entity **IDs**, not names — resolve with `.entity with(ids=[…])`.
+- Stay **read-only**: recommend remediation, don't execute it.
+- **MCP alternative** (for MCP-capable agents instead of the CLI): connect
+  `umodel-mcp` and call the `query_spl_execute` tool with
+  `{ "workspace": "demo", "query": "<the same SPL>" }` (arg key is `query`, not
+  `spl`). Everything above is transport-agnostic — same SPL either way.
