@@ -116,6 +116,7 @@ func (s *Service) ReadResource(ctx context.Context, workspace string, req model.
 				{"id": "entity-set-methods", "query": ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()"},
 				{"id": "entity-set-data-sets", "query": ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)"},
 				{"id": "entity-set-logs", "query": ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')"},
+				{"id": "entity-set-metrics", "query": ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')"},
 				{"id": "find-entity", "query": ".entity with(domain='devops', name='devops.service', query=$query) | limit 20", "parameters": map[string]any{"query": "checkout"}},
 				{"id": "topology-neighbors", "query": ".topo | graph-call getNeighborNodes('full', 2, [(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 20"},
 				{"id": "topology-cypher", "query": ".topo | graph-call cypher(`MATCH (src)-[r]->(dest) RETURN properties(src) AS src, properties(r) AS relation, properties(dest) AS dest LIMIT 20`)"},
@@ -275,6 +276,24 @@ func (s *Service) queryRequest(args map[string]any) (model.QueryRequest, error) 
 			return model.QueryRequest{}, apperrors.New(apperrors.CodeInvalidArgument, "time_range argument is invalid")
 		}
 	}
+	for _, key := range []string{"filterByEntities", "entityData", "entity_data"} {
+		raw, ok := args[key]
+		if !ok {
+			continue
+		}
+		var entityData model.EntityData
+		if err := decodeValue(raw, &entityData); err != nil {
+			return model.QueryRequest{}, apperrors.New(apperrors.CodeInvalidArgument, key+" argument is invalid")
+		}
+		switch key {
+		case "filterByEntities":
+			req.FilterByEntities = &entityData
+		case "entityData":
+			req.EntityDataCamel = &entityData
+		default:
+			req.EntityData = &entityData
+		}
+	}
 	return req, nil
 }
 
@@ -421,6 +440,7 @@ func defaultExamples() []string {
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()",
 		".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)",
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')",
+		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
 		".entity with(domain='devops', name='devops.service', query='checkout') | limit 20",
 		".topo | graph-call getNeighborNodes('full', 2, [(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 20",
 		".topo | graph-call cypher(`MATCH (src)-[r]->(dest) RETURN properties(src) AS src, properties(r) AS relation, properties(dest) AS dest LIMIT 20`)",
@@ -437,6 +457,17 @@ func toolSchemas() map[string]any {
 			"timeout_ms": map[string]any{"type": "integer", "minimum": 1},
 			"parameters": map[string]any{"type": "object", "additionalProperties": true},
 			"time_range": map[string]any{"type": "object"},
+			"entity_data": map[string]any{
+				"type":        "object",
+				"description": "EntityData table used to map EntitySet fields into DataSet/storage filters.",
+				"properties": map[string]any{
+					"version": map[string]any{"type": "integer"},
+					"header":  map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+					"data":    map[string]any{"type": "array"},
+				},
+			},
+			"entityData":       map[string]any{"type": "object"},
+			"filterByEntities": map[string]any{"type": "object"},
 		},
 	}
 	return map[string]any{

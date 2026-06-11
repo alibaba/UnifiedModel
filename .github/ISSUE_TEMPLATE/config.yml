@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or general discussion
+    url: https://github.com/alibaba/UnifiedModel/discussions
+    about: Open-ended questions about UModel concepts, integration, or usage are best discussed in GitHub Discussions.
+  - name: Security report
+    url: https://github.com/alibaba/UnifiedModel/security/policy
+    about: Please report security vulnerabilities privately via the security policy, not through public issues.

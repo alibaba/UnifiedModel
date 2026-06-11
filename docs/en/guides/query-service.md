@@ -77,9 +77,10 @@ Agent and REST callers can bind named parameters into `with(...)` filters and `w
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')"
+go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')"
 ```
 
-The required filters are `domain` and `name`; `ids` is accepted as EntitySet call context. The currently supported methods are `__list_method__`, `list_data_set` (`list_dataset` alias), and `get_logs` (`get_log` alias); method parameters are validated against the UModel Assistant signatures. `get_logs` parses basic SPL where syntax, maps EntitySet fields through `data_link.fields_mapping`, maps LogSet fields through `storage_link.fields_mapping`, and returns the translated storage query plan without querying the storage itself.
+The required filters are `domain` and `name`; `ids` is accepted as EntitySet call context. The currently supported methods are `__list_method__`, `list_data_set` (`list_dataset` alias), `get_logs` (`get_log` alias), and `get_metrics` (`get_metric` alias); method parameters are validated against the UModel Assistant signatures. `get_logs` and `get_metrics` parse basic SPL where syntax, map EntitySet fields through `data_link.fields_mapping`, map DataSet fields through `storage_link.fields_mapping`, and return translated storage query plans without querying the storage itself.
 
 ## `.topo`
 

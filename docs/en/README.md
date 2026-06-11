@@ -56,6 +56,12 @@ Documentation root: [docs/README.md](../README.md)
 - [Public Domain Models](../../pkg/model/types.go)
 - [Stable Error Codes](../../pkg/errors/errors.go)
 
+## Specifications
+
+Cross-implementation contracts that bind both `unified-model` (open source) and `umodel-assistant` (commercial). Breaking either is a P0 regression.
+
+- [Plan Schema v1](spec/plan-schema-v1.md) - mode protocol, plan JSON envelope, and aligned method signatures for `get_metrics` / `get_logs`.
+
 ## Generated Schema HTML
 
 - [English generated schema HTML](../html_en/index.html)

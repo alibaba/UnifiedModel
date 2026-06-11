@@ -100,6 +100,11 @@ const examples = [
     query:
       ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')",
   },
+  {
+    labelKey: 'query.examples.entitySetMetrics',
+    query:
+      ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
+  },
 ] as const satisfies ReadonlyArray<{ labelKey: MessageKey; query: string }>
 
 export function QueryPage({ api, workspaceId }: { api: UModelApi; workspaceId: string }) {

@@ -194,6 +194,35 @@ func entityCallMethodSpecFor(name string) (entityCallMethodSpec, bool) {
 					DisplayName: "Query expression for the log set",
 					Description: "Basic SPL where syntax, for example service_id = 'service_a' and level in ['ERROR', 'WARN'].",
 				},
+				{Key: "storage_domain", Type: "varchar", DisplayName: "Storage Domain", Description: "Optional storage domain used to select a specific StorageLink target. Echoed into the plan; not consumed by the open-source planner."},
+				{Key: "storage_name", Type: "varchar", DisplayName: "Storage Name", Description: "Optional storage name used to select a specific StorageLink target. Echoed into the plan; not consumed by the open-source planner."},
+				{Key: "storage_kind", Type: "varchar", DisplayName: "Storage Kind", Description: "Optional storage kind used to select a specific StorageLink target. Echoed into the plan; not consumed by the open-source planner."},
+			},
+		}, true
+	case "get_metric", "get_metrics":
+		return entityCallMethodSpec{
+			Name: "get_metrics",
+			Params: []model.EntityCallParam{
+				{Key: "domain", Type: "varchar", DisplayName: "metric_set Domain", Required: true},
+				{Key: "name", Type: "varchar", DisplayName: "metric_set Name", Required: true},
+				{
+					Key:         "metric",
+					Type:        "varchar",
+					DisplayName: "Metric name",
+					Description: "Optional metric name. When omitted, all metrics in the MetricSet are planned.",
+				},
+				{
+					Key:         "query",
+					Type:        "varchar",
+					DisplayName: "Query expression for metric labels",
+					Description: "Basic SPL where syntax, for example service_id = 'service_a' and environment = 'prod'.",
+				},
+				{Key: "query_type", Type: "varchar", DisplayName: "Prometheus query type", Description: "range or instant. Defaults to the MetricSet/storage preference."},
+				{Key: "step", Type: "varchar", DisplayName: "Range query step", Description: "Range query step, for example 1m."},
+				{Key: "aggregate", Type: "boolean", DisplayName: "Aggregate time series", Description: "Whether to aggregate the time series. Echoed into the plan; not consumed by the open-source planner.", Default: true},
+				{Key: "storage_domain", Type: "varchar", DisplayName: "Storage Domain", Description: "Optional storage domain used to select a specific StorageLink target. Echoed into the plan; not consumed by the open-source planner."},
+				{Key: "storage_name", Type: "varchar", DisplayName: "Storage Name", Description: "Optional storage name used to select a specific StorageLink target. Echoed into the plan; not consumed by the open-source planner."},
+				{Key: "storage_kind", Type: "varchar", DisplayName: "Storage Kind", Description: "Optional storage kind used to select a specific StorageLink target. Echoed into the plan; not consumed by the open-source planner."},
 			},
 		}, true
 	default:

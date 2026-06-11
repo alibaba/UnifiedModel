@@ -3,8 +3,59 @@ package query
 import (
 	"context"
 
+	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
+
+// ModePlan is the only query mode supported by unified-model. umodel-assistant
+// additionally supports "data". See docs/en/spec/plan-schema-v1.md for the
+// shared mode protocol.
+const ModePlan = "plan"
+
+// normalizeFormat applies the unified-model format policy: empty becomes the
+// default assistant envelope, "agent" passes through, anything else is
+// rejected. See model.QueryRequest.Format for the response shape difference.
+func normalizeFormat(format string) (string, error) {
+	switch format {
+	case model.FormatAssistant, model.FormatAgent:
+		return format, nil
+	default:
+		return "", apperrors.WithDetails(
+			apperrors.CodeInvalidArgument,
+			`unsupported format. unified-model supports format="" (default assistant envelope) or format="agent" (agent-native envelope).`,
+			map[string]string{
+				"requested_format":  format,
+				"supported_formats": `"" (assistant), "agent"`,
+			},
+		)
+	}
+}
+
+// normalizeMode applies the unified-model mode policy: empty becomes "plan",
+// "plan" passes through, anything else is rejected. unified-model never
+// executes plans against real storage.
+//
+// On rejection the error carries migration_* keys in Details so an AI agent
+// (or any structured client) can act on the failure programmatically rather
+// than parsing the message.
+func normalizeMode(mode string) (string, error) {
+	switch mode {
+	case "", ModePlan:
+		return ModePlan, nil
+	default:
+		return "", apperrors.WithDetails(
+			apperrors.CodeNotImplemented,
+			"unified-model only supports mode=plan. To execute queries against real storage, use umodel-assistant.",
+			map[string]string{
+				"requested_mode":     mode,
+				"supported_modes":    ModePlan,
+				"migration_service":  "umodel-assistant",
+				"migration_action":   "switch_endpoint_to_umodel_assistant",
+				"migration_docs_url": "https://github.com/alibaba/UnifiedModel/blob/main/docs/en/spec/plan-schema-v1.md",
+			},
+		)
+	}
+}
 
 type graphStore interface {
 	GetUModelSnapshot(ctx context.Context, req model.UModelSnapshotRequest) (model.UModelSnapshot, error)
@@ -38,6 +89,16 @@ func NewServiceWithSearch(graph graphStore, search searchService) *Service {
 }
 
 func (s *Service) Execute(ctx context.Context, workspace string, req model.QueryRequest) (model.QueryResult, error) {
+	mode, err := normalizeMode(req.Mode)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	req.Mode = mode
+	format, err := normalizeFormat(req.Format)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	req.Format = format
 	plan, caps, health, err := s.plan(ctx, workspace, req)
 	if err != nil {
 		return model.QueryResult{}, err
@@ -65,6 +126,16 @@ func (s *Service) Execute(ctx context.Context, workspace string, req model.Query
 }
 
 func (s *Service) Explain(ctx context.Context, workspace string, req model.QueryRequest) (model.QueryExplain, error) {
+	mode, err := normalizeMode(req.Mode)
+	if err != nil {
+		return model.QueryExplain{}, err
+	}
+	req.Mode = mode
+	format, err := normalizeFormat(req.Format)
+	if err != nil {
+		return model.QueryExplain{}, err
+	}
+	req.Format = format
 	plan, caps, health, err := s.plan(ctx, workspace, req)
 	if err != nil {
 		return model.QueryExplain{}, err
@@ -90,6 +161,7 @@ func (s *Service) Examples(ctx context.Context) ([]string, error) {
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()",
 		".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)",
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')",
+		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
 		".runbook_set with(domain='apm', type='knowledge', query='how to mitigate slow request', mode='hyper', topk=5)",
 		".runbook_set with(domain='apm', type='observations', query='cache miss spike', mode='vector', topk=10)",
 		".topo | graph-call getNeighborNodes('full', 2, [(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 20",

@@ -130,6 +130,7 @@ func (a *App) apiMux(includeRoot bool) *http.ServeMux {
 		mux.HandleFunc("/", a.handleRoot)
 	}
 	mux.HandleFunc("/healthz", a.handleHealth)
+	mux.HandleFunc("/api/v1/capabilities", a.handleCapabilities)
 	mux.HandleFunc("/api/v1/workspaces", a.handleWorkspaces)
 	mux.HandleFunc("/api/v1/workspaces/", a.handleWorkspace)
 	mux.HandleFunc("/api/v1/umodel/", a.handleUModel)
@@ -257,6 +258,29 @@ func (a *App) handleHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "graphstore": health})
 }
 
+// serviceVersion is the unified-model service version reported via
+// /api/v1/capabilities. Build tooling can override at link time via
+// -ldflags "-X github.com/alibaba/UnifiedModel/internal/bootstrap.serviceVersion=<v>".
+var serviceVersion = "dev"
+
+// handleCapabilities reports what query modes this server supports.
+// unified-model is plan-only by design; umodel-assistant supports plan and data.
+// See docs/en/spec/plan-schema-v1.md for the shared mode protocol.
+func (a *App) handleCapabilities(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, apperrors.New(apperrors.CodeInvalidArgument, "method not allowed"))
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"service":           "unified-model",
+		"version":           serviceVersion,
+		"modes_supported":   []string{"plan"},
+		"default_mode":      "plan",
+		"formats_supported": []string{"", "agent"},
+		"default_format":    "",
+	})
+}
+
 func (a *App) handleWorkspaces(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
@@ -342,11 +366,33 @@ func (a *App) handleQuery(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &req) {
 		return
 	}
+	if req.Mode == "" {
+		if mode := r.URL.Query().Get("mode"); mode != "" {
+			req.Mode = mode
+		}
+	}
+	if req.Format == "" {
+		if format := r.URL.Query().Get("format"); format != "" {
+			req.Format = format
+		}
+	}
+	if !req.IncludeSpec {
+		// ?include=spec is all-or-none for v1.1; if we later add granular
+		// expansion (?include=data_link.spec,storage.config), this becomes a
+		// CSV parse.
+		if r.URL.Query().Get("include") == "spec" {
+			req.IncludeSpec = true
+		}
+	}
 	switch action {
 	case "execute":
 		result, err := a.Query.Execute(r.Context(), workspaceID, req)
 		if err != nil {
 			writeError(w, err)
+			return
+		}
+		if req.Format == model.FormatAgent && model.IsAgentPlanResult(result) {
+			writeJSON(w, http.StatusOK, model.AgentPlanPayload(result))
 			return
 		}
 		writeJSON(w, http.StatusOK, model.NewQueryExecuteResponse(result))

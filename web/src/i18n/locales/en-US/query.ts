@@ -25,6 +25,7 @@ export const enUSQuery = {
   'query.examples.entity': '.entity',
   'query.examples.entitySetDatasets': 'EntitySet Datasets',
   'query.examples.entitySetLogs': 'EntitySet Logs',
+  'query.examples.entitySetMetrics': 'EntitySet Metrics',
   'query.examples.entitySetMethods': 'EntitySet Methods',
   'query.examples.neighbors': 'Neighbors',
   'query.examples.placeholder': 'Select example',

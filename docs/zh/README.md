@@ -56,6 +56,12 @@ English: [UModel Documentation](../en/README.md)
 - [公共领域模型](../../pkg/model/types.go)
 - [稳定错误码](../../pkg/errors/errors.go)
 
+## 规范
+
+跨实现的契约文档，同时约束 `unified-model`（开源）与 `umodel-assistant`（商业版）。任一方破坏视为 P0 回归。
+
+- [Plan Schema v1](spec/plan-schema-v1.md) - mode 协议、plan JSON 信封以及 `get_metrics` / `get_logs` 的对齐方法签名。
+
 ## 生成的 Schema 文档
 
 - [中文 Schema HTML](../html_cn/index.html)

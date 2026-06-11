@@ -129,6 +129,15 @@ export interface QueryRequest {
     to?: string
   }
   parameters?: Record<string, unknown>
+  entity_data?: EntityData
+  entityData?: EntityData
+  filterByEntities?: EntityData
+}
+
+export interface EntityData {
+  version?: number
+  header?: string[]
+  data?: Array<string[] | { values: string[] } | Record<string, unknown>>
 }
 
 export interface QueryExplain {
