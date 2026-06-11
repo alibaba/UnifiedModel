@@ -10,6 +10,10 @@ PNPM ?= pnpm
 BIN_DIR ?= bin
 GOEXE ?= $(shell go env GOEXE 2>/dev/null)
 UMCTL_BIN ?= $(BIN_DIR)/umctl$(GOEXE)
+VERSION ?= dev
+GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+BUILD_TIME ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+UMCTL_LDFLAGS ?= -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.version=$(VERSION) -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.gitCommit=$(GIT_COMMIT) -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.buildTime=$(BUILD_TIME)
 API_ADDR ?= :8080
 API_URL ?= http://localhost:8080
 WEB_PORT ?= 5173
@@ -80,11 +84,11 @@ build-service:
 
 build-cli:
 	@mkdir -p "$(BIN_DIR)"
-	go build -o "$(UMCTL_BIN)" ./cmd/umctl
+	go build -ldflags "$(UMCTL_LDFLAGS)" -o "$(UMCTL_BIN)" ./cmd/umctl
 	@echo "Built $(UMCTL_BIN)"
 
 install-cli:
-	go install ./cmd/umctl
+	go install -ldflags "$(UMCTL_LDFLAGS)" ./cmd/umctl
 	@bin="$$(go env GOBIN)"; \
 	if [ -z "$$bin" ]; then bin="$$(go env GOPATH)/bin"; fi; \
 	echo "Installed umctl to $$bin"; \

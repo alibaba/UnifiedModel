@@ -52,7 +52,7 @@ var queryExplainCmd = &cobra.Command{
 
 var queryExamplesCmd = &cobra.Command{
 	Use:   "examples",
-	Short: "Show example SPL queries",
+	Short: "Show offline bootstrap SPL examples",
 	Run: func(cmd *cobra.Command, args []string) {
 		examples := []map[string]string{
 			{"description": "List all UModel element kinds", "query": ".umodel with(kind='entity_set') | limit 20"},
@@ -89,6 +89,6 @@ func init() {
 	})
 	registry.Global.Register(registry.CommandMeta{
 		Group: "service", Resource: "query", Action: "examples",
-		Description: "Show example SPL queries",
+		Description: "Show offline bootstrap SPL examples",
 	})
 }

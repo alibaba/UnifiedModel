@@ -29,10 +29,43 @@ umctl --addr http://localhost:8080 help
 
 | 参数 | 默认值 | 描述 |
 |---|---|---|
-| `--addr` | `http://localhost:8080` | `umodel-server` 的 base URL。 |
-| `--output`, `-o` | `json` | 输出格式。使用 `text` 输出更易读的 key/value 文本。 |
+| `--addr` | 从配置解析 | `umodel-server` 的 base URL。设置后优先级最高。 |
+| `--profile` | 当前配置 profile | 要使用的本地配置 profile。 |
+| `--output`, `-o` | 配置默认值或 `json` | 输出格式。使用 `text` 输出更易读的 key/value 文本。 |
 
 当 HTTP 请求失败，或 HTTP 成功但响应顶层 `failed` 字段大于 `0` 时，命令会返回非 0 退出码。
+
+## 地址解析与 Profiles
+
+`umctl` 按以下顺序解析 server 地址：
+
+1. `--addr`
+2. `UMCTL_ADDR`
+3. `~/.umctl/config.yaml` 中选中的 profile
+4. 当本地没有配置文件时，使用内置默认 profile：`http://localhost:8080`
+
+如果 `~/.umctl/config.yaml` 存在但不是合法 YAML，命令会以退出码 `1` 失败，并提示检查配置语法。如果选中的 profile 存在但 `addr` 为空，需要连接 server 的命令会以退出码 `1` 失败，并提示使用 `umctl configure` 或 `--addr` 修复。
+
+配置或查看 profiles：
+
+```bash
+umctl configure
+umctl --profile dev configure
+umctl configure list
+umctl configure show
+```
+
+配置文件 schema：
+
+```yaml
+current: default
+output_format: json
+profiles:
+  default:
+    addr: http://localhost:8080
+  dev:
+    addr: http://127.0.0.1:8080
+```
 
 ## Server Quickstart 参数
 
@@ -58,6 +91,9 @@ go run ./cmd/umodel-server --quickstart
 | `topo` | `write`, `delete`, `expire` | 写入或过期 relation records。 |
 | `query` | `run`, `explain`, `examples` | 通过 Query Service 读取模型、实体、拓扑。 |
 | `agent` | `discover`, `tool`, `mcp` | 查看 Agent 元数据并执行安全工具。 |
+| `configure` | `list`, `show` | 创建和查看本地 CLI profiles。 |
+| `meta` | `export` | 导出 CLI 命令元数据，供 agent discovery 使用。 |
+| `version` | | 查看版本、git commit 和构建时间。 |
 
 Entity 和 topology 没有独立读取命令；所有读取使用 `query run` 或 `query explain`。
 
@@ -101,6 +137,14 @@ go run ./cmd/umctl --addr http://localhost:8080 query run demo ".umodel | limit 
 go run ./cmd/umctl --addr http://localhost:8080 query explain demo ".entity with(domain='devops', name='devops.service') | limit 5"
 ```
 
+`query examples` 输出离线 bootstrap SPL 示例，因此不需要发起 workspace 相关的 server 调用。需要 server 暴露的运行时 canonical 示例时，使用：
+
+```bash
+go run ./cmd/umctl --addr http://localhost:8080 agent tool demo query_spl_examples '{}'
+```
+
+如果需要保留 SPL 中的空白，建议把 SPL 作为一个带引号的参数传入。如果拆成多个 shell 参数，`umctl` 会用单个空格把它们拼接起来。
+
 参考：[Query Service 指南](../guides/query-service.md)。
 
 ## Agent
@@ -112,3 +156,17 @@ go run ./cmd/umctl --addr http://localhost:8080 agent tool demo query_spl_explai
 ```
 
 `agent mcp` 提示使用 `umodel-mcp` binary 处理 stdio MCP workflows。
+
+## 元数据与版本
+
+```bash
+umctl meta export
+umctl version
+```
+
+`meta export` 以 JSON 输出已注册的 CLI 命令元数据，供 agent discovery 使用。`version` 输出版本号、git commit 和构建时间。`make build-cli` 与 `make install-cli` 会通过 Go linker flags 注入这些值；构建命名版本时可以覆盖 `VERSION`：
+
+```bash
+make build-cli VERSION=0.1.0
+./bin/umctl version
+```
