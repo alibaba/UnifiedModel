@@ -10,7 +10,8 @@
 
 | 技能 | 路径 | 用途 |
 |---|---|---|
-| `umodel` | [`umodel/SKILL.md`](umodel/SKILL.md) | 读取实体 / 关系 / 拓扑数据与 UModel 模型，并在对象图上做模型引导的根因分析。CLI 优先（`umctl`），并提供 MCP 替代方案。 |
+| `umodel-query` | [`umodel-query/SKILL.md`](umodel-query/SKILL.md) | 读取实体 / 关系 / 拓扑数据**以及** UModel 模型（实体集、数据集、链接、Runbook）。CLI 优先（`umctl`），并提供 MCP 替代方案。 |
+| `umodel-rca` | [`umodel-rca/SKILL.md`](umodel-rca/SKILL.md) | 在对象图上做模型引导的**自主根因分析**：取对的遥测、跨域遍历关系、推理到根因。构建于 `umodel-query` 之上。 |
 
 ## 前置要求
 
@@ -35,22 +36,22 @@ Agent 扫描的位置，例如：
 ```bash
 # Claude Code / Cursor / Qoder（Claude-Code 兼容的技能加载器）
 mkdir -p .claude/skills
-cp -R skills/umodel .claude/skills/umodel
+cp -R skills/umodel-query skills/umodel-rca .claude/skills/
 ```
 
-然后正常提问——对 `umodel` 技能，例如*"payment-gateway 的 SLO 告警了，帮我排查"*
-或*"查一下这个 workspace 里 degraded 的服务"*。技能的 `description` 决定 Agent 何时激活它。
+然后正常提问——例如*"查一下这个 workspace 里 degraded 的服务"*（激活 `umodel-query`），
+或*"payment-gateway 的 SLO 告警了，帮我排查"*（激活 `umodel-rca`）。每个技能的
+`description` 决定 Agent 何时激活它。
 
-## `umodel` 技能的组织
+## 两个技能的关系
 
-三个能力（完整方法与命令见 [`umodel/SKILL.md`](umodel/SKILL.md)）：
+它们对应 Agent 用 UModel 做的三件事：
 
-1. **读实体与关系数据** —— `.entity` / `.topo`。开源返回真实数据行；对接 PaaS 端点时，
-   同样的命令返回 PaaS API 的数据。
-2. **读 UModel 模型** —— `.umodel` + `__list_method__` / `list_data_set`：对象类型、
-   数据集、链接、Runbook 的"地图"。
-3. **模型引导取数 + 根因分析** —— `get_metrics` / `get_logs` 由对象图驱动（开源返回
-   *计划*，PaaS 端点返回*数据*），外加自主调查循环。
+- **`umodel-query`** 覆盖读取——(1) 实体与关系/拓扑数据（`.entity` / `.topo`），
+  (2) 模型本身（`.umodel` + `__list_method__` / `list_data_set`）。开源返回真实数据行；
+  对接 PaaS 端点返回 PaaS API 的数据。
+- **`umodel-rca`** 增加 (3) 模型引导取数（`get_metrics` / `get_logs`，开源*计划* /
+  PaaS *数据*）和自主根因循环。它复用 `umodel-query` 的读取，调查时两个一起加载。
 
 ## 编写新技能
 

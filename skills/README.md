@@ -12,7 +12,8 @@ runtimes such as Claude Code, Cursor, and Qoder.
 
 | Skill | Path | What it does |
 |---|---|---|
-| `umodel` | [`umodel/SKILL.md`](umodel/SKILL.md) | Read entity / relationship / topology data and the UModel model, then run model-guided root-cause analysis over the object graph. CLI-first (`umctl`), with an MCP alternative. |
+| `umodel-query` | [`umodel-query/SKILL.md`](umodel-query/SKILL.md) | Read entity / relationship / topology data **and** the UModel model (entity sets, datasets, links, runbooks). CLI-first (`umctl`), MCP alternative. |
+| `umodel-rca` | [`umodel-rca/SKILL.md`](umodel-rca/SKILL.md) | Model-guided **autonomous root-cause analysis** over the object graph: fetch the right telemetry, traverse cross-domain relationships, reason to a root cause. Builds on `umodel-query`. |
 
 ## Prerequisites
 
@@ -38,26 +39,25 @@ skill here, or copy it into the location your agent scans, for example:
 ```bash
 # Claude Code / Cursor / Qoder (Claude-Code-compatible skill loaders)
 mkdir -p .claude/skills
-cp -R skills/umodel .claude/skills/umodel
+cp -R skills/umodel-query skills/umodel-rca .claude/skills/
 ```
 
-Then prompt the agent normally — for the `umodel` skill, e.g.
-*"payment-gateway 的 SLO 告警了，帮我排查"* or *"query the degraded services in
-this workspace"*. The skill's `description` controls when the agent activates it.
+Then prompt the agent normally — e.g. *"query the degraded services in this
+workspace"* (activates `umodel-query`) or *"payment-gateway 的 SLO 告警了，帮我排查"*
+(activates `umodel-rca`). Each skill's `description` controls when the agent
+activates it.
 
-## How the `umodel` skill is organized
+## How the skills relate
 
-Three capabilities (see [`umodel/SKILL.md`](umodel/SKILL.md) for the full method
-and commands):
+They map to the three things an agent does with UModel:
 
-1. **Read entity & relationship data** — `.entity` / `.topo`. Returns real rows in
-   open source; against a PaaS-backed endpoint the same commands return the PaaS
-   API's data.
-2. **Read the UModel model** — `.umodel` + `__list_method__` / `list_data_set`:
-   the map of object types, datasets, links, and runbooks.
-3. **Model-guided fetch + root-cause analysis** — `get_metrics` / `get_logs`
-   driven by the object graph (a *plan* in open source, *data* via a PaaS
-   endpoint), plus an autonomous investigation loop.
+- **`umodel-query`** covers reads — (1) entity & relationship/topology data
+  (`.entity` / `.topo`) and (2) the model itself (`.umodel` + `__list_method__` /
+  `list_data_set`). Real rows in open source; the PaaS API's data against a
+  PaaS-backed endpoint.
+- **`umodel-rca`** adds (3) model-guided fetch (`get_metrics` / `get_logs`, a
+  *plan* in open source / *data* via PaaS) and an autonomous root-cause loop. It
+  reuses `umodel-query`'s reads, so load both for an investigation.
 
 ## Authoring a new skill
 
