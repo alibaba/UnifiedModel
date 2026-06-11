@@ -117,6 +117,16 @@ umctl query run demo \
 
 **Conclusion:** latency is introduced at `order-svc` but not explained by its CPU; its downstream `orders-db` connection pool is saturated while the node hosting it is healthy → **bottleneck localized to the datastore connection pool**.
 
+### Run the whole walkthrough at once
+
+With a server running (`make quickstart QUICKSTART_SAMPLE=examples/service-localization`), replay the full narrated localization loop — each SPL, result, and the agent's reasoning per hop:
+
+```bash
+./examples/service-localization/demo.sh
+```
+
+The same path is gated in CI by `TestServiceLocalizationPath` (`internal/bootstrap/localization_test.go`), so the demo cannot silently rot, and by the MCP-driven `test-integration.sh`.
+
 ## Agent Integration
 
 Connect an MCP client (see the [Agent Integration Guide](../../docs/en/guides/agent-integration.md)) and ask:

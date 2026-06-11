@@ -117,6 +117,16 @@ umctl query run demo \
 
 **结论：** 延迟在 `order-svc` 处出现，但无法用它自身的 CPU 解释；它的下游 `orders-db` 连接池饱和，而托管它的节点健康 → **瓶颈定位到数据存储连接池**。
 
+### 一键回放整个演练
+
+服务运行中时（`make quickstart QUICKSTART_SAMPLE=examples/service-localization`），回放完整的定位叙事——每跳的 SPL、结果与 Agent 推理：
+
+```bash
+./examples/service-localization/demo.sh
+```
+
+同一条路径在 CI 中由 `TestServiceLocalizationPath`（`internal/bootstrap/localization_test.go`）守护，因此 Demo 不会悄悄失效；MCP 驱动的 `test-integration.sh` 也覆盖该路径。
+
 ## Agent 集成
 
 连接 MCP 客户端（见 [Agent 集成指南](../../docs/zh/guides/agent-integration.md)）后提问：
