@@ -8,6 +8,10 @@ A *skill* here is a self-contained `SKILL.md` (YAML frontmatter `name` +
 `description`, then instructions) in the format consumed by skill-aware agent
 runtimes such as Claude Code, Cursor, and Qoder.
 
+> **New here? Start with the [Quickstart](QUICKSTART.md)** — install the skills,
+> load a demo object graph (entities + relations), connect Claude Code / Qoder /
+> Codex, and ask questions. End to end in a few minutes, no API key.
+
 ## Available skills
 
 | Skill | Path | What it does |

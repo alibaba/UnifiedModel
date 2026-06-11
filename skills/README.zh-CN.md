@@ -6,6 +6,9 @@
 这里的*技能*是一个自包含的 `SKILL.md`（YAML frontmatter `name` + `description`，
 随后是指令），格式与 Claude Code、Cursor、Qoder 等支持技能的 Agent 运行时一致。
 
+> **第一次用？从[快速上手](QUICKSTART.zh-CN.md)开始** —— 安装技能、载入一个 demo
+> 对象图（实体 + 关系）、接入 Claude Code / Qoder / Codex、然后提问。几分钟端到端跑通，无需密钥。
+
 ## 可用技能
 
 | 技能 | 路径 | 用途 |

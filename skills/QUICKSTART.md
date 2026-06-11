@@ -1,0 +1,146 @@
+# Quickstart — use the UModel skills with your agent
+
+Get an AI agent (Claude Code / Qoder / Codex / …) using UModel end-to-end in a few
+minutes: **install the skills**, **initialize a demo object graph** (entities +
+relations), **connect your agent**, and **ask questions**.
+
+The demo dataset is the bundled **incident-investigation** pack — 3 domains
+(business / platform / runtime), ~65 entities, ~83 relations, a runbook, and
+metric/log sets — the same data the skills are validated against. Everything runs
+locally, in memory, with **no API key and no network**.
+
+## Prerequisites
+
+- Go 1.22+ and Make
+- A clone of this repo (the MCP server runs from source)
+- An MCP-capable agent: Claude Code, Qoder, Codex, Cursor, …
+
+## 1. Install the skills
+
+The skills are plain `SKILL.md` files under [`skills/`](README.md). How you install
+depends on your agent:
+
+- **Claude Code** (native skills) — copy into a skills directory it scans:
+  ```bash
+  mkdir -p .claude/skills
+  cp -R skills/umodel-query skills/umodel-rca .claude/skills/
+  ```
+  (or your user-level `~/.claude/skills/`).
+- **Qoder / Codex / agents without a `SKILL.md` loader** — the skills are just
+  instructions, so include their content as agent context: reference or paste
+  [`skills/umodel-query/SKILL.md`](umodel-query/SKILL.md) and
+  [`skills/umodel-rca/SKILL.md`](umodel-rca/SKILL.md) into your project
+  instructions (e.g. `AGENTS.md`) or attach them to the conversation.
+
+> A skill's `description` is what triggers activation in agents that support skills.
+
+## 2. Initialize the demo data
+
+The object graph (entities + relations + model + runbook) ships in
+`examples/incident-investigation/` and loads **in memory** — nothing is written to
+disk, nothing is left behind.
+
+- **If you'll connect over MCP** (most common): the MCP server loads the data on
+  startup via `--quickstart-sample` — your agent launches it (see §3). Nothing to
+  do here.
+- **If you'll drive over CLI / HTTP** (or want the Web UI): start the HTTP server:
+  ```bash
+  make quickstart QUICKSTART_SAMPLE=examples/incident-investigation   # API :8080, Web UI :5173
+  ```
+  Sanity-check the data loaded:
+  ```bash
+  umctl query run demo ".umodel with(kind='entity_set') | project domain, name" -o json
+  umctl query run demo ".entity with(domain='platform', name='platform.service', query='degraded')" -o json
+  # → payment-gateway | degraded | …
+  ```
+
+## 3. Connect your agent (MCP)
+
+All three clients use the **same** MCP server invocation — it loads the demo data
+via `--quickstart-sample` and serves the agent:
+
+```
+command: go
+args:    run ./cmd/umodel-mcp --quickstart --quickstart-sample examples/incident-investigation --graphstore memory
+```
+
+### Claude Code
+
+Project `.mcp.json` (or `claude mcp add`):
+
+```json
+{
+  "mcpServers": {
+    "umodel": {
+      "command": "go",
+      "args": ["run", "./cmd/umodel-mcp", "--quickstart",
+               "--quickstart-sample", "examples/incident-investigation",
+               "--graphstore", "memory"]
+    }
+  }
+}
+```
+
+### Qoder
+
+Qoder Settings → **MCP** → **My Servers** → **+ Add**, paste the same
+`{ "mcpServers": { "umodel": { … } } }` block, then **Save**. MCP works in
+**Agent mode**. (Or use `qodercli mcp add`.)
+
+### Codex
+
+`~/.codex/config.toml` (or `codex mcp add`); verify with `/mcp` in a session:
+
+```toml
+[mcp_servers.umodel]
+command = "go"
+args = ["run", "./cmd/umodel-mcp", "--quickstart",
+        "--quickstart-sample", "examples/incident-investigation",
+        "--graphstore", "memory"]
+```
+
+> Launch from the repo root (the `./cmd/umodel-mcp` path is relative), or use an
+> absolute `go` path / a prebuilt `umodel-mcp` binary. For a remote server, run it
+> with `--transport http --addr 0.0.0.0:8090` and point the client at
+> `http://<host>:8090/mcp`.
+
+### No MCP? Use the CLI
+
+The skills work over the CLI too — start the server (§2) and the agent runs
+`umctl query run demo "<SPL>" -o json`.
+
+## 4. Ask questions
+
+With the data loaded and the agent connected, just ask in natural language.
+
+**Reads — activates `umodel-query`:**
+
+- "List the services in this workspace and their status."
+- "What does payment-gateway depend on? Show me the topology."
+- "Which metric and log sets are attached to payment-gateway?"
+
+**Root-cause analysis — activates `umodel-rca`:**
+
+- "Investigate why payment-gateway is degraded." / "payment-gateway 的 SLO 告警了，帮我排查。"
+
+The agent then works autonomously: locate the degraded service → pull its
+metrics/logs → traverse to the upstream caller → find the retry config change →
+rule out the red-herring deployment → find the promotion traffic → conclude the
+root cause (retry ×2.5 × promotion ×3.5 = **8.75×** overload) and recommend a
+rollback.
+
+## Troubleshooting
+
+- **No UModel tools in the agent** → run the `go run ./cmd/umodel-mcp …` line
+  manually first; it should start cleanly. Ensure Agent mode (Qoder) / run `/mcp`
+  (Codex) to confirm the server is connected.
+- **Empty results** → data is in memory per server process; make sure that server
+  was started with `--quickstart-sample examples/incident-investigation`.
+- **`go` not found by the agent** → use an absolute path to `go`, or build once
+  (`go build -o umodel-mcp ./cmd/umodel-mcp`) and point `command` at the binary.
+
+## See also
+
+- [Agent Skills catalog](README.md)
+- [Agent Integration Guide](../docs/en/guides/agent-integration.md)
+- [Incident Investigation Demo](../examples/incident-investigation/README.md)
