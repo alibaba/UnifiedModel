@@ -1,0 +1,53 @@
+kind: metric_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "product.api.metrics"
+  domain: product
+  display_name:
+    en_us: "API Metrics"
+    zh_cn: "API 指标"
+  description:
+    en_us: "Golden metrics for product APIs — the top of the request critical path."
+    zh_cn: "产品 API 的黄金指标——请求关键路径的顶端。"
+spec:
+  labels:
+    keys:
+      - name: target_id
+        type: string
+        display_name: { en_us: "Target ID", zh_cn: "目标 ID" }
+      - name: environment
+        type: string
+        display_name: { en_us: "Environment", zh_cn: "环境" }
+    dynamic: false
+  metrics:
+    - name: latency_p99_ms
+      display_name: { en_us: "P99 Latency", zh_cn: "P99 延迟" }
+      unit: ms
+      data_format: ms
+      type: gauge
+      query_mode: range
+      generator: "histogram_quantile(0.99, sum(rate(product_api_request_duration_seconds_bucket{target_id=\"$target_id\"}[1m])) by (le)) * 1000"
+      aggregator: avg
+      golden_metric: true
+    - name: request_qps
+      display_name: { en_us: "Request QPS", zh_cn: "请求 QPS" }
+      unit: count
+      data_format: KMB
+      type: gauge
+      query_mode: range
+      generator: "sum(rate(product_api_request_total{target_id=\"$target_id\"}[1m]))"
+      aggregator: sum
+      golden_metric: true
+    - name: error_rate
+      display_name: { en_us: "Error Rate", zh_cn: "错误率" }
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "sum(rate(product_api_error_total{target_id=\"$target_id\"}[1m])) / sum(rate(product_api_request_total{target_id=\"$target_id\"}[1m]))"
+      aggregator: avg
+      golden_metric: true
+  query_type: prom
+  needs_processing: true

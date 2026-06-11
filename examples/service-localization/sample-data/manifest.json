@@ -1,0 +1,57 @@
+{
+  "sample": "service-localization",
+  "title": "Service Localization Demo",
+  "description": "A scenario-driven demo showing how an AI agent uses UModel to fetch telemetry and localize a bottleneck down a 4-layer request stack. A degraded checkout API is traced through service and datastore layers to a saturated connection pool, while infrastructure is ruled out.",
+  "schema_pack": "examples/service-localization",
+  "domains": [
+    "product",
+    "service",
+    "data",
+    "infra"
+  ],
+  "entities": "entities.json",
+  "relations": "relations.json",
+  "scenario": {
+    "title": "Checkout API Latency Localized to a Datastore Connection Pool",
+    "symptom": "checkout-api P99 breaches its 300ms SLO; the Checkout Flow journey shows a 2.1% error rate",
+    "critical_path": "Checkout Flow → checkout-api → order-svc → orders-db → node-a",
+    "root_cause": "orders-db (postgres) connection pool saturated (~98%); order-svc latency rises while its own CPU stays healthy",
+    "ruled_out": "infrastructure nodes are healthy; sibling services (catalog, search, payment) are healthy",
+    "method": "Walk the critical path top-down; at each hop fetch latency plus the hop's own resource health; attribute latency to the first hop whose downstream dependency is saturated while its own resources are fine."
+  },
+  "seed_entities_note": "display_name values for documentation; actual __entity_id__ values are 32-char MD5 hex of the semantic names below",
+  "seed_entities": {
+    "impacted_journey": "jrn-checkout",
+    "degraded_api": "api-checkout",
+    "degraded_service": "svc-order",
+    "root_cause_store": "store-orders-db",
+    "healthy_node": "node-a"
+  },
+  "counts": {
+    "entity_sets": 6,
+    "entity_set_links": 7,
+    "metric_sets": 4,
+    "log_sets": 1,
+    "storages": 2,
+    "data_links": 5,
+    "storage_links": 5,
+    "entities": 23,
+    "relations": 29
+  },
+  "included_kinds": [
+    "entity_set",
+    "entity_set_link",
+    "metric_set",
+    "log_set",
+    "prometheus",
+    "elasticsearch",
+    "data_link",
+    "storage_link"
+  ],
+  "excluded_kinds": [
+    "runbook_set",
+    "trace_set",
+    "event_set",
+    "profile_set"
+  ]
+}

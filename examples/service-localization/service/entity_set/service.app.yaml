@@ -1,0 +1,47 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "service.app"
+  domain: service
+  display_name:
+    en_us: "Application Service"
+    zh_cn: "应用服务"
+  description:
+    en_us: "A backend microservice. Sits between product APIs and datastores on the request path."
+    zh_cn: "后端微服务。位于产品 API 与数据存储之间的请求路径上。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+      description:
+        en_us: "Current status: healthy, degraded, down."
+        zh_cn: "当前状态：healthy、degraded、down。"
+    - name: language
+      type: string
+      display_name: { en_us: "Language", zh_cn: "语言" }
+    - name: replicas
+      type: integer
+      display_name: { en_us: "Replicas", zh_cn: "副本数" }
+    - name: owner
+      type: string
+      display_name: { en_us: "Owner", zh_cn: "负责团队" }
+    - name: environment
+      type: string
+      display_name: { en_us: "Environment", zh_cn: "环境" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "status", "language", "replicas", "owner", "environment"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

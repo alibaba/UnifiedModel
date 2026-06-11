@@ -1,0 +1,22 @@
+kind: storage_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "product.api.metrics_to_prometheus"
+  domain: product
+  display_name:
+    en_us: "API metrics stored in Prometheus"
+    zh_cn: "API 指标存储在 Prometheus"
+spec:
+  src:
+    domain: product
+    kind: metric_set
+    name: product.api.metrics
+  dest:
+    domain: infra
+    kind: prometheus
+    name: localization.prometheus.core
+  fields_mapping:
+    target_id: target_id
+    environment: environment

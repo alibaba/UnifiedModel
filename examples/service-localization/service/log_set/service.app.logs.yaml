@@ -1,0 +1,46 @@
+kind: log_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "service.app.logs"
+  domain: service
+  display_name:
+    en_us: "Service Logs"
+    zh_cn: "服务日志"
+  description:
+    en_us: "Application logs for services. Used to confirm error signatures (timeouts, pool exhaustion) during localization."
+    zh_cn: "服务的应用日志。定位时用于确认错误特征（超时、连接池耗尽）。"
+spec:
+  fields:
+    - name: timestamp
+      type: time
+      display_name: { en_us: "Timestamp", zh_cn: "时间" }
+    - name: target_id
+      type: string
+      display_name: { en_us: "Target ID", zh_cn: "目标 ID" }
+    - name: environment
+      type: string
+      display_name: { en_us: "Environment", zh_cn: "环境" }
+    - name: level
+      type: string
+      display_name: { en_us: "Level", zh_cn: "级别" }
+    - name: message
+      type: string
+      display_name: { en_us: "Message", zh_cn: "消息" }
+    - name: trace_id
+      type: string
+      display_name: { en_us: "Trace ID", zh_cn: "Trace ID" }
+  time_field: timestamp
+  name_fields:
+    - message
+  tag_fields:
+    - target_id
+    - environment
+    - level
+  ordered_fields:
+    - timestamp
+    - target_id
+    - level
+    - message
+  default_order: desc

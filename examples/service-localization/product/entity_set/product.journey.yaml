@@ -1,0 +1,44 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "product.journey"
+  domain: product
+  display_name:
+    en_us: "Product Journey"
+    zh_cn: "产品旅程"
+  description:
+    en_us: "A user-facing business journey (e.g. Checkout Flow) that depends on one or more product APIs."
+    zh_cn: "依赖一个或多个产品 API 的用户业务旅程（如结账流程）。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+      description:
+        en_us: "Current status: healthy, impacted, down."
+        zh_cn: "当前状态：healthy、impacted、down。"
+    - name: error_rate
+      type: string
+      display_name: { en_us: "Error Rate", zh_cn: "错误率" }
+    - name: critical
+      type: boolean
+      display_name: { en_us: "Business Critical", zh_cn: "业务关键" }
+    - name: owner
+      type: string
+      display_name: { en_us: "Owner", zh_cn: "负责团队" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "status", "error_rate", "critical", "owner"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

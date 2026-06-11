@@ -41,6 +41,7 @@ Documentation root: [docs/README.md](../README.md)
 
 - [Multi-Domain Quickstart Example Pack](../../examples/quickstart-multidomain/README.md) - five domains connected in one workspace; the default `make quickstart` sample.
 - [Incident Investigation Demo](../../examples/incident-investigation/README.md) - scenario-driven, AI-agent-assisted root-cause analysis of a payment-gateway SLO breach across business, platform, and runtime domains, with a runbook-guided diagnosis path.
+- [Service Localization Demo](../../examples/service-localization/README.md) - AI-agent-assisted bottleneck localization down a four-layer request stack (product → service → data → infra), centered on fetching telemetry at each hop.
 
 ## Architecture
 

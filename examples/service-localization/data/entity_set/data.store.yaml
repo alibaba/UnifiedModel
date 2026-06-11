@@ -1,0 +1,50 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "data.store"
+  domain: data
+  display_name:
+    en_us: "Data Store"
+    zh_cn: "数据存储"
+  description:
+    en_us: "A backing datastore (PostgreSQL, Redis, Kafka) read or written by services. Often where latency hides."
+    zh_cn: "服务读写的后端数据存储（PostgreSQL、Redis、Kafka）。延迟常常藏在这里。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: store_type
+      type: string
+      display_name: { en_us: "Store Type", zh_cn: "存储类型" }
+      description:
+        en_us: "Engine: postgres, redis, kafka."
+        zh_cn: "引擎：postgres、redis、kafka。"
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+      description:
+        en_us: "Current status: healthy, saturated, down."
+        zh_cn: "当前状态：healthy、saturated、down。"
+    - name: max_connections
+      type: integer
+      display_name: { en_us: "Max Connections", zh_cn: "最大连接数" }
+    - name: owner
+      type: string
+      display_name: { en_us: "Owner", zh_cn: "负责团队" }
+    - name: environment
+      type: string
+      display_name: { en_us: "Environment", zh_cn: "环境" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "store_type", "status", "max_connections", "owner", "environment"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

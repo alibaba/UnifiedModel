@@ -1,0 +1,23 @@
+kind: data_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "product.api_related_to_product.api.metrics"
+  domain: product
+  display_name:
+    en_us: "API related to API metrics"
+    zh_cn: "API 关联 API 指标"
+spec:
+  src:
+    domain: product
+    kind: entity_set
+    name: product.api
+  dest:
+    domain: product
+    kind: metric_set
+    name: product.api.metrics
+  fields_mapping:
+    id: target_id
+    environment: environment
+  data_link_type: related_to

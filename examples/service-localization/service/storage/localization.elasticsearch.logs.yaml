@@ -1,0 +1,26 @@
+kind: elasticsearch
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "localization.elasticsearch.logs"
+  domain: service
+  display_name:
+    en_us: "Localization Elasticsearch Logs"
+    zh_cn: "定位 Demo Elasticsearch 日志"
+  description:
+    en_us: "Elasticsearch-compatible log index for the service-localization demo service log set."
+    zh_cn: "service-localization Demo 服务日志集使用的 Elasticsearch 兼容日志索引。"
+spec:
+  endpoint: "https://elasticsearch.localization.example:9200"
+  index: "service-logs-*"
+  index_pattern: "service-logs-${yyyy.MM.dd}"
+  version: "8.x"
+  query_dialect: elasticsearch_dsl
+  time_field: timestamp
+  default_size: 1000
+  max_size: 10000
+  tls_verify: true
+  tags:
+    sample: service-localization
+    role: logs

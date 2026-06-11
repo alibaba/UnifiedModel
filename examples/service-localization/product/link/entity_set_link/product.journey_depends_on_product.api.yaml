@@ -1,0 +1,23 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "product.journey_depends_on_product.api"
+  domain: product
+  display_name:
+    en_us: "Journey depends on API"
+    zh_cn: "旅程依赖 API"
+  description:
+    en_us: "A user journey depends on one or more product APIs."
+    zh_cn: "用户旅程依赖一个或多个产品 API。"
+spec:
+  src:
+    domain: product
+    kind: entity_set
+    name: product.journey
+  dest:
+    domain: product
+    kind: entity_set
+    name: product.api
+  entity_link_type: depends_on

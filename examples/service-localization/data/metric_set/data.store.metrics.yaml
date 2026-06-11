@@ -1,0 +1,53 @@
+kind: metric_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "data.store.metrics"
+  domain: data
+  display_name:
+    en_us: "Store Metrics"
+    zh_cn: "存储指标"
+  description:
+    en_us: "Golden metrics for datastores. connection_pool_usage is the key saturation signal for localization."
+    zh_cn: "数据存储的黄金指标。connection_pool_usage 是定位时的关键饱和信号。"
+spec:
+  labels:
+    keys:
+      - name: target_id
+        type: string
+        display_name: { en_us: "Target ID", zh_cn: "目标 ID" }
+      - name: environment
+        type: string
+        display_name: { en_us: "Environment", zh_cn: "环境" }
+    dynamic: false
+  metrics:
+    - name: connection_pool_usage
+      display_name: { en_us: "Connection Pool Usage", zh_cn: "连接池使用率" }
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "max(data_store_connection_pool_in_use{target_id=\"$target_id\"}) / max(data_store_connection_pool_max{target_id=\"$target_id\"})"
+      aggregator: max
+      golden_metric: true
+    - name: query_latency_p99_ms
+      display_name: { en_us: "Query P99 Latency", zh_cn: "查询 P99 延迟" }
+      unit: ms
+      data_format: ms
+      type: gauge
+      query_mode: range
+      generator: "histogram_quantile(0.99, sum(rate(data_store_query_duration_seconds_bucket{target_id=\"$target_id\"}[1m])) by (le)) * 1000"
+      aggregator: avg
+      golden_metric: true
+    - name: qps
+      display_name: { en_us: "Queries Per Second", zh_cn: "每秒查询数" }
+      unit: count
+      data_format: KMB
+      type: gauge
+      query_mode: range
+      generator: "sum(rate(data_store_query_total{target_id=\"$target_id\"}[1m]))"
+      aggregator: sum
+      golden_metric: true
+  query_type: prom
+  needs_processing: true

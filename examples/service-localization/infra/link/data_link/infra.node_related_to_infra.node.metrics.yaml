@@ -1,0 +1,23 @@
+kind: data_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "infra.node_related_to_infra.node.metrics"
+  domain: infra
+  display_name:
+    en_us: "Node related to node metrics"
+    zh_cn: "节点关联节点指标"
+spec:
+  src:
+    domain: infra
+    kind: entity_set
+    name: infra.node
+  dest:
+    domain: infra
+    kind: metric_set
+    name: infra.node.metrics
+  fields_mapping:
+    id: target_id
+    environment: environment
+  data_link_type: related_to

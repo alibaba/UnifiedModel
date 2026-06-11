@@ -1,0 +1,41 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "infra.pod"
+  domain: infra
+  display_name:
+    en_us: "Infrastructure Pod"
+    zh_cn: "基础设施 Pod"
+  description:
+    en_us: "A Kubernetes pod running a service replica, scheduled onto a node."
+    zh_cn: "运行某个服务副本、被调度到节点上的 Kubernetes Pod。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+      description:
+        en_us: "Current status: running, pending, crashloop."
+        zh_cn: "当前状态：running、pending、crashloop。"
+    - name: workload
+      type: string
+      display_name: { en_us: "Workload", zh_cn: "工作负载" }
+    - name: environment
+      type: string
+      display_name: { en_us: "Environment", zh_cn: "环境" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "status", "workload", "environment"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

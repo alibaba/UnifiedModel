@@ -1,0 +1,47 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "infra.node"
+  domain: infra
+  display_name:
+    en_us: "Infrastructure Node"
+    zh_cn: "基础设施节点"
+  description:
+    en_us: "A Kubernetes node hosting pods and datastores. Bottom of the request critical path."
+    zh_cn: "承载 Pod 与数据存储的 Kubernetes 节点。请求关键路径的底端。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+      description:
+        en_us: "Current status: healthy, pressured, down."
+        zh_cn: "当前状态：healthy、pressured、down。"
+    - name: cpu_cores
+      type: integer
+      display_name: { en_us: "CPU Cores", zh_cn: "CPU 核数" }
+    - name: mem_gb
+      type: integer
+      display_name: { en_us: "Memory (GB)", zh_cn: "内存 (GB)" }
+    - name: zone
+      type: string
+      display_name: { en_us: "Zone", zh_cn: "可用区" }
+    - name: instance_type
+      type: string
+      display_name: { en_us: "Instance Type", zh_cn: "实例规格" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "status", "cpu_cores", "mem_gb", "zone", "instance_type"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

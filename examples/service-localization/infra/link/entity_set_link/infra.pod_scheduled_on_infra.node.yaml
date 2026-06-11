@@ -1,0 +1,23 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "infra.pod_scheduled_on_infra.node"
+  domain: infra
+  display_name:
+    en_us: "Pod scheduled on Node"
+    zh_cn: "Pod 调度到节点"
+  description:
+    en_us: "A pod is scheduled onto a node."
+    zh_cn: "Pod 被调度到某个节点上。"
+spec:
+  src:
+    domain: infra
+    kind: entity_set
+    name: infra.pod
+  dest:
+    domain: infra
+    kind: entity_set
+    name: infra.node
+  entity_link_type: scheduled_on

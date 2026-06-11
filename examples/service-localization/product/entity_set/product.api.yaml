@@ -1,0 +1,53 @@
+kind: entity_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "product.api"
+  domain: product
+  display_name:
+    en_us: "Product API"
+    zh_cn: "产品 API"
+  description:
+    en_us: "A user-facing API endpoint exposed by the product. Top of the request critical path."
+    zh_cn: "产品对外暴露的用户侧 API 端点。请求关键路径的顶端。"
+spec:
+  fields:
+    - name: id
+      type: string
+      display_name: { en_us: "ID", zh_cn: "ID" }
+    - name: display_name
+      type: string
+      display_name: { en_us: "Name", zh_cn: "名称" }
+    - name: status
+      type: string
+      display_name: { en_us: "Status", zh_cn: "状态" }
+      description:
+        en_us: "Current status: healthy, degraded, down."
+        zh_cn: "当前状态：healthy、degraded、down。"
+    - name: sla_tier
+      type: string
+      display_name: { en_us: "SLA Tier", zh_cn: "SLA 层级" }
+    - name: latency_slo_ms
+      type: integer
+      display_name: { en_us: "Latency SLO (ms)", zh_cn: "延迟 SLO (ms)" }
+      description:
+        en_us: "P99 latency objective in milliseconds."
+        zh_cn: "P99 延迟目标（毫秒）。"
+    - name: owner
+      type: string
+      display_name: { en_us: "Owner", zh_cn: "负责团队" }
+    - name: environment
+      type: string
+      display_name: { en_us: "Environment", zh_cn: "环境" }
+    - name: exposure
+      type: string
+      display_name: { en_us: "Exposure", zh_cn: "暴露范围" }
+  primary_key_fields:
+    - id
+  id_generator: "id"
+  name_fields:
+    - display_name
+  ordered_fields: ["id", "display_name", "status", "sla_tier", "latency_slo_ms", "owner", "environment"]
+  first_observed_time_field: "__first_observed_time__"
+  last_observed_time_field: "__last_observed_time__"

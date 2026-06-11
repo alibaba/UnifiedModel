@@ -1,0 +1,23 @@
+kind: data_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "service.app_related_to_service.app.metrics"
+  domain: service
+  display_name:
+    en_us: "Service related to service metrics"
+    zh_cn: "服务关联服务指标"
+spec:
+  src:
+    domain: service
+    kind: entity_set
+    name: service.app
+  dest:
+    domain: service
+    kind: metric_set
+    name: service.app.metrics
+  fields_mapping:
+    id: target_id
+    environment: environment
+  data_link_type: related_to

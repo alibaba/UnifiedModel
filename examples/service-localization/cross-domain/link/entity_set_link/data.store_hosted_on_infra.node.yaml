@@ -1,0 +1,23 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "data.store_hosted_on_infra.node"
+  domain: data
+  display_name:
+    en_us: "Store hosted on Node"
+    zh_cn: "存储托管于节点"
+  description:
+    en_us: "A datastore is hosted on an infrastructure node."
+    zh_cn: "数据存储托管在某个基础设施节点上。"
+spec:
+  src:
+    domain: data
+    kind: entity_set
+    name: data.store
+  dest:
+    domain: infra
+    kind: entity_set
+    name: infra.node
+  entity_link_type: hosted_on

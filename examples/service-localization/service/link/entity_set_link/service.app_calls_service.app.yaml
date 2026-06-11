@@ -1,0 +1,23 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "service.app_calls_service.app"
+  domain: service
+  display_name:
+    en_us: "Service calls Service"
+    zh_cn: "服务调用服务"
+  description:
+    en_us: "Synchronous call dependency between two application services."
+    zh_cn: "两个应用服务之间的同步调用依赖。"
+spec:
+  src:
+    domain: service
+    kind: entity_set
+    name: service.app
+  dest:
+    domain: service
+    kind: entity_set
+    name: service.app
+  entity_link_type: calls

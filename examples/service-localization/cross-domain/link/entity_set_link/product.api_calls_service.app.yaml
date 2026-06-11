@@ -1,0 +1,23 @@
+kind: entity_set_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v0.1.0"
+metadata:
+  name: "product.api_calls_service.app"
+  domain: product
+  display_name:
+    en_us: "API calls Service"
+    zh_cn: "API 调用服务"
+  description:
+    en_us: "A product API is served by one or more backend application services."
+    zh_cn: "产品 API 由一个或多个后端应用服务承载。"
+spec:
+  src:
+    domain: product
+    kind: entity_set
+    name: product.api
+  dest:
+    domain: service
+    kind: entity_set
+    name: service.app
+  entity_link_type: calls

@@ -42,6 +42,13 @@ var sampleCatalog = []sampleDefinition{
 		EntityFile:   "examples/incident-investigation/sample-data/entities.json",
 		RelationFile: "examples/incident-investigation/sample-data/relations.json",
 	},
+	{
+		Name:         "service-localization",
+		Aliases:      []string{"bottleneck-localization", "examples/service-localization"},
+		SchemaRoot:   "examples/service-localization",
+		EntityFile:   "examples/service-localization/sample-data/entities.json",
+		RelationFile: "examples/service-localization/sample-data/relations.json",
+	},
 }
 
 type Service struct {

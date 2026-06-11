@@ -1,0 +1,44 @@
+kind: metric_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "infra.node.metrics"
+  domain: infra
+  display_name:
+    en_us: "Node Metrics"
+    zh_cn: "节点指标"
+  description:
+    en_us: "Resource metrics for infrastructure nodes — used to rule the infra layer in or out during localization."
+    zh_cn: "基础设施节点的资源指标——定位时用于排除或确认基础设施层。"
+spec:
+  labels:
+    keys:
+      - name: target_id
+        type: string
+        display_name: { en_us: "Target ID", zh_cn: "目标 ID" }
+      - name: environment
+        type: string
+        display_name: { en_us: "Environment", zh_cn: "环境" }
+    dynamic: false
+  metrics:
+    - name: cpu_usage
+      display_name: { en_us: "CPU Usage", zh_cn: "CPU 使用率" }
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "1 - avg(rate(node_cpu_seconds_total{target_id=\"$target_id\", mode=\"idle\"}[1m]))"
+      aggregator: avg
+      golden_metric: true
+    - name: mem_usage
+      display_name: { en_us: "Memory Usage", zh_cn: "内存使用率" }
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "1 - (node_memory_available_bytes{target_id=\"$target_id\"} / node_memory_total_bytes{target_id=\"$target_id\"})"
+      aggregator: avg
+      golden_metric: true
+  query_type: prom
+  needs_processing: true

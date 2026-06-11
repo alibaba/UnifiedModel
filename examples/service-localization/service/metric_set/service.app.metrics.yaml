@@ -1,0 +1,53 @@
+kind: metric_set
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "service.app.metrics"
+  domain: service
+  display_name:
+    en_us: "Service Metrics"
+    zh_cn: "服务指标"
+  description:
+    en_us: "Golden metrics for application services — latency plus the service's own resource health (CPU)."
+    zh_cn: "应用服务的黄金指标——延迟，以及服务自身的资源健康度（CPU）。"
+spec:
+  labels:
+    keys:
+      - name: target_id
+        type: string
+        display_name: { en_us: "Target ID", zh_cn: "目标 ID" }
+      - name: environment
+        type: string
+        display_name: { en_us: "Environment", zh_cn: "环境" }
+    dynamic: false
+  metrics:
+    - name: latency_p99_ms
+      display_name: { en_us: "P99 Latency", zh_cn: "P99 延迟" }
+      unit: ms
+      data_format: ms
+      type: gauge
+      query_mode: range
+      generator: "histogram_quantile(0.99, sum(rate(service_app_request_duration_seconds_bucket{target_id=\"$target_id\"}[1m])) by (le)) * 1000"
+      aggregator: avg
+      golden_metric: true
+    - name: cpu_usage
+      display_name: { en_us: "CPU Usage", zh_cn: "CPU 使用率" }
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "avg(rate(service_app_cpu_seconds_total{target_id=\"$target_id\"}[1m]))"
+      aggregator: avg
+      golden_metric: true
+    - name: error_rate
+      display_name: { en_us: "Error Rate", zh_cn: "错误率" }
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "sum(rate(service_app_error_total{target_id=\"$target_id\"}[1m])) / sum(rate(service_app_request_total{target_id=\"$target_id\"}[1m]))"
+      aggregator: avg
+      golden_metric: true
+  query_type: prom
+  needs_processing: true

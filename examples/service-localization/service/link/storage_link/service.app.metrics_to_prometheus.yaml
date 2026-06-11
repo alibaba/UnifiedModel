@@ -1,0 +1,22 @@
+kind: storage_link
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "service.app.metrics_to_prometheus"
+  domain: service
+  display_name:
+    en_us: "Service metrics stored in Prometheus"
+    zh_cn: "服务指标存储在 Prometheus"
+spec:
+  src:
+    domain: service
+    kind: metric_set
+    name: service.app.metrics
+  dest:
+    domain: infra
+    kind: prometheus
+    name: localization.prometheus.core
+  fields_mapping:
+    target_id: target_id
+    environment: environment
