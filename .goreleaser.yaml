@@ -1,0 +1,163 @@
+# GoReleaser config — prebuilt binaries + multi-arch Docker image.
+# Validate:  goreleaser check
+# Dry run:   goreleaser release --snapshot --clean --skip=publish
+# Release:   push a tag `vX.Y.Z` (handled by .github/workflows/release.yml)
+version: 2
+
+project_name: unifiedmodel
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  # umctl — the only binary with version vars; gets the -X ldflags.
+  - id: umctl
+    main: ./cmd/umctl
+    binary: umctl
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+      - -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.version={{ .Version }}
+      - -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.gitCommit={{ .ShortCommit }}
+      - -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.buildTime={{ .Date }}
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+  # umodel-server — no version vars; size-strip only.
+  - id: umodel-server
+    main: ./cmd/umodel-server
+    binary: umodel-server
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+  # umodel-mcp — no version vars; size-strip only.
+  - id: umodel-mcp
+    main: ./cmd/umodel-mcp
+    binary: umodel-mcp
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  # One archive per platform with all three binaries + the demo packs, so
+  # `./umodel-server --quickstart` works straight from the unpacked dir.
+  - id: default
+    ids:
+      - umctl
+      - umodel-server
+      - umodel-mcp
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+      - examples/quickstart-multidomain/**/*
+      - examples/incident-investigation/**/*
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot-{{ .ShortCommit }}"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
+
+# Docker — build per-arch images FROM the prebuilt umodel-server, then a manifest.
+dockers:
+  - id: linux-amd64
+    goos: linux
+    goarch: amd64
+    ids:
+      - umodel-server
+    image_templates:
+      - "ghcr.io/alibaba/unifiedmodel:{{ .Version }}-amd64"
+      - "ghcr.io/alibaba/unifiedmodel:latest-amd64"
+    dockerfile: deployments/docker/Dockerfile.goreleaser
+    use: buildx
+    extra_files:
+      - examples
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.source=https://github.com/alibaba/UnifiedModel"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+
+  - id: linux-arm64
+    goos: linux
+    goarch: arm64
+    ids:
+      - umodel-server
+    image_templates:
+      - "ghcr.io/alibaba/unifiedmodel:{{ .Version }}-arm64"
+      - "ghcr.io/alibaba/unifiedmodel:latest-arm64"
+    dockerfile: deployments/docker/Dockerfile.goreleaser
+    use: buildx
+    extra_files:
+      - examples
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.source=https://github.com/alibaba/UnifiedModel"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+
+docker_manifests:
+  - name_template: "ghcr.io/alibaba/unifiedmodel:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/alibaba/unifiedmodel:{{ .Version }}-amd64"
+      - "ghcr.io/alibaba/unifiedmodel:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/alibaba/unifiedmodel:latest"
+    image_templates:
+      - "ghcr.io/alibaba/unifiedmodel:latest-amd64"
+      - "ghcr.io/alibaba/unifiedmodel:latest-arm64"
+
+release:
+  github:
+    owner: alibaba
+    name: UnifiedModel
+  draft: false
+  prerelease: auto

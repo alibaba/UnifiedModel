@@ -1,0 +1,26 @@
+# Built by GoReleaser from a PREBUILT umodel-server binary (not a source build).
+# GoReleaser populates the build context with the target-arch `umodel-server`
+# binary and (via extra_files) the `examples/` tree.
+#
+# The source-build image is deployments/docker/Dockerfile (used by docker compose).
+FROM gcr.io/distroless/base-debian12
+
+WORKDIR /app
+
+# Prebuilt static binary (CGO_ENABLED=0), injected by GoReleaser at context root.
+COPY umodel-server /usr/local/bin/umodel-server
+
+# Quickstart sample packs are read from disk at runtime (NOT embedded), so ship
+# them in the image. WORKDIR=/app makes the CWD-relative `examples/...` lookups
+# resolve, so `--quickstart` serves demo data with no repo checkout.
+COPY examples /app/examples
+
+EXPOSE 8080
+
+ENTRYPOINT ["umodel-server"]
+# Default: serve the multi-domain quickstart demo in memory.
+# Override the sample, e.g.:
+#   docker run -p 8080:8080 ghcr.io/alibaba/unifiedmodel:latest \
+#     --quickstart --quickstart-sample incident-investigation \
+#     --addr :8080 --data /data --graphstore memory
+CMD ["--quickstart", "--addr", ":8080", "--data", "/data", "--graphstore", "memory"]
