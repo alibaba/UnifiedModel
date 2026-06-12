@@ -155,7 +155,14 @@ func spaFileHandler(uiDir string) http.HandlerFunc {
 		if cleanPath == "." || cleanPath == "" {
 			cleanPath = "index.html"
 		}
-		file := filepath.Join(uiDir, filepath.FromSlash(cleanPath))
+		rel := filepath.FromSlash(cleanPath)
+		// Confine the request to uiDir: reject anything that escapes it
+		// (absolute paths, "..", etc.) before it reaches the filesystem.
+		if !filepath.IsLocal(rel) {
+			http.NotFound(w, r)
+			return
+		}
+		file := filepath.Join(uiDir, rel)
 		if info, err := os.Stat(file); err == nil && !info.IsDir() {
 			http.ServeFile(w, r, file)
 			return
