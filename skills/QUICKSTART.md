@@ -20,12 +20,14 @@ locally, in memory, with **no API key and no network**.
 The skills are plain `SKILL.md` files under [`skills/`](README.md). How you install
 depends on your agent:
 
-- **Claude Code** (native skills) — copy into a skills directory it scans:
-  ```bash
-  mkdir -p .claude/skills
-  cp -R skills/umodel-query skills/umodel-rca .claude/skills/
+- **Claude Code** — install both skills as a plugin in one command:
   ```
-  (or your user-level `~/.claude/skills/`).
+  /plugin marketplace add alibaba/UnifiedModel
+  /plugin install umodel@unifiedmodel
+  ```
+  The `umodel` plugin bundles both skills; they auto-activate by prompt. (Or copy
+  them into a scanned directory: `mkdir -p .claude/skills && cp -R
+  skills/umodel-query skills/umodel-rca .claude/skills/`.)
 - **Qoder / Codex / agents without a `SKILL.md` loader** — the skills are just
   instructions, so include their content as agent context: reference or paste
   [`skills/umodel-query/SKILL.md`](umodel-query/SKILL.md) and

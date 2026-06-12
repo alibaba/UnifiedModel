@@ -37,6 +37,21 @@ No API key or network is required for the demo.
 
 ## Using a skill
 
+### Option A — Claude Code plugin marketplace (one command)
+
+In Claude Code, install both skills as a plugin straight from this repo:
+
+```
+/plugin marketplace add alibaba/UnifiedModel
+/plugin install umodel@unifiedmodel
+```
+
+This installs the `umodel` plugin — both `umodel-query` and `umodel-rca` — which
+then activate automatically based on your prompt. Update later with
+`/plugin marketplace update unifiedmodel`.
+
+### Option B — copy into a skills directory (any agent)
+
 Most skill-aware agents discover skills from a directory. Point your agent at a
 skill here, or copy it into the location your agent scans, for example:
 

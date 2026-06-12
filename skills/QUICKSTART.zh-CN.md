@@ -17,12 +17,13 @@ runtime）、约 65 个实体、约 83 条关系、1 个 Runbook，以及指标/
 
 技能就是 [`skills/`](README.zh-CN.md) 下的 `SKILL.md` 文件。安装方式取决于你的 Agent：
 
-- **Claude Code**（原生技能）—— 拷贝到它扫描的技能目录：
-  ```bash
-  mkdir -p .claude/skills
-  cp -R skills/umodel-query skills/umodel-rca .claude/skills/
+- **Claude Code** —— 一条命令把两个技能作为插件装上：
   ```
-  （或用户级 `~/.claude/skills/`）。
+  /plugin marketplace add alibaba/UnifiedModel
+  /plugin install umodel@unifiedmodel
+  ```
+  `umodel` 插件含两个技能，按提问自动激活。（或拷贝到扫描目录：`mkdir -p
+  .claude/skills && cp -R skills/umodel-query skills/umodel-rca .claude/skills/`。）
 - **Qoder / Codex / 没有 `SKILL.md` 加载器的 Agent** —— 技能就是一段指令，把内容作为
   Agent 上下文带上即可：把 [`skills/umodel-query/SKILL.md`](umodel-query/SKILL.md)
   和 [`skills/umodel-rca/SKILL.md`](umodel-rca/SKILL.md) 引用或粘贴进项目指令

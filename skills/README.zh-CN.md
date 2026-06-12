@@ -33,6 +33,20 @@ demo 无需任何密钥或网络。
 
 ## 使用技能
 
+### 方式 A —— Claude Code 插件市场（一条命令）
+
+在 Claude Code 里，直接从本仓库把两个技能作为插件装上：
+
+```
+/plugin marketplace add alibaba/UnifiedModel
+/plugin install umodel@unifiedmodel
+```
+
+这会装上 `umodel` 插件——含 `umodel-query` 与 `umodel-rca`——随后按你的提问自动激活。
+之后用 `/plugin marketplace update unifiedmodel` 更新。
+
+### 方式 B —— 拷贝到技能目录（任意 Agent）
+
 多数支持技能的 Agent 从一个目录发现技能。把这里的技能指给你的 Agent，或拷贝到
 Agent 扫描的位置，例如：
 
