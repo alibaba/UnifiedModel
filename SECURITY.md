@@ -39,6 +39,7 @@ Current open-source security defaults:
 - `make dev`, Docker, and Compose use `file.memory` local persistence.
 - MCP write tools are disabled by default.
 - AgentGateway resources expose metadata and templates, not runtime rows.
+- The UModel import endpoint (`POST /api/v1/umodel/{workspace}/import`, `umctl umodel import`) reads model packs from operator-provided **server-local filesystem paths** by design, similar to `kubectl apply -f <path>`. It is an operator capability and must not be exposed to untrusted callers. Keep the import endpoint off any internet-facing surface, or front it with authentication/authorization.
 - This release does not include multi-tenant authorization or cloud-hosted control plane behavior.
 
 Do not use the local development server as an internet-facing production service without adding authentication, authorization, transport security, rate limits, audit logging, and deployment hardening.

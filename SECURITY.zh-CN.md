@@ -41,6 +41,7 @@ English version: [SECURITY.md](SECURITY.md)
 - `make dev`、Docker 和 Compose 使用 `file.memory` 本地持久化。
 - MCP 写工具默认关闭。
 - AgentGateway resources 暴露元数据和模板，不暴露运行时 rows。
+- UModel 导入端点（`POST /api/v1/umodel/{workspace}/import`、`umctl umodel import`）按设计从 operator 提供的**服务端本地文件路径**读取模型包，类似 `kubectl apply -f <path>`。这是 operator 能力，不得暴露给不受信任的调用方。请勿将导入端点放在公网可达的表面，或在其前面加认证/授权。
 - 当前 release 不包含 multi-tenant authorization 或 cloud-hosted control plane 行为。
 
 不要在没有认证、授权、传输安全、限流、审计和部署加固的情况下，把本地开发服务作为公网生产服务使用。
