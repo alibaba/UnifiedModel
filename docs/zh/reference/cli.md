@@ -80,6 +80,7 @@ go run ./cmd/umodel-server --quickstart
 | `--quickstart` | `false` | 监听前创建 quickstart workspace，并导入内置样例数据。除非显式设置 `--graphstore`，否则使用 `memory`。 |
 | `--quickstart-workspace` | `demo` | `--quickstart` 使用的 workspace id。 |
 | `--quickstart-sample` | `multi-domain-quickstart` | `--quickstart` 导入的样例包。 |
+| `--import-root` | 当前工作目录 | 将 UModel API 导入（`umctl umodel import`、`POST /api/v1/umodel/{workspace}/import`）限定在该目录内，目录外的路径被拒绝。传 `/` 允许任意路径。`--quickstart` 内置样例加载不受限。 |
 
 ## 命令组
 

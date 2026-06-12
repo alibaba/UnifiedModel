@@ -120,7 +120,10 @@ func (s *Service) importPack(ctx context.Context, workspace string, def sampleDe
 		Workspace: workspace,
 		Sample:    def.Name,
 	}
-	umodelResult, err := s.umodel.Import(ctx, workspace, model.UModelImportRequest{Path: schemaRoot})
+	// Bundled sample packs are resolved from the repository (repoPath); the
+	// path is trusted, so it bypasses import-root confinement and loads
+	// regardless of the server's working directory.
+	umodelResult, err := s.umodel.ImportTrusted(ctx, workspace, model.UModelImportRequest{Path: schemaRoot})
 	if err != nil {
 		return result, err
 	}

@@ -30,6 +30,7 @@ func run(args []string, in io.Reader, out, errOut io.Writer) error {
 	quickStart := flags.Bool("quickstart", false, "Create a demo workspace and import bundled quickstart data before serving MCP")
 	quickStartWorkspace := flags.String("quickstart-workspace", bootstrap.DefaultQuickStartWorkspaceID, "Workspace id used by --quickstart")
 	quickStartSample := flags.String("quickstart-sample", bootstrap.DefaultQuickStartSample, "Sample package imported by --quickstart")
+	importRoot := flags.String("import-root", "", "Confine UModel imports to this directory (default: current working directory; use \"/\" to allow any path)")
 	manifest := flags.Bool("manifest", false, "print tools/resources manifest and exit")
 	transport := flags.String("transport", "stdio", "MCP transport: stdio or http")
 	addr := flags.String("addr", "127.0.0.1:8090", "HTTP MCP listen address when --transport=http")
@@ -53,7 +54,7 @@ func run(args []string, in io.Reader, out, errOut io.Writer) error {
 		*workspace = *quickStartWorkspace
 	}
 
-	app, err := bootstrap.NewAppWithGraphStore(*dataRoot, graphstore.ProviderConfig{Type: *provider, DataRoot: *dataRoot})
+	app, err := bootstrap.NewAppWithGraphStore(*dataRoot, graphstore.ProviderConfig{Type: *provider, DataRoot: *dataRoot}, bootstrap.WithImportRoot(*importRoot))
 	if err != nil {
 		return err
 	}

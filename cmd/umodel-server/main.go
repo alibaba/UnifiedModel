@@ -18,6 +18,7 @@ func main() {
 	quickStart := flag.Bool("quickstart", false, "Create a demo workspace and import bundled quickstart data before serving")
 	quickStartWorkspace := flag.String("quickstart-workspace", bootstrap.DefaultQuickStartWorkspaceID, "Workspace id used by --quickstart")
 	quickStartSample := flag.String("quickstart-sample", bootstrap.DefaultQuickStartSample, "Sample package imported by --quickstart")
+	importRoot := flag.String("import-root", "", "Confine UModel API imports to this directory (default: current working directory; use \"/\" to allow any path)")
 	flag.Parse()
 
 	graphstoreExplicit := false
@@ -29,7 +30,7 @@ func main() {
 	*provider = resolveProviderForQuickStart(*provider, *quickStart, graphstoreExplicit)
 
 	ctx := context.Background()
-	app, err := bootstrap.NewAppWithGraphStore(*dataRoot, graphstore.ProviderConfig{Type: *provider, DataRoot: *dataRoot})
+	app, err := bootstrap.NewAppWithGraphStore(*dataRoot, graphstore.ProviderConfig{Type: *provider, DataRoot: *dataRoot}, bootstrap.WithImportRoot(*importRoot))
 	if err != nil {
 		log.Fatal(err)
 	}

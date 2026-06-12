@@ -13,7 +13,7 @@ import (
 )
 
 func TestCLIBusinessFlowUsesOnlyPublicContracts(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir()).Handler())
+	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir(), bootstrap.WithImportRoot("/")).Handler())
 	defer server.Close()
 
 	root := filepath.Join("..", "..")

@@ -79,6 +79,7 @@ go run ./cmd/umodel-server --quickstart
 | `--quickstart` | `false` | Create the quickstart workspace and import bundled sample data before listening. Uses `memory` unless `--graphstore` is explicitly set. |
 | `--quickstart-workspace` | `demo` | Workspace id used by `--quickstart`. |
 | `--quickstart-sample` | `multi-domain-quickstart` | Sample package imported by `--quickstart`. |
+| `--import-root` | current working directory | Confine UModel API imports (`umctl umodel import`, `POST /api/v1/umodel/{workspace}/import`) to this directory. Paths outside it are rejected. Pass `/` to allow any path. Bundled `--quickstart` sample loads are never confined. |
 
 ## Command Groups
 

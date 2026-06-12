@@ -14,7 +14,28 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Import loads UModel elements from an operator-provided path. The path is
+// confined to the configured import root (WithImportRoot; the current working
+// directory by default) so an API caller cannot read arbitrary server files.
 func (s *Service) Import(ctx context.Context, workspace string, req model.UModelImportRequest) (model.UModelImportResult, error) {
+	if req.Path != "" {
+		confined, err := s.confineImportPath(req.Path)
+		if err != nil {
+			return model.UModelImportResult{Workspace: workspace, Source: req.Path}, err
+		}
+		req.Path = confined
+	}
+	return s.importInternal(ctx, workspace, req)
+}
+
+// ImportTrusted loads UModel elements from a path the caller has already
+// vouched for (e.g. a bundled sample pack resolved from the repository).
+// It skips import-root confinement and must never be reached by user input.
+func (s *Service) ImportTrusted(ctx context.Context, workspace string, req model.UModelImportRequest) (model.UModelImportResult, error) {
+	return s.importInternal(ctx, workspace, req)
+}
+
+func (s *Service) importInternal(ctx context.Context, workspace string, req model.UModelImportRequest) (model.UModelImportResult, error) {
 	if workspace == "" {
 		return model.UModelImportResult{}, apperrors.New(apperrors.CodeInvalidArgument, "workspace is required")
 	}
@@ -58,6 +79,40 @@ func (s *Service) Import(ctx context.Context, workspace string, req model.UModel
 		result.Errors = append(result.Errors, model.ErrorDetail{Field: item.ID, Reason: item.Message})
 	}
 	return result, nil
+}
+
+// confineImportPath resolves p and verifies it stays within the import root,
+// returning the cleaned absolute path. The root defaults to the current
+// working directory; "/" effectively disables confinement. This is the
+// barrier that stops an API-provided path from escaping to arbitrary files.
+func (s *Service) confineImportPath(p string) (string, error) {
+	root := s.importRoot
+	if root == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return "", apperrors.WithDetails(apperrors.CodeInternal, "cannot resolve import root", map[string]string{"reason": err.Error()})
+		}
+		root = wd
+	}
+	rootAbs, err := filepath.Abs(root)
+	if err != nil {
+		return "", apperrors.WithDetails(apperrors.CodeInternal, "invalid import root", map[string]string{"reason": err.Error()})
+	}
+	rootAbs = filepath.Clean(rootAbs)
+
+	abs, err := filepath.Abs(p)
+	if err != nil {
+		return "", apperrors.WithDetails(apperrors.CodeInvalidArgument, "invalid import path", map[string]string{"path": p})
+	}
+	abs = filepath.Clean(abs)
+
+	rel, err := filepath.Rel(rootAbs, abs)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", apperrors.WithDetails(apperrors.CodeInvalidArgument,
+			"import path is outside the allowed import root",
+			map[string]string{"import_root": rootAbs})
+	}
+	return abs, nil
 }
 
 func (s *Service) loadCommonSchemaPacks(ctx context.Context, workspace string, packs []string) ([]model.UModelElement, error) {

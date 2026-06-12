@@ -11,7 +11,7 @@ import (
 
 func TestImportQuickstartExamplesAndQueryUModel(t *testing.T) {
 	ctx := context.Background()
-	app := bootstrap.NewMemoryApp(t.TempDir())
+	app := bootstrap.NewMemoryApp(t.TempDir(), bootstrap.WithImportRoot("/"))
 	examples := filepath.Join("..", "..", "examples", "quickstart-multidomain")
 
 	result, err := app.UModel.Import(ctx, "demo", model.UModelImportRequest{Path: examples})

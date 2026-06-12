@@ -15,7 +15,7 @@ import (
 )
 
 func TestRESTBusinessFlowCoversCoreScenarios(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir()).Handler())
+	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir(), bootstrap.WithImportRoot("/")).Handler())
 	defer server.Close()
 
 	created := e2ePost(t, server.URL+"/api/v1/workspaces", map[string]any{
