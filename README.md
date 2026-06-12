@@ -73,6 +73,17 @@ Stop local services:
 make stop-all
 ```
 
+## Agent Skills
+
+Loadable skills let a skill-aware agent drive UModel directly — read entities, relations, topology, and the model itself, then run model-guided root-cause analysis over the object graph. In Claude Code, install both skills in one command:
+
+```
+/plugin marketplace add alibaba/UnifiedModel
+/plugin install umodel@unifiedmodel
+```
+
+Cursor, Qoder, Codex, and other agents load the same `SKILL.md` files directly. See [Agent Skills](skills/README.md) for the catalog and [the skills quickstart](skills/QUICKSTART.md) for an end-to-end walkthrough.
+
 ## Architecture
 
 ![UModel architecture](images/architecture.png)

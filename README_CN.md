@@ -73,6 +73,17 @@ make quickstart
 make stop-all
 ```
 
+## Agent 技能
+
+可加载的技能让支持技能的 Agent 直接驱动 UModel——读取实体、关系、拓扑和模型本身，并在对象图上做模型引导的根因分析。在 Claude Code 里，一条命令装上两个技能：
+
+```
+/plugin marketplace add alibaba/UnifiedModel
+/plugin install umodel@unifiedmodel
+```
+
+Cursor、Qoder、Codex 等 Agent 可直接加载同样的 `SKILL.md` 文件。技能目录见 [UModel Agent 技能](skills/README.zh-CN.md)，端到端走查见 [技能快速上手](skills/QUICKSTART.zh-CN.md)。
+
 ## 架构
 
 ![UModel 架构](images/architecture.png)
