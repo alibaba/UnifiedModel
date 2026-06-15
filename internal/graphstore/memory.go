@@ -187,7 +187,7 @@ func (s *MemoryStore) QueryEntities(ctx context.Context, plan model.EntityQueryP
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	rows := make([]map[string]any, 0, limit)
+	rows := make([]map[string]any, 0, allocHint(limit))
 	keys := make([]string, 0, len(s.entities[plan.Workspace]))
 	for key := range s.entities[plan.Workspace] {
 		keys = append(keys, key)
@@ -222,7 +222,7 @@ func (s *MemoryStore) QueryTopo(ctx context.Context, plan model.TopoQueryPlan) (
 		return s.queryCypherLocked(plan, limit)
 	}
 
-	rows := make([]map[string]any, 0, limit)
+	rows := make([]map[string]any, 0, allocHint(limit))
 	keys := make([]string, 0, len(s.relations[plan.Workspace]))
 	for key := range s.relations[plan.Workspace] {
 		keys = append(keys, key)
@@ -508,6 +508,23 @@ func methodOf(payload map[string]any) string {
 func normalizeLimit(limit, fallback int) int {
 	if limit <= 0 {
 		return fallback
+	}
+	return limit
+}
+
+// maxPreallocRows bounds the initial capacity we reserve for a result slice.
+// The slice still grows via append, so this never truncates results — it only
+// stops a caller-supplied limit from driving a huge up-front allocation
+// (defense in depth; the planner already caps limit against provider
+// capability before a request reaches the store).
+const maxPreallocRows = 1024
+
+func allocHint(limit int) int {
+	if limit < 0 {
+		return 0
+	}
+	if limit > maxPreallocRows {
+		return maxPreallocRows
 	}
 	return limit
 }

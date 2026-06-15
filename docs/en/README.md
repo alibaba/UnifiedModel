@@ -35,6 +35,7 @@ Documentation root: [docs/README.md](../README.md)
 - [Web UI Guide](guides/web-ui.md)
 - [SDK And Client Guide](guides/sdk-clients.md) - REST, CLI, MCP, generated model SDKs, and integration examples.
 - [Agent Integration Guide](guides/agent-integration.md) - connect an MCP client, the agent tool/resource surface, the query surface an agent uses, and a worked incident-investigation walkthrough.
+- [Agent Skills](../../skills/README.md) - loadable `SKILL.md` files for MCP/CLI agents: read entity/relation/model data and run model-guided root-cause analysis.
 - [MCP Examples](../../examples/mcp/README.md) - stdio, Streamable HTTP, HTTP+SSE, and TOON payload examples.
 
 ## Examples

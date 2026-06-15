@@ -73,6 +73,17 @@ Stop local services:
 make stop-all
 ```
 
+## Agent Skills
+
+Loadable skills let a skill-aware agent drive UModel directly — read entities, relations, topology, and the model itself, then run model-guided root-cause analysis over the object graph. In Claude Code, install both skills in one command:
+
+```
+/plugin marketplace add alibaba/UnifiedModel
+/plugin install umodel@unifiedmodel
+```
+
+Cursor, Qoder, Codex, and other agents load the same `SKILL.md` files directly. See [Agent Skills](skills/README.md) for the catalog and [the skills quickstart](skills/QUICKSTART.md) for an end-to-end walkthrough.
+
 ## Architecture
 
 ![UModel architecture](images/architecture.png)
@@ -103,6 +114,7 @@ Start with the bilingual documentation index: [docs/README.md](docs/README.md).
 | Architecture | [Architecture Overview](docs/en/architecture/overview.md), [Runtime Flow](docs/en/architecture/runtime-flow.md), [Query And Agent Architecture](docs/en/architecture/query-and-agent.md) |
 | Reference | [CLI](docs/en/reference/cli.md), [MCP](docs/en/reference/mcp.md), [REST OpenAPI](api/openapi/openapi.yaml), [MCP Tool And Resource Schema](api/mcp/tools.schema.json) |
 | Examples | [Multi-Domain Quickstart Example Pack](examples/quickstart-multidomain/README.md), [Incident Investigation Demo (AI agent)](examples/incident-investigation/README.md) |
+| Agent Skills | [UModel Agent Skills](skills/README.md) — loadable skills for MCP/CLI agents: read entity/relation/model data and run model-guided root-cause analysis |
 | Deployment | [Docker And Compose](deployments/README.md) |
 
 Chinese documentation: [docs/zh/README.md](docs/zh/README.md).
