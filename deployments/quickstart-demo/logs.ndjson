@@ -1,0 +1,28 @@
+{"index":{}}
+{"event_time":"2026-06-15T02:14:55Z","svc_id":"10000000000000000000000000000101","env":"prod","severity":"INFO","log_message":"checkout completed order=ord-88231 amount=42.10","trace_id":"a1b2c3d4e5f60001"}
+{"index":{}}
+{"event_time":"2026-06-15T02:16:40Z","svc_id":"10000000000000000000000000000101","env":"prod","severity":"WARN","log_message":"payment call slow: 1480ms (threshold 800ms)","trace_id":"a1b2c3d4e5f60002"}
+{"index":{}}
+{"event_time":"2026-06-15T02:17:03Z","svc_id":"10000000000000000000000000000101","env":"prod","severity":"ERROR","log_message":"payment upstream timeout after 2000ms; retry 5/5 exhausted","trace_id":"a1b2c3d4e5f60003"}
+{"index":{}}
+{"event_time":"2026-06-15T02:17:09Z","svc_id":"10000000000000000000000000000101","env":"prod","severity":"ERROR","log_message":"payment-gateway returned 503 Service Unavailable","trace_id":"a1b2c3d4e5f60004"}
+{"index":{}}
+{"event_time":"2026-06-15T02:17:21Z","svc_id":"10000000000000000000000000000101","env":"prod","severity":"ERROR","log_message":"retry budget exhausted for downstream payment; shedding load","trace_id":"a1b2c3d4e5f60005"}
+{"index":{}}
+{"event_time":"2026-06-15T02:17:44Z","svc_id":"10000000000000000000000000000101","env":"prod","severity":"ERROR","log_message":"circuit breaker open: payment downstream error rate 15%","trace_id":"a1b2c3d4e5f60006"}
+{"index":{}}
+{"event_time":"2026-06-15T02:18:02Z","svc_id":"10000000000000000000000000000101","env":"prod","severity":"ERROR","log_message":"context deadline exceeded calling payment-gateway","trace_id":"a1b2c3d4e5f60007"}
+{"index":{}}
+{"event_time":"2026-06-15T02:18:20Z","svc_id":"10000000000000000000000000000101","env":"prod","severity":"WARN","log_message":"degraded mode: serving cached availability for checkout","trace_id":"a1b2c3d4e5f60008"}
+{"index":{}}
+{"event_time":"2026-06-15T02:10:11Z","svc_id":"10000000000000000000000000000102","env":"prod","severity":"INFO","log_message":"catalog query served items=24 in 38ms","trace_id":"b2000000000000a1"}
+{"index":{}}
+{"event_time":"2026-06-15T02:15:33Z","svc_id":"10000000000000000000000000000102","env":"prod","severity":"INFO","log_message":"cache warm complete for category electronics","trace_id":"b2000000000000a2"}
+{"index":{}}
+{"event_time":"2026-06-15T02:16:58Z","svc_id":"10000000000000000000000000000103","env":"prod","severity":"WARN","log_message":"delivery ETA recompute backlog growing (queue=512)","trace_id":"c3000000000000a1"}
+{"index":{}}
+{"event_time":"2026-06-15T02:17:35Z","svc_id":"10000000000000000000000000000103","env":"prod","severity":"ERROR","log_message":"route optimizer timeout for shipment shp-7741","trace_id":"c3000000000000a2"}
+{"index":{}}
+{"event_time":"2026-06-15T02:12:05Z","svc_id":"10000000000000000000000000000104","env":"prod","severity":"INFO","log_message":"flushed 5000 telemetry points to sink","trace_id":"d4000000000000a1"}
+{"index":{}}
+{"event_time":"2026-06-15T02:18:50Z","svc_id":"10000000000000000000000000000104","env":"prod","severity":"INFO","log_message":"scrape cycle ok targets=128 dropped=0","trace_id":"d4000000000000a2"}
