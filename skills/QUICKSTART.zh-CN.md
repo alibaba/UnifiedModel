@@ -15,20 +15,29 @@ runtime）、约 65 个实体、约 83 条关系、1 个 Runbook，以及指标/
 
 ## 1. 安装技能
 
-技能就是 [`skills/`](README.zh-CN.md) 下的 `SKILL.md` 文件。安装方式取决于你的 Agent：
+技能就是 [`skills/`](README.zh-CN.md) 下的 `SKILL.md` 目录。三个 Agent 都原生加载，按你的客户端选：
 
 - **Claude Code** —— 一条命令把两个技能作为插件装上：
   ```
   /plugin marketplace add alibaba/UnifiedModel
   /plugin install umodel@unifiedmodel
   ```
-  `umodel` 插件含两个技能，按提问自动激活。（或拷贝到扫描目录：`mkdir -p
-  .claude/skills && cp -R skills/umodel-query skills/umodel-rca .claude/skills/`。）
-- **Qoder / Codex / 没有 `SKILL.md` 加载器的 Agent** —— 技能就是一段指令，把内容作为
-  Agent 上下文带上即可：把 [`skills/umodel-query/SKILL.md`](umodel-query/SKILL.md)
-  和 [`skills/umodel-rca/SKILL.md`](umodel-rca/SKILL.md) 引用或粘贴进项目指令
-  （如 `AGENTS.md`），或直接附到对话里。
+  `umodel` 插件含两个技能，按提问自动激活。（或拷贝到 `.claude/skills/`。）
+- **Qoder** —— 把两个技能拷进工作区 skills 目录：
+  ```bash
+  mkdir -p .qoder/skills && cp -R skills/umodel-query skills/umodel-rca .qoder/skills/
+  ```
+  按提问自动激活，或用 `/umodel-query` 手动触发。（Qoder 另有 Skills Marketplace
+  和内置 `create-skill` 助手。）
+- **Codex** —— 拷进中立的 `.agents/skills/` 目录（用 `~/.agents/skills/` 做用户级全局）：
+  ```bash
+  mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca .agents/skills/
+  ```
+  按 description 自动激活，或用 `$umodel-query` 提及（打 `$`，或跑 `/skills`，浏览）。
+  新技能没出现就重启 Codex。
 
+> `.agents/skills/` 是跨 Agent 的开放标准路径——Qoder 也读它，放一份即可同时服务 Qoder 和 Codex。
+>
 > 技能的 `description` 决定支持技能的 Agent 何时激活它。
 
 ## 2. 初始化 demo 数据

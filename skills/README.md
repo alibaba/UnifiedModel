@@ -6,7 +6,7 @@ over the `umctl` CLI or MCP.
 
 A *skill* here is a self-contained `SKILL.md` (YAML frontmatter `name` +
 `description`, then instructions) in the format consumed by skill-aware agent
-runtimes such as Claude Code, Cursor, and Qoder.
+runtimes such as Claude Code, Cursor, Qoder, and Codex.
 
 > **New here? Start with the [Quickstart](QUICKSTART.md)** — install the skills,
 > load a demo object graph (entities + relations), connect Claude Code / Qoder /
@@ -50,21 +50,30 @@ This installs the `umodel` plugin — both `umodel-query` and `umodel-rca` — w
 then activate automatically based on your prompt. Update later with
 `/plugin marketplace update unifiedmodel`.
 
-### Option B — copy into a skills directory (any agent)
+### Option B — copy into your agent's skills directory
 
-Most skill-aware agents discover skills from a directory. Point your agent at a
-skill here, or copy it into the location your agent scans, for example:
+Most skill-aware agents discover skills from a directory — drop both skill folders
+into the one your agent scans:
+
+| Agent | Skills directory |
+|---|---|
+| Claude Code | `.claude/skills/` |
+| Cursor | `.cursor/skills/` |
+| Qoder | `.qoder/skills/` |
+| Codex | `.agents/skills/` (or `~/.agents/skills/` for user-global) |
 
 ```bash
-# Claude Code / Cursor / Qoder (Claude-Code-compatible skill loaders)
-mkdir -p .claude/skills
-cp -R skills/umodel-query skills/umodel-rca .claude/skills/
+# Qoder
+mkdir -p .qoder/skills  && cp -R skills/umodel-query skills/umodel-rca .qoder/skills/
+# Codex — the vendor-neutral .agents/skills/ is also read by Qoder
+mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca .agents/skills/
 ```
 
 Then prompt the agent normally — e.g. *"query the degraded services in this
 workspace"* (activates `umodel-query`) or *"payment-gateway 的 SLO 告警了，帮我排查"*
 (activates `umodel-rca`). Each skill's `description` controls when the agent
-activates it.
+activates it; trigger one manually with `/umodel-query` (Claude Code / Qoder) or
+`$umodel-query` (Codex).
 
 ## How the skills relate
 

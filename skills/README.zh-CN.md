@@ -4,7 +4,7 @@
 拉取遥测数据，并在对象图上做模型引导的根因分析——通过 `umctl` CLI 或 MCP。
 
 这里的*技能*是一个自包含的 `SKILL.md`（YAML frontmatter `name` + `description`，
-随后是指令），格式与 Claude Code、Cursor、Qoder 等支持技能的 Agent 运行时一致。
+随后是指令），格式与 Claude Code、Cursor、Qoder、Codex 等支持技能的 Agent 运行时一致。
 
 > **第一次用？从[快速上手](QUICKSTART.zh-CN.md)开始** —— 安装技能、载入一个 demo
 > 对象图（实体 + 关系）、接入 Claude Code / Qoder / Codex、然后提问。几分钟端到端跑通，无需密钥。
@@ -45,20 +45,28 @@ demo 无需任何密钥或网络。
 这会装上 `umodel` 插件——含 `umodel-query` 与 `umodel-rca`——随后按你的提问自动激活。
 之后用 `/plugin marketplace update unifiedmodel` 更新。
 
-### 方式 B —— 拷贝到技能目录（任意 Agent）
+### 方式 B —— 拷贝到 Agent 的技能目录
 
-多数支持技能的 Agent 从一个目录发现技能。把这里的技能指给你的 Agent，或拷贝到
-Agent 扫描的位置，例如：
+多数支持技能的 Agent 从一个目录发现技能——把两个技能目录拷进你的 Agent 扫描的位置：
+
+| Agent | 技能目录 |
+|---|---|
+| Claude Code | `.claude/skills/` |
+| Cursor | `.cursor/skills/` |
+| Qoder | `.qoder/skills/` |
+| Codex | `.agents/skills/`（或 `~/.agents/skills/` 做用户级全局） |
 
 ```bash
-# Claude Code / Cursor / Qoder（Claude-Code 兼容的技能加载器）
-mkdir -p .claude/skills
-cp -R skills/umodel-query skills/umodel-rca .claude/skills/
+# Qoder
+mkdir -p .qoder/skills  && cp -R skills/umodel-query skills/umodel-rca .qoder/skills/
+# Codex —— 中立的 .agents/skills/ Qoder 也读
+mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca .agents/skills/
 ```
 
 然后正常提问——例如*"查一下这个 workspace 里 degraded 的服务"*（激活 `umodel-query`），
 或*"payment-gateway 的 SLO 告警了，帮我排查"*（激活 `umodel-rca`）。每个技能的
-`description` 决定 Agent 何时激活它。
+`description` 决定 Agent 何时激活它；手动触发用 `/umodel-query`（Claude Code / Qoder）
+或 `$umodel-query`（Codex）。
 
 ## 两个技能的关系
 
