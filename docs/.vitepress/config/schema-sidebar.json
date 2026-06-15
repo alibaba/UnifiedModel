@@ -1,0 +1,246 @@
+{
+  "en": [
+    {
+      "text": "EntitySet",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "entity_set",
+          "link": "/en/reference/schema/core/entity-set"
+        }
+      ]
+    },
+    {
+      "text": "DataSet",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "entity_source",
+          "link": "/en/reference/schema/core/dataset/entity-source"
+        },
+        {
+          "text": "event_set",
+          "link": "/en/reference/schema/core/dataset/event-set"
+        },
+        {
+          "text": "explorer",
+          "link": "/en/reference/schema/core/dataset/explorer"
+        },
+        {
+          "text": "log_set",
+          "link": "/en/reference/schema/core/dataset/log-set"
+        },
+        {
+          "text": "metric_set",
+          "link": "/en/reference/schema/core/dataset/metric-set"
+        },
+        {
+          "text": "profile_set",
+          "link": "/en/reference/schema/core/dataset/profile-set"
+        },
+        {
+          "text": "runbook_set",
+          "link": "/en/reference/schema/core/dataset/runbook-set"
+        },
+        {
+          "text": "trace_set",
+          "link": "/en/reference/schema/core/dataset/trace-set"
+        }
+      ]
+    },
+    {
+      "text": "Link",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "data_link",
+          "link": "/en/reference/schema/core/link/data-link"
+        },
+        {
+          "text": "entity_set_link",
+          "link": "/en/reference/schema/core/link/entity-set-link"
+        },
+        {
+          "text": "entity_source_link",
+          "link": "/en/reference/schema/core/link/entity-source-link"
+        },
+        {
+          "text": "explorer_link",
+          "link": "/en/reference/schema/core/link/explorer-link"
+        },
+        {
+          "text": "runbook_link",
+          "link": "/en/reference/schema/core/link/runbook-link"
+        },
+        {
+          "text": "storage_link",
+          "link": "/en/reference/schema/core/link/storage-link"
+        }
+      ]
+    },
+    {
+      "text": "Storage",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "aliyun_prometheus",
+          "link": "/en/reference/schema/core/storage/aliyun-prometheus"
+        },
+        {
+          "text": "elasticsearch",
+          "link": "/en/reference/schema/core/storage/elasticsearch"
+        },
+        {
+          "text": "external_storage",
+          "link": "/en/reference/schema/core/storage/external-storage"
+        },
+        {
+          "text": "mysql",
+          "link": "/en/reference/schema/core/storage/mysql"
+        },
+        {
+          "text": "prometheus",
+          "link": "/en/reference/schema/core/storage/prometheus"
+        },
+        {
+          "text": "sls_entitystore",
+          "link": "/en/reference/schema/core/storage/sls-entitystore"
+        },
+        {
+          "text": "sls_logstore",
+          "link": "/en/reference/schema/core/storage/sls-logstore"
+        },
+        {
+          "text": "sls_metricstore",
+          "link": "/en/reference/schema/core/storage/sls-metricstore"
+        }
+      ]
+    },
+    {
+      "text": "Shared types",
+      "link": "/en/reference/schema/shared-types"
+    }
+  ],
+  "zh": [
+    {
+      "text": "EntitySet（实体集）",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "entity_set",
+          "link": "/zh/reference/schema/core/entity-set"
+        }
+      ]
+    },
+    {
+      "text": "DataSet（数据集）",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "entity_source",
+          "link": "/zh/reference/schema/core/dataset/entity-source"
+        },
+        {
+          "text": "event_set",
+          "link": "/zh/reference/schema/core/dataset/event-set"
+        },
+        {
+          "text": "explorer",
+          "link": "/zh/reference/schema/core/dataset/explorer"
+        },
+        {
+          "text": "log_set",
+          "link": "/zh/reference/schema/core/dataset/log-set"
+        },
+        {
+          "text": "metric_set",
+          "link": "/zh/reference/schema/core/dataset/metric-set"
+        },
+        {
+          "text": "profile_set",
+          "link": "/zh/reference/schema/core/dataset/profile-set"
+        },
+        {
+          "text": "runbook_set",
+          "link": "/zh/reference/schema/core/dataset/runbook-set"
+        },
+        {
+          "text": "trace_set",
+          "link": "/zh/reference/schema/core/dataset/trace-set"
+        }
+      ]
+    },
+    {
+      "text": "Link（链接）",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "data_link",
+          "link": "/zh/reference/schema/core/link/data-link"
+        },
+        {
+          "text": "entity_set_link",
+          "link": "/zh/reference/schema/core/link/entity-set-link"
+        },
+        {
+          "text": "entity_source_link",
+          "link": "/zh/reference/schema/core/link/entity-source-link"
+        },
+        {
+          "text": "explorer_link",
+          "link": "/zh/reference/schema/core/link/explorer-link"
+        },
+        {
+          "text": "runbook_link",
+          "link": "/zh/reference/schema/core/link/runbook-link"
+        },
+        {
+          "text": "storage_link",
+          "link": "/zh/reference/schema/core/link/storage-link"
+        }
+      ]
+    },
+    {
+      "text": "Storage（存储）",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "aliyun_prometheus",
+          "link": "/zh/reference/schema/core/storage/aliyun-prometheus"
+        },
+        {
+          "text": "elasticsearch",
+          "link": "/zh/reference/schema/core/storage/elasticsearch"
+        },
+        {
+          "text": "external_storage",
+          "link": "/zh/reference/schema/core/storage/external-storage"
+        },
+        {
+          "text": "mysql",
+          "link": "/zh/reference/schema/core/storage/mysql"
+        },
+        {
+          "text": "prometheus",
+          "link": "/zh/reference/schema/core/storage/prometheus"
+        },
+        {
+          "text": "sls_entitystore",
+          "link": "/zh/reference/schema/core/storage/sls-entitystore"
+        },
+        {
+          "text": "sls_logstore",
+          "link": "/zh/reference/schema/core/storage/sls-logstore"
+        },
+        {
+          "text": "sls_metricstore",
+          "link": "/zh/reference/schema/core/storage/sls-metricstore"
+        }
+      ]
+    },
+    {
+      "text": "共享类型",
+      "link": "/zh/reference/schema/shared-types"
+    }
+  ]
+}

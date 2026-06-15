@@ -1,4 +1,5 @@
 import type { LocaleSpecificConfig, DefaultTheme } from 'vitepress'
+import schemaSidebar from './schema-sidebar.json'
 
 const nav: DefaultTheme.NavItem[] = [
   { text: 'Guide', link: '/en/getting-started/quickstart', activeMatch: '/en/(getting-started|concepts|guides|architecture)/' },
@@ -67,6 +68,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
     items: [
       { text: 'CLI', link: '/en/reference/cli' },
       { text: 'MCP', link: '/en/reference/mcp' },
+      { text: 'Schema', link: '/en/reference/schema/' },
       { text: 'Web UI API Map', link: '/en/ui-api' },
       { text: 'UI Architecture', link: '/en/ui-architecture' },
       { text: 'SDK Specification', link: '/en/umodel-sdk-specification' },
@@ -81,13 +83,18 @@ const sidebar: DefaultTheme.SidebarItem[] = [
   },
 ]
 
+const schemaNav: DefaultTheme.SidebarItem[] = [
+  { text: 'Schema Reference', link: '/en/reference/schema/' },
+  ...(schemaSidebar.en as DefaultTheme.SidebarItem[]),
+]
+
 export const en: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?: string } = {
   label: 'English',
   lang: 'en-US',
   link: '/en/',
   themeConfig: {
     nav,
-    sidebar: { '/en/': sidebar },
+    sidebar: { '/en/reference/schema/': schemaNav, '/en/': sidebar },
     outline: { level: [2, 3], label: 'On this page' },
     docFooter: { prev: 'Previous', next: 'Next' },
     editLink: {

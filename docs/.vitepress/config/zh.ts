@@ -1,4 +1,5 @@
 import type { LocaleSpecificConfig, DefaultTheme } from 'vitepress'
+import schemaSidebar from './schema-sidebar.json'
 
 const nav: DefaultTheme.NavItem[] = [
   { text: '指南', link: '/zh/getting-started/quickstart', activeMatch: '/zh/(getting-started|concepts|guides|architecture)/' },
@@ -67,6 +68,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
     items: [
       { text: 'CLI', link: '/zh/reference/cli' },
       { text: 'MCP', link: '/zh/reference/mcp' },
+      { text: 'Schema', link: '/zh/reference/schema/' },
       { text: 'Web UI API 映射', link: '/zh/ui-api' },
       { text: 'UI 架构', link: '/zh/ui-architecture' },
       { text: 'SDK 规范', link: '/zh/umodel-sdk-specification' },
@@ -81,13 +83,18 @@ const sidebar: DefaultTheme.SidebarItem[] = [
   },
 ]
 
+const schemaNav: DefaultTheme.SidebarItem[] = [
+  { text: 'Schema 参考', link: '/zh/reference/schema/' },
+  ...(schemaSidebar.zh as DefaultTheme.SidebarItem[]),
+]
+
 export const zh: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?: string } = {
   label: '简体中文',
   lang: 'zh-CN',
   link: '/zh/',
   themeConfig: {
     nav,
-    sidebar: { '/zh/': sidebar },
+    sidebar: { '/zh/reference/schema/': schemaNav, '/zh/': sidebar },
     outline: { level: [2, 3], label: '本页目录' },
     docFooter: { prev: '上一页', next: '下一页' },
     editLink: {
