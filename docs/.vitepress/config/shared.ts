@@ -29,15 +29,21 @@ export const shared: UserConfig = {
     'zh/README.md': 'zh/index.md',
   },
 
-  // The reused docs contain literal mustache examples in inline code
-  // (e.g. `${{src.service_id}}` in fields_mapping). Move Vue's delimiters to
-  // unused tokens so `{{ }}` renders literally — no source edits, GitHub
-  // rendering preserved.
-  vue: {
-    template: {
-      compilerOptions: {
-        delimiters: ['__vp_no_interp_open__', '__vp_no_interp_close__'],
-      },
+  // The reused docs use literal `{{ }}` inside inline code (e.g.
+  // `${{src.service_id}}`). Vue would treat those as interpolation and break the
+  // build. Entity-escape braces in inline code only, so they render literally —
+  // without changing Vue's global delimiters (which breaks the theme's own
+  // `{{ }}`) and without editing the source docs. GitHub rendering is unaffected.
+  markdown: {
+    config: (md) => {
+      md.renderer.rules.code_inline = (tokens, idx, _options, _env, self) => {
+        const token = tokens[idx]
+        const content = md.utils
+          .escapeHtml(token.content)
+          .replace(/{/g, '&#123;')
+          .replace(/}/g, '&#125;')
+        return `<code${self.renderAttrs(token)}>${content}</code>`
+      }
     },
   },
 
