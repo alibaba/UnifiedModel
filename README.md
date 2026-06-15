@@ -82,7 +82,7 @@ Loadable skills let a skill-aware agent drive UModel directly — read entities,
 /plugin install umodel@unifiedmodel
 ```
 
-Cursor, Qoder, Codex, and other agents load the same `SKILL.md` files directly. See [Agent Skills](skills/README.md) for the catalog and [the skills quickstart](skills/QUICKSTART.md) for an end-to-end walkthrough.
+Qoder, Codex, Cursor, and other agents load the same two `SKILL.md` files — copy them into the agent's skills directory (`.qoder/skills/` for Qoder, `.agents/skills/` for Codex, `.claude/skills/` for Claude Code). See [Agent Skills](skills/README.md) for the catalog and [the skills quickstart](skills/QUICKSTART.md) for per-agent install.
 
 ## Architecture
 

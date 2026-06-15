@@ -82,7 +82,7 @@ make stop-all
 /plugin install umodel@unifiedmodel
 ```
 
-Cursor、Qoder、Codex 等 Agent 可直接加载同样的 `SKILL.md` 文件。技能目录见 [UModel Agent 技能](skills/README.zh-CN.md)，端到端走查见 [技能快速上手](skills/QUICKSTART.zh-CN.md)。
+Qoder、Codex、Cursor 等 Agent 加载同样的两个 `SKILL.md` 文件——把它们拷进对应 Agent 的技能目录（Qoder 用 `.qoder/skills/`，Codex 用 `.agents/skills/`，Claude Code 用 `.claude/skills/`）。技能目录见 [UModel Agent 技能](skills/README.zh-CN.md)，分平台安装见 [技能快速上手](skills/QUICKSTART.zh-CN.md)。
 
 ## 架构
 
