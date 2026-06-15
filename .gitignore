@@ -15,6 +15,11 @@ data/graphstore/
 web/node_modules/
 web/dist/
 
+# Docs site (VitePress) dependencies and build output
+docs/node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
 # Generated build/test output
 generated/java/target/
 /bin/
