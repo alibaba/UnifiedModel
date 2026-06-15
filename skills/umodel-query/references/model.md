@@ -46,9 +46,13 @@ umctl query run demo ".umodel with(kind='runbook_set', name='platform.service.op
 ```
 
 The `domain` + `name` of each `entity_set` listed here are exactly what you pass to `.entity`
-(read its runtime instances, see [entity.md](entity.md)) and `.entity_set` (call its methods);
-likewise a `metric_set` / `log_set` `domain`+`name` is what `get_metrics` / `get_logs` take.
+(read its runtime instances, see [entity.md](entity.md)) and `.entity_set` (call its methods).
 `.umodel` defines the **types**; `.entity` returns their **instances**.
+
+`.umodel with(kind='metric_set')` browses the dataset **catalog** — every dataset in the
+workspace. To find which metric_set / log_set a **specific entity** exposes (the `domain`+`name`
+`get_metrics` / `get_logs` actually take), don't scan the catalog — ask the entity:
+`.entity_set … | entity-call list_data_set(['metric_set'])` (see [entity-set.md](entity-set.md)).
 
 To go from a model element to what you can *do* with it (its methods, its datasets), use
 `.entity_set | entity-call` — see [entity-set.md](entity-set.md).

@@ -7,8 +7,19 @@ call mechanics and the wrapped result shape.
 
 ## 1. Fetch the plan
 
-Resolve the entity id first (`.entity … query='payment-gateway' | project __entity_id__`, see
-[entity.md](entity.md)), then call the method:
+Two lookups give you the call arguments — **get both from the entity, not from a global model
+scan**:
+
+- **Entity id** — `.entity … query='payment-gateway' | project __entity_id__` (see
+  [entity.md](entity.md)).
+- **Dataset name** (the metric_set / log_set this entity exposes) — call
+  `entity-call list_data_set(['metric_set'])` (or `['log_set']`) on the entity-set (see
+  [entity-set.md](entity-set.md)); the returned row gives the `domain`+`name` to pass below. Do
+  **not** reach for `.umodel with(kind='metric_set')` — that lists every dataset in the
+  workspace, unscoped to your entity, so it can't tell you which one applies (and `| project
+  name` on `.umodel` comes back null).
+
+Then call the method:
 
 ```bash
 umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c']) | entity-call get_metrics('platform','platform.service.metrics','latency_p99_ms', step='30s')" -o json
@@ -86,6 +97,10 @@ The ES `query` block has **no `endpoint`** — take it from
 POST `body` to `<endpoint>/<index>/_search`.
 
 ## 3. Execute it with what you have
+
+**You are the executor.** The plan describes the query and where it lives; running it is your
+job — don't stop at the plan. (If a plan's `description` or `next_action` suggests forwarding it
+to a separate data executor, that's the PaaS path; in this skill you execute it yourself.)
 
 The query is ready to run — you decide how: if a Prometheus / Elasticsearch CLI is available
 in your environment, call it; otherwise hit the HTTP API directly, or use any client you have.
