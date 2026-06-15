@@ -161,6 +161,7 @@ export interface CosmosVectorIconOverlayItem {
   opacity: number
   label: string
   typeLabel: string
+  domain?: string
   iconClass?: string
   iconUrl?: string
   iconPreset: TopoIconPreset

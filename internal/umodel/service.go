@@ -36,6 +36,7 @@ type Service struct {
 	indexes            map[string]*schemaIndex
 	commonSchemaLoader CommonSchemaLoader
 	search             searchIndexer
+	importRoot         string
 }
 
 // Option configures Service.
@@ -51,6 +52,14 @@ func WithValidator(v SchemaValidator) Option {
 // WithSearchIndexer connects UModel writes to the runtime search index.
 func WithSearchIndexer(indexer searchIndexer) Option {
 	return func(s *Service) { s.search = indexer }
+}
+
+// WithImportRoot confines API-originated imports (Service.Import) to paths
+// inside root. The empty default confines to the server's current working
+// directory; set root to "/" to allow imports from anywhere. Bundled sample
+// loads use Service.ImportTrusted and are never confined.
+func WithImportRoot(root string) Option {
+	return func(s *Service) { s.importRoot = root }
 }
 
 func NewService(graph graphStore, opts ...Option) *Service {

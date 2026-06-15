@@ -183,6 +183,7 @@ interface HoverPanelInfo {
   lucideIcon?: string
   ringWidth?: number
   typeLabel?: string
+  domain?: string
   rows?: Array<[string, string]>
   source?: HoverEntityInfo
   target?: HoverEntityInfo
@@ -192,6 +193,7 @@ interface HoverEntityInfo {
   role: 'Source' | 'Target'
   title: string
   typeLabel: string
+  domain?: string
   color: string
   iconClass?: string
   iconUrl?: string
@@ -211,10 +213,12 @@ function getEntityInfo(engine: CosmosEngine, nodeId: string, role: 'Source' | 'T
     style,
     fallbackColor: node?.iconFill || node?.color,
   })
+  const cluster = node?.cluster || raw?.data?.cluster || raw?.type || ''
   return {
     role,
     title: node?.title || raw?.title || raw?.data?.title || raw?.data?.name || nodeId,
-    typeLabel: node?.subTitle || raw?.data?.subTitle || node?.cluster || raw?.type || t('entityTopoExplorer.detail.entity'),
+    typeLabel: node?.subTitle || raw?.data?.subTitle || cluster || t('entityTopoExplorer.detail.entity'),
+    domain: cluster.split('@')[0] || undefined,
     color: node?.iconFill || visual.iconFill,
     iconClass: node?.iconClass || visual.iconClass,
     iconUrl: node?.iconUrl || visual.iconUrl,
@@ -248,6 +252,7 @@ function buildHoverPanelInfo(hover: HoverState, engine: CosmosEngine, t: TFuncti
       lucideIcon: entity.lucideIcon,
       ringWidth: entity.ringWidth,
       typeLabel: entity.typeLabel,
+      domain: entity.domain,
       rows: [
         [t('entityTopoExplorer.detail.degree'), String(degree)],
         [t('entityTopoExplorer.detail.id'), raw?.data?.id ? String(raw.data.id) : node.id],
@@ -282,6 +287,7 @@ function CosmosNodeGlyph({
   ringWidth,
   focusRing = false,
   label,
+  domain,
   size = 28,
   glow = true,
 }: {
@@ -293,11 +299,16 @@ function CosmosNodeGlyph({
   ringWidth?: number
   focusRing?: boolean
   label: string
+  domain?: string
   size?: number
   glow?: boolean
 }) {
   const iconId = getSvgIconId(iconClass)
-  const letter = (label || '?').trim().slice(0, 1).toUpperCase()
+  let effectiveLabel = (label || '?').trim()
+  if (domain && effectiveLabel.startsWith(domain + '.') && effectiveLabel.length > domain.length + 1) {
+    effectiveLabel = effectiveLabel.slice(domain.length + 1)
+  }
+  const letter = effectiveLabel.slice(0, 1).toUpperCase()
   const shouldUseSymbol = iconId && !isGenericIconClass(iconClass)
   const innerSize = Math.max(14, size * 0.52)
   const hasSvgSymbol = shouldUseSymbol && typeof document !== 'undefined' && document.getElementById(iconId)
@@ -492,6 +503,7 @@ function CosmosVectorIconOverlay({
             ringWidth={icon.ringWidth}
             focusRing={icon.active}
             label={icon.typeLabel || icon.label}
+            domain={icon.domain}
             size={icon.size}
             glow={false}
           />
@@ -530,6 +542,7 @@ function HoverEntityBlock({ entity }: { entity: HoverEntityInfo }) {
           lucideIcon={entity.lucideIcon}
           ringWidth={entity.ringWidth}
           label={entity.typeLabel}
+          domain={entity.domain}
           size={26}
         />
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -631,6 +644,7 @@ function CosmosHoverPanelContent({ info }: { info: HoverPanelInfo }) {
             lucideIcon={info.lucideIcon}
             ringWidth={info.ringWidth}
             label={typeLabel}
+            domain={info.domain}
             size={34}
           />
         ) : (

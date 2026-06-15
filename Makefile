@@ -1,5 +1,5 @@
 .PHONY: help check-env install-env setup setup-ui expand doc example-validate check-manifest
-.PHONY: build build-service build-ui build-sdk-go dev quickstart dev-api dev-web deploy serve-ui status stop-all stop-dev stop-deploy test test-service test-ui test-ui-e2e test-capability test-quickstart-health test-ladybug verify verify-go verify-python verify-java guard ci clean
+.PHONY: build build-service build-cli install-cli build-ui build-sdk-go dev quickstart dev-api dev-web deploy serve-ui status stop-all stop-dev stop-deploy test test-service test-ui test-ui-e2e test-capability test-quickstart-health test-ladybug verify verify-go verify-python verify-java guard ci clean
 
 VENV_PYTHON := .venv/bin/python
 CONDA_PYTHON := $(if $(CONDA_PREFIX),$(CONDA_PREFIX)/bin/python)
@@ -7,6 +7,13 @@ VIRTUAL_ENV_PYTHON := $(if $(VIRTUAL_ENV),$(VIRTUAL_ENV)/bin/python)
 PYTHON ?= $(or $(wildcard $(VENV_PYTHON)),$(wildcard $(CONDA_PYTHON)),$(wildcard $(VIRTUAL_ENV_PYTHON)),python3)
 GOCACHE ?= $(CURDIR)/.cache/go-build
 PNPM ?= pnpm
+BIN_DIR ?= bin
+GOEXE ?= $(shell go env GOEXE 2>/dev/null)
+UMCTL_BIN ?= $(BIN_DIR)/umctl$(GOEXE)
+VERSION ?= dev
+GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+BUILD_TIME ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+UMCTL_LDFLAGS ?= -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.version=$(VERSION) -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.gitCommit=$(GIT_COMMIT) -X github.com/alibaba/UnifiedModel/cmd/umctl/cmd.buildTime=$(BUILD_TIME)
 API_ADDR ?= :8080
 API_URL ?= http://localhost:8080
 WEB_PORT ?= 5173
@@ -28,6 +35,8 @@ help:
 	@echo ""
 	@echo "Service:"
 	@echo "  build-service          Build umodel-server, umctl, and umodel-mcp"
+	@echo "  build-cli              Build umctl into bin/"
+	@echo "  install-cli            Install umctl into the active Go bin directory"
 	@echo "  build-ui               Build the web UI under web/"
 	@echo "  test-service           Run root Go tests"
 	@echo "  test-ui                Type-check and build the web UI"
@@ -72,6 +81,18 @@ build: build-service build-ui build-sdk-go
 
 build-service:
 	go build ./cmd/...
+
+build-cli:
+	@mkdir -p "$(BIN_DIR)"
+	go build -ldflags "$(UMCTL_LDFLAGS)" -o "$(UMCTL_BIN)" ./cmd/umctl
+	@echo "Built $(UMCTL_BIN)"
+
+install-cli:
+	go install -ldflags "$(UMCTL_LDFLAGS)" ./cmd/umctl
+	@bin="$$(go env GOBIN)"; \
+	if [ -z "$$bin" ]; then bin="$$(go env GOPATH)/bin"; fi; \
+	echo "Installed umctl to $$bin"; \
+	echo "Make sure $$bin is on PATH."
 
 build-ui:
 	@PNPM="$(PNPM)" bash ./scripts/env.sh web-build

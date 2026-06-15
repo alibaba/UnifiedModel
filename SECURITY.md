@@ -39,6 +39,7 @@ Current open-source security defaults:
 - `make dev`, Docker, and Compose use `file.memory` local persistence.
 - MCP write tools are disabled by default.
 - AgentGateway resources expose metadata and templates, not runtime rows.
+- UModel API imports (`umctl umodel import`, `POST /api/v1/umodel/{workspace}/import`) read model packs from the server's local filesystem and are **confined to an import root** — the server's current working directory by default, or `--import-root <dir>`. Paths outside it are rejected, so an API caller cannot read arbitrary server files. Pass `--import-root /` only if you intentionally need unrestricted local imports. Bundled `--quickstart` sample loads are trusted and not confined.
 - This release does not include multi-tenant authorization or cloud-hosted control plane behavior.
 
 Do not use the local development server as an internet-facing production service without adding authentication, authorization, transport security, rate limits, audit logging, and deployment hardening.

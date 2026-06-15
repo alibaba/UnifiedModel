@@ -839,6 +839,7 @@ export class CosmosEngine {
         opacity,
         label: node.title,
         typeLabel: node.subTitle || node.cluster,
+        domain: node.cluster.split('@')[0] || undefined,
         iconClass: node.iconClass,
         iconUrl: node.iconUrl,
         iconPreset: node.iconPreset,

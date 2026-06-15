@@ -1,0 +1,43 @@
+{
+  "name": "unifiedmodel",
+  "owner": {
+    "name": "UnifiedModel (UModel) maintainers"
+  },
+  "metadata": {
+    "description": "Agent skills for UModel — the open-source object-graph semantic layer for observability and AI agents.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "umodel",
+      "displayName": "UModel",
+      "description": "Use UModel from your agent: read entities, relationships, topology, and the model itself through the umctl CLI, and run model-guided autonomous root-cause analysis over the object graph. Bundles the umodel-query and umodel-rca skills.",
+      "source": "./",
+      "strict": false,
+      "version": "0.1.0",
+      "author": {
+        "name": "UnifiedModel (UModel) maintainers"
+      },
+      "homepage": "https://github.com/alibaba/UnifiedModel",
+      "repository": "https://github.com/alibaba/UnifiedModel",
+      "license": "Apache-2.0",
+      "keywords": [
+        "observability",
+        "semantic-layer",
+        "object-graph",
+        "topology",
+        "root-cause-analysis",
+        "rca",
+        "aiops",
+        "agent",
+        "mcp",
+        "umctl"
+      ],
+      "category": "observability",
+      "skills": [
+        "./skills/umodel-query",
+        "./skills/umodel-rca"
+      ]
+    }
+  ]
+}

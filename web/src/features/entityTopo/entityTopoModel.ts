@@ -346,7 +346,7 @@ function ensureNode(
     visual: {
       ...visual,
       label: meta?.displayName || endpoint.entityType || visual.label,
-      abbrev: abbreviate(meta?.displayName || endpoint.entityType || endpoint.cluster),
+      abbrev: abbreviate(meta?.displayName || endpoint.entityType || endpoint.cluster, endpoint.domain),
     },
     properties,
     inDegree: 0,
@@ -571,7 +571,7 @@ function buildClusterMetas(nodes: EntityTopoNode[], umodelIndex: Map<string, { d
         visual: {
           ...visual,
           label: meta?.displayName || entityType || visual.label,
-          abbrev: abbreviate(meta?.displayName || entityType || cluster),
+          abbrev: abbreviate(meta?.displayName || entityType || cluster, domain),
         },
       }
     })
@@ -628,7 +628,7 @@ function visualForCluster(cluster: string, displayName?: string, paletteIndex?: 
   return {
     ...visual,
     label: displayName || splitCluster(cluster)[1] || visual.label,
-    abbrev: abbreviate(displayName || splitCluster(cluster)[1] || cluster),
+    abbrev: abbreviate(displayName || splitCluster(cluster)[1] || cluster, splitCluster(cluster)[0]),
   }
 }
 
@@ -837,10 +837,19 @@ function recordValue(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>
 }
 
-function abbreviate(value: string) {
-  const parts = value.split(/[^a-zA-Z0-9]+/).filter(Boolean)
+function stripDomainPrefix(value: string, domain?: string) {
+  if (domain) {
+    const prefix = domain + '.'
+    if (value.startsWith(prefix) && value.length > prefix.length) return value.slice(prefix.length)
+  }
+  return value
+}
+
+function abbreviate(value: string, domain?: string) {
+  const effective = stripDomainPrefix(value, domain)
+  const parts = effective.split(/[^a-zA-Z0-9]+/).filter(Boolean)
   if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-  const compact = value.replace(/[^a-zA-Z0-9]/g, '')
+  const compact = effective.replace(/[^a-zA-Z0-9]/g, '')
   return (compact.slice(0, 2) || 'E').toUpperCase()
 }
 
