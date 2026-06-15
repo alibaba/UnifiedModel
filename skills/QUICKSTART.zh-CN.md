@@ -120,6 +120,7 @@ args = ["run", "./cmd/umodel-mcp", "--quickstart",
 - "列一下这个 workspace 里的服务和它们的状态。"
 - "payment-gateway 依赖了什么？把拓扑给我看看。"
 - "payment-gateway 挂了哪些指标集和日志集？"
+- "读一下 payment-gateway 最近一小时的 p99 延迟。"（取回 plan，在你的 Prometheus 上执行）
 
 **根因分析 —— 激活 `umodel-rca`：**
 
@@ -128,6 +129,11 @@ args = ["run", "./cmd/umodel-mcp", "--quickstart",
 Agent 随后自主工作：定位 degraded 服务 → 拉它的指标/日志 → 顺拓扑找到上游调用方 →
 发现重试配置变更 → 排除红鲱鱼部署 → 找到促销流量 → 得出根因（重试 ×2.5 × 促销 ×3.5
 = **8.75×** 过载）并建议回滚。
+
+> **指标/日志需要后端。** `.entity` / `.topo` / `.umodel` 读取开箱即用；要拿指标/日志
+> 的**数值**，`get_metrics` / `get_logs` 返回一段可执行 **plan**（PromQL / Elasticsearch
+> DSL），由 Agent 在**你的 Prometheus / Elasticsearch** 上执行——把它指向你灌数据的后端。
+> 详见 [umodel-query](umodel-query/SKILL.md) 的 *Read metrics & logs*。
 
 ## 排错
 

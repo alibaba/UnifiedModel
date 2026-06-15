@@ -130,6 +130,7 @@ With the data loaded and the agent connected, just ask in natural language.
 - "List the services in this workspace and their status."
 - "What does payment-gateway depend on? Show me the topology."
 - "Which metric and log sets are attached to payment-gateway?"
+- "Read payment-gateway's p99 latency over the last hour." (fetches the plan, runs it against your Prometheus)
 
 **Root-cause analysis — activates `umodel-rca`:**
 
@@ -140,6 +141,12 @@ metrics/logs → traverse to the upstream caller → find the retry config chang
 rule out the red-herring deployment → find the promotion traffic → conclude the
 root cause (retry ×2.5 × promotion ×3.5 = **8.75×** overload) and recommend a
 rollback.
+
+> **Metrics & logs need a backend.** `.entity` / `.topo` / `.umodel` reads work out
+> of the box; for metric/log **values**, `get_metrics` / `get_logs` return an
+> executable plan (PromQL / Elasticsearch DSL) that the agent runs against **your
+> Prometheus / Elasticsearch** — point it at where you loaded the data. See
+> *Read metrics & logs* in [umodel-query](umodel-query/SKILL.md).
 
 ## Troubleshooting
 

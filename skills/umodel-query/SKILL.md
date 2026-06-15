@@ -1,120 +1,92 @@
 ---
 name: umodel-query
 description: >-
-  Read data and model from a UModel object-graph semantic layer, primarily
-  through the `umctl` CLI (MCP alternative noted). Reads (1) entity and
-  relationship/topology data and (2) the UModel model itself — entity sets,
-  datasets, links, runbooks. Entity/relation/model reads return real rows in
-  open source; against a PaaS-backed endpoint the same calls return the PaaS
-  API's data. Use when asked to query or read UModel entities, relations,
-  topology, or model metadata; look up services / dependencies; or list what
-  objects and datasets exist. For root-cause analysis built on these reads,
-  see the `umodel-rca` skill. Triggers: UModel, object graph, .entity / .topo /
-  .umodel, query entities, read topology, list services / dependencies /
-  datasets, 实体查询, 关系/拓扑查询, 读模型, 查服务依赖.
+  Read from a UModel object-graph semantic layer with the `umctl` CLI (MCP
+  alternative noted). Three kinds of read: (1) entities & relationships / topology
+  (`.entity`, `.topo`) and (2) the model itself (`.umodel`, and `.entity_set`
+  methods) return real rows; (3) metrics & logs (`get_metrics` / `get_logs`)
+  return an executable *plan* — PromQL / Elasticsearch DSL with the entity id
+  pre-substituted — that you run against the backend. Against a PaaS endpoint the
+  same calls return data rows instead of a plan. Use to query or read UModel
+  entities, relations, topology, or model metadata; to read a service's metrics or
+  logs; to look up services and dependencies; or to discover what objects,
+  datasets, and methods exist. For root-cause analysis on top of these reads, see
+  the `umodel-rca` skill. Triggers: UModel, object graph, .entity / .topo /
+  .umodel / .entity_set, query entities, read topology, read metrics / logs,
+  get_metrics / get_logs, list services / dependencies / datasets, 实体查询,
+  关系/拓扑查询, 读模型, 读指标, 读日志, 查指标, 查日志, 查服务依赖.
 ---
 
-# UModel Query — read entities, relationships, and the model
+# UModel Query — read entities, relationships, the model, and telemetry
 
 UModel is an **object-graph semantic layer**: enterprise objects (services, Pods,
 deployments, config changes, promotions, …), their typed relationships (`calls`,
-`runs-on`, `affects`, `triggers`, `impacts`, …), and the datasets (metrics, logs)
-that hang off them — all queryable through one SPL surface.
+`depends_on`, `affects`, …), and the datasets (metrics, logs) hanging off them — all read
+through one SPL surface via the `umctl` CLI (MCP alternative at the bottom).
 
-This skill teaches you (an agent) to **read** it. Prefer the `umctl` CLI; an MCP
-alternative is at the end. *(For model-guided root-cause analysis on top of these
-reads, load the `umodel-rca` skill.)*
+This file is the **overview + setup**. Each query surface has a focused guide under
+[`references/`](references/) — **read the one your task needs** (don't load them all).
 
 ## Setup (CLI-first)
 
-Point `umctl` at a running UModel server (open source, or a PaaS-backed
-endpoint). For the bundled demo:
+**1. Ensure `umctl` is on PATH** — UModel's read CLI:
 
 ```bash
-make quickstart QUICKSTART_SAMPLE=examples/incident-investigation   # serves http://localhost:8080
+command -v umctl || go install github.com/alibaba/UnifiedModel/cmd/umctl@latest   # needs Go 1.22+
 ```
 
-Every read is one command — **always pass `-o json`** for machine-readable rows:
+No Go toolchain? Download a prebuilt `umctl` from the repo's Releases, or build from a clone
+(`make build-cli` → `./bin/umctl`). Verify with `umctl version`.
+
+**2. Point `umctl` at your UModel server** — set the address explicitly (flag, env, or a
+saved profile):
 
 ```bash
-umctl query run <workspace> "<SPL>" -o json     # execute
-umctl query explain <workspace> "<SPL>"          # see the plan/providers without running
-umctl --addr http://<host>:8080 query run …       # target a specific server (e.g. a PaaS endpoint)
+umctl --addr http://<host>:8080 query run <workspace> "<SPL>" -o json   # per call
+export UMCTL_ADDR=http://<host>:8080                                    # or for the session
+umctl configure                                                         # or save a profile
 ```
 
-**Response shape** (parse this): rows live in `data.data` (a matrix), column names
-in `data.header`.
-
-```jsonc
-{ "code": "200", "success": true,
-  "data": {
-    "header": ["display_name", "status", "owner", "sla_tier"],
-    "data":   [ ["payment-gateway", "degraded", "payments-backend", "platinum"] ]
-  } }
-```
-
-So `columns = data.header`, `rows = data.data`. Zip them to read records.
-
-## Read entity & relationship data
-
-Real rows directly (from EntityStore / GraphStore), in open source and against a
-PaaS endpoint alike. *(Against a PaaS-backed `--addr`, the same commands return
-the PaaS API's data response — same SPL, same shape.)*
-
-### Entities — `.entity`
+**3. Pick the workspace** — every read takes a workspace name. List what the server has and
+use the one your data lives in (the bundled demo is `demo`):
 
 ```bash
-umctl query run demo ".entity with(domain='platform', name='platform.service', query='degraded') | project display_name, status, owner, sla_tier" -o json
-# → ["payment-gateway","degraded","payments-backend","platinum"]
+umctl workspace list -o json
 ```
 
-- `query='…'` is full-text over all entity fields. Add `mode='vector'` or
-  `mode='hyper'` for semantic / hybrid search, `topk=N` to bound matches.
-- `with(ids=['<entity_id>'])` fetches specific entities by id.
-- Pipe `| project a,b,c`, `| where …`, `| sort …`, `| limit N`.
+> No server yet? The bundled demo serves one with sample data on `:8080`:
+> `make quickstart QUICKSTART_SAMPLE=examples/incident-investigation` (needs a repo clone + Go).
 
-### Relationships & topology — `.topo`
+**Always pass `-o json`.** Plain reads put column names in `data.header` and rows in
+`data.data` (a matrix) — zip them to read records. (Entity-call results wrap differently; see
+the entity-set guide.)
 
-```bash
-# neighbors along a relationship (raise the hop count for multi-hop)
-umctl query run demo ".topo | graph-call getNeighborNodes('full', 1, [(:\"platform@platform.service\" {__entity_id__:'63718b78868895d2590551b27ec6f51c'})]) | with(__relation_type__='calls')" -o json
+## Query surfaces — open the reference you need
 
-# direct relations of a node; or full Cypher
-umctl query run demo ".topo | graph-call getDirectRelations([(:\"platform@platform.service\" {__entity_id__:'…'})])" -o json
-umctl query run demo ".topo | graph-call cypher(\`MATCH (s)-[r]->(d) RETURN properties(s), type(r), properties(d) LIMIT 20\`)" -o json
-```
+| Your goal | SPL surface | Guide |
+|---|---|---|
+| Read objects (services, deployments, config changes…) by type / search / id | `.entity` | [references/entity.md](references/entity.md) |
+| Traverse relationships, dependencies, topology | `.topo` | [references/topology.md](references/topology.md) |
+| List what object types / datasets / links / runbooks exist | `.umodel` | [references/model.md](references/model.md) |
+| Call an EntitySet's methods (discover via `__list_method__`, list datasets) | `.entity_set \| entity-call` | [references/entity-set.md](references/entity-set.md) |
+| Read a service's **metrics / logs** (fetch a plan, then run it) | `get_metrics` / `get_logs` | [references/metrics-logs.md](references/metrics-logs.md) |
 
-Each relation row carries the source ref, relation type, destination ref, and edge
-properties. **Topology rows reference entities by ID** — resolve display names with
-a follow-up `.entity … with(ids=[…])` when you need them.
+**How they relate:** `.umodel` defines the **types**. The `domain` + `name` you pass
+everywhere names one of those definitions — for `.entity` / `.entity_set` it's an
+**EntitySet** (`.umodel with(kind='entity_set')`); for `get_metrics` / `get_logs` it's a
+**MetricSet** / **LogSet**. `.entity` reads the runtime **instances** of an EntitySet;
+`.entity_set` calls **methods** on the EntitySet itself; the same `domain`/`name` join them.
 
-## Read the UModel model — `.umodel`
+Typical flow: `.umodel` to learn the types → `.entity` to find an object and grab its
+`__entity_id__` → `.topo` / `.entity_set` / telemetry build on that id.
 
-The model is the **map**: what object types, datasets, links, and runbooks exist,
-and how they connect. Read it before assuming structure.
+## Notes
 
-```bash
-# what object types / datasets / runbooks exist
-umctl query run demo ".umodel with(kind='entity_set') | project domain, name" -o json
-umctl query run demo ".umodel with(kind='runbook_set', name='platform.service.ops')" -o json
-
-# what can a given EntitySet do, and what telemetry hangs off it
-umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['…']) | entity-call __list_method__()" -o json
-umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['…']) | entity-call list_data_set(['metric_set','log_set'], true)" -o json
-```
-
-Kinds you can list: `entity_set`, `metric_set`, `log_set`, `event_set`,
-`entity_set_link`, `data_link`, `storage_link`, `runbook_set`. Use `.umodel` +
-`__list_method__` + `list_data_set` to discover capabilities instead of guessing.
-
-## Notes & gotchas
-
-- **Always `-o json`**; parse `rows = data.data`, `columns = data.header`.
-- `.entity` / `.topo` / `.umodel` reads return **real rows** in open source.
-  (Telemetry reads — `get_metrics` / `get_logs` — return a *plan* in open source
-  and *data* via a PaaS endpoint; those belong to the `umodel-rca` skill.)
-- Topology rows carry entity **IDs**, not names — resolve with `.entity with(ids=[…])`.
 - Stay **read-only**.
+- `.entity` / `.topo` / `.umodel` reads return **real rows** in open source. `get_metrics` /
+  `get_logs` return an executable *plan* you run against Prometheus / Elasticsearch (or, against
+  a PaaS endpoint with `mode='data'`, rows directly) — see
+  [references/metrics-logs.md](references/metrics-logs.md).
 - **MCP alternative** (instead of the CLI): connect `umodel-mcp` and call the
-  `query_spl_execute` tool with `{ "workspace": "demo", "query": "<the same SPL>" }`
-  (arg key is `query`, not `spl`). Same SPL either way.
+  `query_spl_execute` tool with `{ "workspace": "demo", "query": "<the same SPL>" }` (arg key
+  is `query`, not `spl`). Same SPL, same results.

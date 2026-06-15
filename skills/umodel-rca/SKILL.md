@@ -24,28 +24,25 @@ inline below.
 
 ## Setup
 
-Same server and CLI as `umodel-query`. For the bundled demo:
-
-```bash
-make quickstart QUICKSTART_SAMPLE=examples/incident-investigation   # serves http://localhost:8080
-```
+Same server and CLI as `umodel-query` — ensure `umctl` is on PATH, pointed at your
+UModel server, and using the right workspace (`umctl workspace list`; the demo is
+`demo`). See that skill's **Setup** for details. The bundled demo serves sample data
+with `make quickstart QUICKSTART_SAMPLE=examples/incident-investigation`.
 
 ## Model-guided data fetch (autonomous retrieval)
 
-`get_metrics` / `get_logs` are driven by the object graph: the model knows which
-metric/log set hangs off an entity and the `fields_mapping`, so it **fills in
-`service_id` for you** — you never hand-write PromQL or guess an ID.
+To get evidence, call `get_metrics` / `get_logs` on the entity. The object graph
+auto-scopes the query — it fills in `service_id` from the `fields_mapping`, so you
+never hand-write PromQL or guess an ID:
 
 ```bash
 umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c']) | entity-call get_metrics('platform','platform.service.metrics','latency_p99_ms', step='30s')" -o json
-umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['…']) | entity-call get_logs('platform','platform.service.logs', query='level = \"ERROR\"')" -o json
 ```
 
-> **Open source returns a query *plan*** (the rendered PromQL / ES query, with the
-> id substituted) — a downstream executor runs it. **Against a PaaS-backed
-> endpoint** (`umctl --addr <paas>` with `mode='data'`) the same call returns the
-> **actual rows** as the PaaS API response (`{__labels__, __ts__, __value__}` for
-> metrics). Either way, the object graph produced the exact, correctly-scoped query.
+These return an executable **plan**; run it against Prometheus / Elasticsearch to get the
+values — see *"Read metrics & logs — read the plan, then run it"* in the `umodel-query`
+skill for the plan's fields and how to execute. (A PaaS endpoint with `mode='data'`
+returns the rows directly.)
 
 ## The autonomous RCA loop
 
@@ -74,10 +71,12 @@ Run this loop; let evidence — not a fixed script — drive your next query.
 ## Runbook as scaffold
 
 If the entity links a `runbook_set` (read it with `.umodel with(kind='runbook_set',
-name='…')`), use its **observations** as a reasoning frame — each is a hypothesis +
-how to check it + a conclusion rule. Structure your reasoning with it; you may
-still form hypotheses it didn't list. Cite its `knowledge` (failure patterns) and
-`toolkits` (allowed remediation tools).
+name='…')`), use it as a reasoning frame. Its `spec.knowledge` holds documented
+**failure patterns** — in the demo, a *Retry Storm* pattern with the exact amplification
+formula `base_qps × promotion_multiplier × (new_retries / old_retries)`; `spec.automations`
+are the wired-up context-collection / remediation actions. Cite the matching knowledge
+entry as your mechanism (it's where the worked example's 8.75× comes from); you may still
+form hypotheses it didn't list.
 
 ## Output
 
@@ -101,9 +100,9 @@ root cause **without** being told the steps:
   runbook `platform.service.ops` + datasets `platform.service.metrics`/`.logs`.
 - CHARACTERIZE: `get_metrics(… 'latency_p99_ms' …)` → P99 breaching;
   `get_logs(… level="ERROR")` → upstream-timeout signatures.
-- GATHER: `.topo getNeighborNodes … 'calls'` → upstream `checkout-service`
-  (`149632df…`); `.entity … platform.config_change query='checkout'` →
-  `cfg-checkout-retry`, `max_retries 2→5` 24h ago.
+- GATHER: `.topo getNeighborNodes … | where __relation_type__='calls'` → upstream
+  caller `checkout-service` (`149632df…`); `.entity … platform.config_change query='checkout'`
+  → `checkout-retry-policy-v2`: `max_retries 2→5`, `timeout 500→2000ms` (targets svc-checkout).
 - DISCRIMINATE: `.entity … platform.deployment query='payment'` → `payment-gw
   v3.2.1`, trivial logging change → **ruled out** (red herring).
 - CROSS-DOMAIN: `.entity … business.promotion query='active'` → `618 Flash Sale`,
@@ -115,7 +114,8 @@ root cause **without** being told the steps:
 
 - Reuse the `umodel-query` reads for everything except telemetry fetch; this skill
   adds the fetch + the reasoning loop.
-- `get_metrics` / `get_logs`: *plan* in open source, *data* against a PaaS endpoint.
+- `get_metrics` / `get_logs`: *plan* in open source — execute it against Prometheus /
+  Elasticsearch to get evidence (see `umodel-query`); *data* directly via a PaaS endpoint.
 - Stay **read-only** — recommend remediation, do not execute it.
 - **MCP alternative**: call `query_spl_execute` with `{ "workspace", "query" }`
   instead of the CLI; same SPL.
