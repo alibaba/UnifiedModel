@@ -26,6 +26,20 @@ API: `http://localhost:8080` | Web UI: `http://localhost:5173`. Loads 5 domains,
 > API only (no Web UI):
 > `go run ./cmd/umodel-server --quickstart --quickstart-sample multi-domain-quickstart --graphstore memory`
 
+### With real telemetry (read data end-to-end)
+
+`make quickstart` serves the **model only** — `get_metrics` / `get_logs` return executable
+**plans**, but there is no backend to run them against. To read **real values**, bring up UModel
++ a seeded Prometheus + a seeded Elasticsearch with one command:
+
+```bash
+sh examples/quickstart-multidomain/deploy/start.sh
+```
+
+UModel `http://localhost:8080`, Prometheus `http://localhost:9090`, Elasticsearch
+`http://localhost:9200` — the pack's storage endpoints already point here, so the plans in
+steps 6–7 run as-is. Details: [deploy/README.md](deploy/README.md).
+
 ## Smart data-retrieval walkthrough
 
 Every read is one `umctl` command — always pass `-o json` (rows in `data.data`, columns in
@@ -97,9 +111,10 @@ umctl query run demo ".entity_set with(domain='devops', name='devops.service', i
 
 → a `prometheus_promql` plan carrying
 `sum(rate(devops_service_request_total{service_id="10000000000000000000000000000101"}[1m]))`
-against `http://prometheus.devops.example:9090` — the service id already substituted, no
-hand-written PromQL. Point the endpoint at your Prometheus and run it (see the skill's
-[metrics-logs guide](../../skills/umodel-query/references/metrics-logs.md)).
+against `http://localhost:9090` — the service id already substituted, no hand-written PromQL.
+With the demo stack up, run it **as-is** (≈120 req/s for checkout-service); otherwise point the
+endpoint at your own Prometheus. See the skill's
+[metrics-logs guide](../../skills/umodel-query/references/metrics-logs.md).
 
 ### 7. Read logs → plan → run
 
@@ -108,30 +123,45 @@ umctl query run demo ".entity_set with(domain='devops', name='devops.service', i
 ```
 
 → an `elasticsearch_dsl` plan: a bool/filter query on index `devops-service-logs-*` against
-`https://elasticsearch.devops.example:9200`. Run it against your Elasticsearch the same way.
+`http://localhost:9200`. With the demo stack up, run it **as-is** (checkout-service's ERROR lines
+— payment timeouts, 503s, circuit-breaker); otherwise point it at your own Elasticsearch.
 
 > The `devops.event.deployment` event_set is modeled on **MySQL** (discoverable in Step 5 and via
 > `.umodel`), showing one model over three backends. The executable plan methods today are
 > `get_metrics` (Prometheus) and `get_logs` (Elasticsearch).
 
-## For an agent
+## Read it with an agent (the `umodel-query` skill)
 
-The [`umodel-query`](../../skills/umodel-query) skill teaches an agent to do all of the above —
-discover the model, read across domains, search, and turn `get_metrics` / `get_logs` plans into
-real values — on its own. Load it (and [`umodel-rca`](../../skills/umodel-rca) for root-cause
-analysis on top), connect over MCP or CLI, and ask in natural language.
+The [`umodel-query`](../../skills/umodel-query) skill teaches an agent to do everything above on
+its own — discover the model, read objects and topology, search, and turn `get_metrics` /
+`get_logs` plans into real values. With the demo stack up (above), point the agent at UModel and
+ask in plain language:
+
+```text
+export UMCTL_ADDR=http://localhost:8080      # or set the skill's MCP target to the same address
+
+Ask: "List the devops services and their status, then read checkout-service's request rate,
+      error rate, and p95 latency, and show its recent ERROR logs. Why is it degraded?"
+```
+
+The agent discovers the model, finds `checkout-service`, pulls its `get_metrics` / `get_logs`
+plans, runs them against `localhost:9090` / `localhost:9200`, and reports the elevated error
+rate (~15%), high p95 (~1.9 s), and the timeout / 503 / circuit-breaker ERROR lines — no
+hand-written PromQL or ES DSL. Add [`umodel-rca`](../../skills/umodel-rca) for root-cause
+analysis on top. Install both via the [skills README](../../skills/README.md).
 
 ## Contents
 
 | Area | Path | Count | Purpose |
 |---|---|---:|---|
-| DevOps entity sets | `devops/entity_set/` | 10 | Teams, services, repositories, pipelines, environments, deployments, releases, changes, incidents, and SLOs. |
-| Kubernetes entity sets | `k8s/entity_set/` | 7 | Coarse clusters, namespaces, workloads, pods, nodes, services, and ingresses. |
-| Enterprise demo entity sets | `automaker/entity_set/`, `game/entity_set/`, `supplier/entity_set/` | 18 | Reused enterprise entity topology. |
-| Entity links | `*/link/entity_set_link/`, `cross-domain/link/entity_set_link/` | 42 | In-domain and cross-domain topology semantics. |
-| DevOps data sets | `devops/metric_set/`, `devops/log_set/`, `devops/event_set/` | 3 | Minimal service metrics, logs, and deployment events for EntitySet dataset discovery. |
-| Data and storage links | `devops/link/data_link/`, `devops/link/storage_link/` | 6 | Connect `devops.service` to datasets and datasets to storage. |
-| Storage definitions | `devops/storage/` | 3 | Prometheus, Elasticsearch, and MySQL query-planning metadata. |
+| DevOps entity sets | `umodel/devops/entity_set/` | 10 | Teams, services, repositories, pipelines, environments, deployments, releases, changes, incidents, and SLOs. |
+| Kubernetes entity sets | `umodel/k8s/entity_set/` | 7 | Coarse clusters, namespaces, workloads, pods, nodes, services, and ingresses. |
+| Enterprise demo entity sets | `umodel/automaker/entity_set/`, `umodel/game/entity_set/`, `umodel/supplier/entity_set/` | 18 | Reused enterprise entity topology. |
+| Entity links | `umodel/*/link/entity_set_link/`, `umodel/cross-domain/link/entity_set_link/` | 42 | In-domain and cross-domain topology semantics. |
+| DevOps data sets | `umodel/devops/metric_set/`, `umodel/devops/log_set/`, `umodel/devops/event_set/` | 3 | Minimal service metrics, logs, and deployment events for EntitySet dataset discovery. |
+| Data and storage links | `umodel/devops/link/data_link/`, `umodel/devops/link/storage_link/` | 6 | Connect `devops.service` to datasets and datasets to storage. |
+| Storage definitions | `umodel/devops/storage/` | 3 | Prometheus, Elasticsearch, and MySQL query-planning metadata. |
+| Deploy stack | `deploy/` | — | One-command demo: `docker-compose` + seeded Prometheus / Elasticsearch + `start.sh` / `verify.sh`. |
 | Runtime entities | `sample-data/entities.json` | 93 | CMS 2.0 compatible entity payloads. |
 | Runtime relations | `sample-data/relations.json` | 125 | CMS 2.0 compatible topology payloads. |
 

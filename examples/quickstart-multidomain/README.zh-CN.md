@@ -17,6 +17,16 @@ API：`http://localhost:8080` | Web UI：`http://localhost:5173`。把 5 个域�
 > 仅 API（不起 Web UI）：
 > `go run ./cmd/umodel-server --quickstart --quickstart-sample multi-domain-quickstart --graphstore memory`
 
+### 带真实遥测（端到端读数）
+
+`make quickstart` 只起**模型**——`get_metrics` / `get_logs` 返回可执行 **plan**，但没有后端可跑。要读**真实数值**，用一条命令拉起 UModel + 已灌数的 Prometheus + 已灌数的 Elasticsearch：
+
+```bash
+sh examples/quickstart-multidomain/deploy/start.sh
+```
+
+UModel `http://localhost:8080`、Prometheus `http://localhost:9090`、Elasticsearch `http://localhost:9200`——pack 的 storage endpoint 已指向这里，所以第 6–7 步的 plan 直接就能跑。详见 [deploy/README.md](deploy/README.md)。
+
 ## 智能读数走查
 
 每次读取都是一条 `umctl` 命令——务必带 `-o json`（行在 `data.data`，列名在 `data.header`）。同样的 SPL 也可走 MCP 的 `query_spl_execute` 工具。[`umodel-query`](../../skills/umodel-query) skill 会自主执行这些；这里手动走一遍。
@@ -74,7 +84,7 @@ umctl query run demo ".entity_set with(domain='devops', name='devops.service', i
 
 → 一个 `prometheus_promql` plan，携带
 `sum(rate(devops_service_request_total{service_id="10000000000000000000000000000101"}[1m]))`，
-打到 `http://prometheus.devops.example:9090`——service id 已替换好，无需手写 PromQL。把 endpoint 改成你的 Prometheus 再执行（见 skill 的 [metrics-logs 指南](../../skills/umodel-query/references/metrics-logs.md)）。
+打到 `http://localhost:9090`——service id 已替换好，无需手写 PromQL。demo 起着时**直接执行**（checkout-service ≈120 req/s）；否则把 endpoint 改成你自己的 Prometheus。见 skill 的 [metrics-logs 指南](../../skills/umodel-query/references/metrics-logs.md)。
 
 ### 7. 读日志 → plan → 执行
 
@@ -82,25 +92,35 @@ umctl query run demo ".entity_set with(domain='devops', name='devops.service', i
 umctl query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops','devops.log.service', query='level = \"ERROR\"')" -o json
 ```
 
-→ 一个 `elasticsearch_dsl` plan：对索引 `devops-service-logs-*`、`https://elasticsearch.devops.example:9200` 的 bool/filter 查询。同样改成你的 ES 再执行。
+→ 一个 `elasticsearch_dsl` plan：对索引 `devops-service-logs-*`、`http://localhost:9200` 的 bool/filter 查询。demo 起着时**直接执行**（checkout-service 的 ERROR 行——payment 超时、503、熔断）；否则改成你自己的 ES。
 
 > `devops.event.deployment` event_set 建模在 **MySQL** 上（第 5 步 / `.umodel` 可发现），展示一套模型覆盖三种后端。目前可执行的 plan 方法是 `get_metrics`（Prometheus）和 `get_logs`（Elasticsearch）。
 
-## 给 Agent
+## 用 Agent 取数（`umodel-query` skill）
 
-[`umodel-query`](../../skills/umodel-query) skill 教 Agent 自主完成以上全部——发现模型、跨域读取、检索、把 `get_metrics` / `get_logs` 的 plan 变成真实数值。加载它（再加 [`umodel-rca`](../../skills/umodel-rca) 做根因分析），通过 MCP 或 CLI 接入，用自然语言提问即可。
+[`umodel-query`](../../skills/umodel-query) skill 教 Agent 自主完成以上全部——发现模型、读对象与拓扑、检索、把 `get_metrics` / `get_logs` 的 plan 变成真实数值。demo 起着时（见上），把 Agent 指向 UModel，用自然语言提问：
+
+```text
+export UMCTL_ADDR=http://localhost:8080      # 或把 skill 的 MCP 目标设成同一地址
+
+提问："列出 devops 的服务和状态，然后读 checkout-service 的请求速率、错误率、p95 延迟，
+      并给出最近的 ERROR 日志。它为什么 degraded?"
+```
+
+Agent 会发现模型、定位 `checkout-service`、取它的 `get_metrics` / `get_logs` plan、打到 `localhost:9090` / `localhost:9200`，报出偏高的错误率（~15%）、高 p95（~1.9s）、以及超时/503/熔断的 ERROR 行——无需手写 PromQL 或 ES DSL。再加 [`umodel-rca`](../../skills/umodel-rca) 做根因分析。安装见 [skills README](../../skills/README.md)。
 
 ## 内容
 
 | 区域 | 路径 | 数量 | 作用 |
 |---|---|---:|---|
-| DevOps EntitySet | `devops/entity_set/` | 10 | 团队、服务、仓库、流水线、环境、部署、发布、变更、故障、SLO。 |
-| Kubernetes EntitySet | `k8s/entity_set/` | 7 | 粗粒度集群、命名空间、工作负载、Pod、节点、Service、Ingress。 |
-| 企业 demo EntitySet | `automaker/entity_set/`, `game/entity_set/`, `supplier/entity_set/` | 18 | 复用的企业实体拓扑定义。 |
-| EntitySetLink | `*/link/entity_set_link/`, `cross-domain/link/entity_set_link/` | 42 | 域内和跨域拓扑语义。 |
-| DevOps DataSet | `devops/metric_set/`, `devops/log_set/`, `devops/event_set/` | 3 | 用于 EntitySet DataSet 发现的最小服务指标、日志和部署事件。 |
-| DataLink 和 StorageLink | `devops/link/data_link/`, `devops/link/storage_link/` | 6 | 连接 `devops.service` 到 DataSet，并连接 DataSet 到 Storage。 |
-| Storage 定义 | `devops/storage/` | 3 | Prometheus、Elasticsearch 和 MySQL 查询规划元数据。 |
+| DevOps EntitySet | `umodel/devops/entity_set/` | 10 | 团队、服务、仓库、流水线、环境、部署、发布、变更、故障、SLO。 |
+| Kubernetes EntitySet | `umodel/k8s/entity_set/` | 7 | 粗粒度集群、命名空间、工作负载、Pod、节点、Service、Ingress。 |
+| 企业 demo EntitySet | `umodel/automaker/entity_set/`, `umodel/game/entity_set/`, `umodel/supplier/entity_set/` | 18 | 复用的企业实体拓扑定义。 |
+| EntitySetLink | `umodel/*/link/entity_set_link/`, `umodel/cross-domain/link/entity_set_link/` | 42 | 域内和跨域拓扑语义。 |
+| DevOps DataSet | `umodel/devops/metric_set/`, `umodel/devops/log_set/`, `umodel/devops/event_set/` | 3 | 用于 EntitySet DataSet 发现的最小服务指标、日志和部署事件。 |
+| DataLink 和 StorageLink | `umodel/devops/link/data_link/`, `umodel/devops/link/storage_link/` | 6 | 连接 `devops.service` 到 DataSet，并连接 DataSet 到 Storage。 |
+| Storage 定义 | `umodel/devops/storage/` | 3 | Prometheus、Elasticsearch 和 MySQL 查询规划元数据。 |
+| 部署栈 | `deploy/` | — | 一键 demo：`docker-compose` + 已灌数的 Prometheus / Elasticsearch + `start.sh` / `verify.sh`。 |
 | Runtime entities | `sample-data/entities.json` | 93 | CMS 2.0 兼容实体 payload。 |
 | Runtime relations | `sample-data/relations.json` | 125 | CMS 2.0 兼容拓扑 payload。 |
 
