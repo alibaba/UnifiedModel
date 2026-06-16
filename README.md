@@ -13,9 +13,9 @@ Most AI and analytics work stalls not on missing data but on data with no shared
 
 ## See it
 
-[![UModel demo — an AI agent reading the object graph via the umodel-query skill (click to play, 90s)](images/quickstart-demo.jpg)](https://unifiedmodel-assets.oss-cn-hangzhou.aliyuncs.com/QuickStart.mp4)
+<video src="https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4" controls width="800"></video>
 
-A 90-second demo — an AI agent reads across the object graph in the `quickstart-multidomain` workspace: it discovers services, walks cross-domain topology, and pulls metrics and logs through model-scoped query plans, without hand-writing a single query. ([watch the clip](https://unifiedmodel-assets.oss-cn-hangzhou.aliyuncs.com/QuickStart.mp4))
+A 90-second demo — an AI agent reads across the object graph in the `quickstart-multidomain` workspace: it discovers services, walks cross-domain topology, and pulls metrics and logs through model-scoped query plans, without hand-writing a single query. If the player doesn't load, [watch the clip directly](https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4).
 
 ## How it works
 

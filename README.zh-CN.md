@@ -13,9 +13,9 @@ AI 与分析卡住，往往不是因为缺数据，而是数据缺少共享的*�
 
 ## 看一眼
 
-[![UModel 演示 —— AI Agent 通过 umodel-query 技能读取对象图（点击播放，90 秒）](images/quickstart-demo.jpg)](https://unifiedmodel-assets.oss-cn-hangzhou.aliyuncs.com/QuickStart.mp4)
+<video src="https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4" controls width="800"></video>
 
-一段 90 秒的演示：AI Agent 在 `quickstart-multidomain` workspace 上读取对象图——发现服务、沿跨域拓扑遍历、并通过模型自动生成的查询计划拉取指标和日志，全程不手写一条查询。（[观看完整视频](https://unifiedmodel-assets.oss-cn-hangzhou.aliyuncs.com/QuickStart.mp4)）
+一段 90 秒的演示：AI Agent 在 `quickstart-multidomain` workspace 上读取对象图——发现服务、沿跨域拓扑遍历、并通过模型自动生成的查询计划拉取指标和日志，全程不手写一条查询。播放器若未加载，[直接观看视频](https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4)。
 
 ## 工作原理
 
