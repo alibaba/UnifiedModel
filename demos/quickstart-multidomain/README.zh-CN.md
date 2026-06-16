@@ -16,7 +16,7 @@ skill 接上来，端到端地读对象图和遥测。
 ## 1. 一键启动
 
 ```bash
-docker compose -f deployments/quickstart-demo/docker-compose.yml up
+docker compose -f demos/quickstart-multidomain/docker-compose.yml up
 ```
 
 等到 `es-seed` 服务打印 `seed complete`（首次还会拉镜像、启动 ES，约一两分钟）。此时在跑：
@@ -69,7 +69,7 @@ plan、对 `localhost:9090` / `localhost:9200` 执行，并报告偏高的错误
 `verify.sh` 手动跑同一条链路（需要 `jq` + `umctl`/Go）：
 
 ```bash
-sh deployments/quickstart-demo/verify.sh
+sh demos/quickstart-multidomain/verify.sh
 ```
 
 它列出服务、取每个指标的 plan 并把 PromQL 打到 `:9090`、取日志 plan 并把 `_search` 打到
@@ -78,7 +78,7 @@ sh deployments/quickstart-demo/verify.sh
 ## 关停
 
 ```bash
-docker compose -f deployments/quickstart-demo/docker-compose.yml down -v
+docker compose -f demos/quickstart-multidomain/docker-compose.yml down -v
 ```
 
 ## 说明

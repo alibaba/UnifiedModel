@@ -9,7 +9,7 @@ services:
   umodel:
     build:
       context: ../..
-      dockerfile: deployments/quickstart-demo/umodel.Dockerfile
+      dockerfile: demos/quickstart-multidomain/umodel.Dockerfile
     ports:
       - "8080:8080"   # UModel API (umctl --addr / MCP target)
 

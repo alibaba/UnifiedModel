@@ -17,7 +17,7 @@ the graph and the telemetry end to end.
 ## 1. Start the stack (one command)
 
 ```bash
-docker compose -f deployments/quickstart-demo/docker-compose.yml up
+docker compose -f demos/quickstart-multidomain/docker-compose.yml up
 ```
 
 Wait until the `es-seed` service prints `seed complete` (first run also pulls images and starts
@@ -74,7 +74,7 @@ the elevated error rate + latency + the timeout/503 ERROR lines.
 `verify.sh` runs the same chain by hand (needs `jq` + `umctl`/Go):
 
 ```bash
-sh deployments/quickstart-demo/verify.sh
+sh demos/quickstart-multidomain/verify.sh
 ```
 
 It lists the services, fetches each metric plan and runs the PromQL against `:9090`, and fetches
@@ -84,7 +84,7 @@ rates, p95, and ERROR log lines.
 ## Teardown
 
 ```bash
-docker compose -f deployments/quickstart-demo/docker-compose.yml down -v
+docker compose -f demos/quickstart-multidomain/docker-compose.yml down -v
 ```
 
 ## Notes
