@@ -38,3 +38,6 @@ __pycache__/
 .coverage/
 coverage.out
 batch_validation_report_examples.md
+
+# Demo video — hosted externally (OSS), not committed (see README "See it")
+/QuickStart.mp4

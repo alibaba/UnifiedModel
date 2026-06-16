@@ -7,22 +7,49 @@
 
 中文版本：[README_CN.md](README_CN.md)
 
-UModel (Unified Model) is a vendor-neutral semantic runtime for enterprise AI, data governance, and operational intelligence. It turns fragmented schemas, entities, business objects, telemetry links, and topology relations into workspace-scoped graph context that humans, systems, and AI agents can understand and use through one local service.
+**The open-source semantic layer for AI, data governance, and operations.** UModel turns fragmented schemas, entities, telemetry, and topology into one workspace-scoped **object graph** that humans, systems, and AI agents read through a single query surface — vendor-neutral, run locally.
 
-With UModel, you can:
+Most AI and analytics work stalls not on missing data but on data with no shared *meaning*. UModel is the layer that supplies it: a live, queryable semantic runtime instead of a passive data dictionary.
 
-- Author and import model packs that define enterprise objects, operational objects, datasets, links, storage, and topology semantics.
-- Query models, entities, and topology through one SPL surface: `.umodel`, `.entity`, and `.topo`.
-- Explore the workspace through a local Web UI.
-- Connect agent clients through AgentGateway and MCP.
-- Use public REST, CLI, and SDK contracts without depending on server internals.
+## See it
+
+[![UModel demo — an AI agent reading the object graph via the umodel-query skill (click to play, 90s)](images/quickstart-demo.jpg)](https://unifiedmodel-assets.oss-cn-hangzhou.aliyuncs.com/QuickStart.mp4)
+
+A 90-second demo — an AI agent reads across the object graph in the `quickstart-multidomain` workspace: it discovers services, walks cross-domain topology, and pulls metrics and logs through model-scoped query plans, without hand-writing a single query. ([watch the clip](https://unifiedmodel-assets.oss-cn-hangzhou.aliyuncs.com/QuickStart.mp4))
+
+## How it works
+
+UModel sits between scattered sources and the people, systems, and agents that need to make sense of them. Author the meaning once; everyone reads it the same way.
+
+```mermaid
+flowchart LR
+  S[Schemas]
+  E[Entities and business objects]
+  T[Telemetry and topology]
+  G[(UModel object graph<br/>workspace-scoped)]
+  Q[One query surface<br/>.umodel / .entity / .topo]
+  S --> G
+  E --> G
+  T --> G
+  G --> Q
+  Q --> H[Humans via Web UI]
+  Q --> Y[Systems via CLI / REST / SDK]
+  Q --> A[AI agents via MCP / skills]
+```
+
+With UModel you:
+
+- **Author and import model packs** that define enterprise objects, operational objects, datasets, links, storage, and topology semantics.
+- **Query** models, entities, and topology through one SPL surface — `.umodel`, `.entity`, `.topo` — over CLI, REST, or MCP.
+- **Explore** the workspace through a local Web UI.
+- **Connect agents** through AgentGateway and MCP, and let the model auto-scope reads (metrics/logs query plans) instead of hand-writing them.
 
 ## Why UModel
 
-- Accelerate enterprise AI at scale. A unified semantic standard helps AI models understand data meaning across platforms, departments, tools, and domains, improving the path to intelligent operations, customer service, analytics, prediction, and agent workflows.
-- Reduce data governance cost. A shared language for multi-source enterprise data frees data teams from repetitive metric alignment, field translation, and context reconstruction, so more effort goes into extracting value from data.
-- Preserve vendor neutrality and choice. UModel is independent of any single platform, data tool, observability stack, or AI vendor, helping organizations avoid semantic lock-in while building digital infrastructure.
-- Build an enterprise semantic operating system. UModel moves beyond a passive data dictionary toward a live, programmable semantic runtime that AI agents can query, reason over, and use as shared context for future multi-agent collaboration.
+- **Accelerate enterprise AI at scale.** A unified semantic standard lets AI understand data meaning across platforms, departments, and tools — a faster path to operations, analytics, prediction, and agent workflows.
+- **Cut data-governance cost.** A shared language for multi-source data frees teams from repetitive metric alignment, field translation, and context reconstruction.
+- **Stay vendor-neutral.** UModel is independent of any single platform, data tool, observability stack, or AI vendor, so you avoid semantic lock-in.
+- **Build a semantic operating system.** A live, programmable runtime that agents query and reason over — shared context for multi-agent collaboration, not a static dictionary.
 
 ## Project Scope
 
@@ -32,22 +59,12 @@ The open-source core focuses on local operation, public contracts, semantic mode
 
 ## Five-Minute Quick Start
 
-Requirements:
+Requirements: Go 1.22+, Make, Node.js 22+ (Web UI), and pnpm 9+ preferred (`corepack` / `npm exec` fallback supported).
 
-- Go 1.22 or newer.
-- Make.
-- Node.js 22 or newer for the Web UI.
-- pnpm 9 or newer is preferred; `corepack` or `npm exec` fallback is supported by the Makefile.
-
-Check the local toolchain:
+Check the local toolchain, then start the API and Web UI with a preloaded demo workspace:
 
 ```bash
 make check-env
-```
-
-Start the API and Web UI with a preloaded demo workspace:
-
-```bash
 make quickstart
 ```
 
@@ -56,21 +73,11 @@ make quickstart
 Next steps:
 
 - Open `http://localhost:5173`, select `demo`, and inspect the workspace through Explorer, Query, Data Store, and Agent views.
-- Integrate an agent through AgentGateway or MCP. Start with `umctl agent discover demo`, then connect an MCP client through `umodel-mcp`.
+- Integrate an agent through AgentGateway or MCP: `umctl agent discover demo`, then connect an MCP client through `umodel-mcp`.
 - Query models, entities, and topology through CLI or REST using Query Service.
+- Want the agent reading **real** metrics and logs? Bring up the telemetry-backed stack — `sh examples/quickstart-multidomain/deploy/start.sh` — and point the [`umodel-query`](skills/umodel-query) skill at it.
 
-Detailed flows:
-
-- [Quick Start](docs/en/getting-started/quickstart.md)
-- [Web UI Guide](docs/en/guides/web-ui.md)
-- [Query Service Guide](docs/en/guides/query-service.md)
-- [MCP Reference](docs/en/reference/mcp.md)
-
-Stop local services:
-
-```bash
-make stop-all
-```
+Stop local services with `make stop-all`. Detailed flows: [Quick Start](docs/en/getting-started/quickstart.md) · [Web UI](docs/en/guides/web-ui.md) · [Query Service](docs/en/guides/query-service.md) · [MCP](docs/en/reference/mcp.md).
 
 ## Agent Skills
 
@@ -95,11 +102,7 @@ UModel runs as a local service around one workspace-scoped object graph:
 - AgentGateway and MCP expose discovery, resources, query examples, and safe tools for agent clients.
 - Web UI, CLI, REST, and SDK clients operate against the same public contracts.
 
-Architecture details:
-
-- [Architecture Overview](docs/en/architecture/overview.md)
-- [Runtime Flow](docs/en/architecture/runtime-flow.md)
-- [Query And Agent Architecture](docs/en/architecture/query-and-agent.md)
+Details: [Overview](docs/en/architecture/overview.md) · [Runtime Flow](docs/en/architecture/runtime-flow.md) · [Query And Agent](docs/en/architecture/query-and-agent.md).
 
 ## Documentation
 
@@ -120,34 +123,13 @@ Chinese documentation: [docs/zh/README.md](docs/zh/README.md).
 
 ## Development
 
-Install local dependencies:
-
 ```bash
-make install-env
+make install-env     # install local dependencies
+make build           # build service, UI, and Go SDK
+make ci              # run the local CI gate
 ```
 
-Build:
-
-```bash
-make build
-```
-
-Run focused checks:
-
-```bash
-make guard
-make test-service
-make verify
-make example-validate
-```
-
-Run the local CI gate:
-
-```bash
-make ci
-```
-
-Generated Go and Python model SDKs live under `sdk/`. The Java SDK currently remains under `generated/java/`. The minimal Go service client lives under `sdk/go/service` and wraps public REST contracts.
+Focused checks: `make guard`, `make test-service`, `make verify`, `make example-validate`. Generated Go and Python model SDKs live under `sdk/`; the Java SDK remains under `generated/java/`. The minimal Go service client lives under `sdk/go/service`.
 
 ## GraphStore Providers
 
