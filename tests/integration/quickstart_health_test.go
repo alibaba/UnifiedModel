@@ -118,7 +118,7 @@ func TestQuickstartHealth(t *testing.T) {
 	})
 
 	t.Run("EntitySetYAMLsExist", func(t *testing.T) {
-		examplesDir := filepath.Join("..", "..", "examples", "quickstart-multidomain")
+		examplesDir := filepath.Join("..", "..", "examples", "quickstart-multidomain", "umodel")
 		entityTypes := make(map[string]bool)
 		for _, e := range entities {
 			if et, ok := e["__entity_type__"].(string); ok {

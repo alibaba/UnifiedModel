@@ -101,6 +101,10 @@ class ConfigValidator(SchemaValidator):
         pattern = "**/*.yml" if recursive else "*.yml"
         yaml_files.extend(directory_path.glob(pattern))
         
+        # 跳过非模型资产目录(与 Go importer 的 shouldSkipDir 一致:部署脚本等不是模型文件)
+        skip_dirs = {"node_modules", "vendor", "target", "dist", "build", "sample-data", "deploy"}
+        yaml_files = [f for f in yaml_files if not (skip_dirs & set(f.parts))]
+
         # 排序并去重
         yaml_files = sorted(list(set(yaml_files)))
         

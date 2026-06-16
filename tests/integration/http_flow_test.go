@@ -163,7 +163,7 @@ func TestHTTPUModelImportThenQuery(t *testing.T) {
 
 	post(t, server.URL+"/api/v1/workspaces", map[string]any{"id": "demo"})
 	importResult := post(t, server.URL+"/api/v1/umodel/demo/import", map[string]any{
-		"path": filepath.Join("..", "..", "examples", "quickstart-multidomain", "devops", "entity_set", "devops.service.yaml"),
+		"path": filepath.Join("..", "..", "examples", "quickstart-multidomain", "umodel", "devops", "entity_set", "devops.service.yaml"),
 	})
 	if importResult["imported"] != float64(1) {
 		t.Fatalf("unexpected import result: %+v", importResult)

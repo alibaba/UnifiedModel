@@ -50,7 +50,7 @@ func TestCLIBusinessFlowUsesOnlyPublicContracts(t *testing.T) {
 	if out := runUMCtlBinary(t, bin, server.URL, "umodel", "put", "cli-demo", umodel); !bytes.Contains(out, []byte(`"accepted":1`)) {
 		t.Fatalf("expected umodel put accepted, got %s", out)
 	}
-	imported := runUMCtlBinaryJSON(t, bin, server.URL, "umodel", "import", "cli-demo", filepath.Join(root, "examples", "quickstart-multidomain", "devops", "entity_set", "devops.pipeline.yaml"))
+	imported := runUMCtlBinaryJSON(t, bin, server.URL, "umodel", "import", "cli-demo", filepath.Join(root, "examples", "quickstart-multidomain", "umodel", "devops", "entity_set", "devops.pipeline.yaml"))
 	if imported["imported"] != float64(1) {
 		t.Fatalf("expected one imported schema through CLI, got %+v", imported)
 	}
