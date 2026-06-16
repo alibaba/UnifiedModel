@@ -2,7 +2,7 @@
 
 让 AI Agent 指向对象图，由**模型来界定读取范围**——发现实体集、遍历拓扑、并通过模型生成的查询计划拉取遥测。不要让 Agent 手写 SPL、PromQL 或日志 DSL；模型已经携带了它需要的结构。
 
-<video controls preload="metadata" style="width: 100%" src="https://unifiedmodel-assets.oss-cn-hangzhou.aliyuncs.com/QuickStart.mp4"></video>
+<video controls preload="metadata" style="width: 100%" src="https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4"></video>
 
 *一段 90 秒的演示，跑在 `quickstart-multidomain` 包上：Agent 安装 `umodel-query` 技能，找到 `demo` workspace，读取 `devops.service`，并拉取指标和日志——全程不手写一条查询。*
 

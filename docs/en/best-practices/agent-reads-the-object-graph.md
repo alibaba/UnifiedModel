@@ -2,7 +2,7 @@
 
 Point an AI agent at the object graph and let the **model scope the reads** — discover entity sets, walk topology, and pull telemetry through model-generated query plans. Don't make the agent hand-write SPL, PromQL, or log DSL; the model already carries the structure it needs.
 
-<video controls preload="metadata" style="width: 100%" src="https://unifiedmodel-assets.oss-cn-hangzhou.aliyuncs.com/QuickStart.mp4"></video>
+<video controls preload="metadata" style="width: 100%" src="https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4"></video>
 
 *A 90-second run on the `quickstart-multidomain` pack: an agent installs the `umodel-query` skill, finds the `demo` workspace, reads `devops.service`, and pulls metrics and logs — without a hand-written query.*
 
