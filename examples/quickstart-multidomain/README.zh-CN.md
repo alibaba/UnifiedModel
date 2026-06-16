@@ -1,113 +1,86 @@
-# 多域 Quickstart — 智能读数 demo
+# 多域 Quickstart
 
-English: [Multi-Domain Quickstart Example Pack](README.md)
+English: [Multi-domain quickstart](README.md)
 
-`examples/quickstart-multidomain` 是 `make quickstart` 默认导入的样例，也是**智能读数**的展示场景：一个 workspace、**5 个域、35 种对象类型**，通过同一套 SPL 入口端到端读取——发现模型、跨域读对象与拓扑、语义检索、把遥测变成可执行的查询 plan。它与 [`umodel-query`](../../skills/umodel-query) skill 配套，让 Agent 自主完成这套走查。
+一个跨域、端到端读取对象图的样例——一个 workspace、五个域、35 种对象类型——通过 `.umodel` / `.entity` / `.topo` 这套 SPL 入口完成:发现模型、读实体与拓扑、检索、遥测查询规划。它同时是仓库默认的 `make quickstart` sample。[`umodel-query`](../../skills/umodel-query) skill 用同一条路径从 Agent 侧驱动。
 
-五个域：**devops**（服务、部署、流水线、SLO、故障…）、**k8s**（粗粒度集群/命名空间/工作负载/Pod），以及三个企业场景——**automaker**、**game**、**supplier**。`devops.service` 关联一个 metric / log / event 数据集，各自连到对应 Storage（Prometheus / Elasticsearch / MySQL），因此数据集发现是基于真实数据的。
+五个域:**devops**(服务、部署、流水线、SLO、故障…)、**k8s**(集群、命名空间、工作负载、Pod),以及三个企业场景——**automaker**、**game**、**supplier**。`devops.service` 关联一个 metric / log / event 数据集，各自连到对应 Storage（Prometheus、Elasticsearch、MySQL）。
 
-## 快速开始
-
-```bash
-make quickstart
-```
-
-API：`http://localhost:8080` | Web UI：`http://localhost:5173`。把 5 个域、35 个 entity set、93 个实体、125 条关系载入 `demo` workspace（内存，无需密钥）。
-
-> 仅 API（不起 Web UI）：
-> `go run ./cmd/umodel-server --quickstart --quickstart-sample multi-domain-quickstart --graphstore memory`
-
-### 带真实遥测（端到端读数）
-
-`make quickstart` 只起**模型**——`get_metrics` / `get_logs` 返回可执行 **plan**，但没有后端可跑。要读**真实数值**，用一条命令拉起 UModel + 已灌数的 Prometheus + 已灌数的 Elasticsearch：
+## 启动
 
 ```bash
 sh examples/quickstart-multidomain/deploy/start.sh
 ```
 
-UModel `http://localhost:8080`、Prometheus `http://localhost:9090`、Elasticsearch `http://localhost:9200`——pack 的 storage endpoint 已指向这里，所以第 6–7 步的 plan 直接就能跑。详见 [deploy/README.md](deploy/README.md)。
+拉起 UModel（载入本 pack）加一个已灌数的 Prometheus 和 Elasticsearch（docker 或 podman），下面每一步——直到 `get_metrics` / `get_logs` 的 plan——都能端到端跑通。UModel `http://localhost:8080`、Prometheus `:9090`、Elasticsearch `:9200`。见 [deploy/](deploy/)。
 
-## 智能读数走查
+本 pack 同时是仓库默认的 `make quickstart` sample：`make quickstart` 把模型和样例数据载入一个内存服务、不带遥测后端——下面的模型、实体、检索、拓扑读取都可用，但 `get_metrics` / `get_logs` 只会返回无后端可执行的 plan。
 
-每次读取都是一条 `umctl` 命令——务必带 `-o json`（行在 `data.data`，列名在 `data.header`）。同样的 SPL 也可走 MCP 的 `query_spl_execute` 工具。[`umodel-query`](../../skills/umodel-query) skill 会自主执行这些；这里手动走一遍。
+## 读取
 
-### 1. 发现模型
+每次读取都是一条 `umctl` 命令；带 `-o json`（行在 `data.data`，列名在 `data.header`）。同样的 SPL 也可走 MCP 的 `query_spl_execute`。
+
+### 模型
 
 ```bash
 umctl query run demo ".umodel with(kind='entity_set') | project domain, name" -o json
 ```
 
-→ `devops`、`k8s`、`automaker`、`game`、`supplier` 五个域共 35 种对象类型。`.umodel` 是地图；这里看到的 `domain` + `name` 就是后面每个读取要传的参数。
+列出 35 种对象类型。这里的 `domain` + `name` 就是后面每个读取要传的参数。
 
-### 2. 读对象
+### 实体
 
 ```bash
-umctl query run demo ".entity with(domain='devops', name='devops.service')" -o json   # 全字段
-umctl query run demo ".entity with(domain='devops', name='devops.service') | project __entity_id__, display_name, status, owner" -o json
+umctl query run demo ".entity with(domain='devops', name='devops.service')" -o json
+umctl query run demo ".entity with(domain='devops', name='devops.service') | project __entity_id__, display_name, status" -o json
 ```
 
-→ `checkout-service`（degraded）、`catalog-api`（active）、`delivery-service`（warning）、`telemetry-collector`（active）。`__entity_id__`（checkout-service = `10000000000000000000000000000101`）是后续复用的句柄。`| project` 等 pipe 是可选的——裸读返回全部字段。
+四个服务：`checkout-service`（degraded）、`catalog-api`（active）、`delivery-service`（warning）、`telemetry-collector`（active）。`checkout-service` 的 `__entity_id__` 是 `10000000000000000000000000000101`，后面复用。`| project` 可选；裸读返回全字段。
 
-### 3. 检索
-
-普通全文——填任意文本即可跨所有字段匹配：
+### 检索
 
 ```bash
 umctl query run demo ".entity with(domain='devops', name='devops.service', query='checkout') | project __entity_id__, display_name, status" -o json
-# → checkout-service | degraded
 ```
 
-需要按语义排序时加 `mode='vector'`（或 `mode='hyper'` 混合）和 `topk=N`——`query='payment checkout'` 的首位命中是 `checkout-service`（"Converts carts into paid orders"）。语义检索结果以**完整行**按相似度返回（`| project` 简写适用于普通读取）。
+`query=` 是跨所有字段的全文检索。加 `mode='vector'`（或 `mode='hyper'`）和 `topk=N` 按相似度排序；向量结果以完整行按得分返回。
 
-### 4. 遍历拓扑（含跨域）
+### 拓扑
 
 ```bash
 umctl query run demo ".topo | graph-call getNeighborNodes('full', 1, [(:\"devops@devops.service\" {__entity_id__:'10000000000000000000000000000101'})]) | where __relation_type__ = 'runs'" -o json
 ```
 
-→ `checkout-service --runs--> ` 一个 **k8s** 工作负载：一条跨域边（devops → k8s）。该节点还有 `deploys`、`measured_by`、`runs_in`、`impacts`、`contains` 等关系。按关系过滤用 `where __relation_type__='…'`（`with(...)` 子句**不会**过滤 graph-call 输出）。行里是实体 **ID**——用 `.entity … with(ids=[…])` 还原名字。
+返回 `checkout-service` 的 `runs` 边，指向一个 k8s 工作负载——一条跨域关系。用 `where __relation_type__ = '…'` 过滤；`with(...)` 子句不会过滤 graph-call 输出。行里是实体 id，用 `.entity … with(ids=[…])` 还原名字。
 
-### 5. 发现对象的方法与数据集
+### 数据集
 
 ```bash
 umctl query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()" -o json
 umctl query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call list_data_set(['metric_set','log_set','event_set'], true)" -o json
 ```
 
-→ 方法：`__list_method__`、`list_data_set`、`get_metrics`、`get_logs`。服务上的数据集：`devops.metric.service`（**Prometheus**）、`devops.log.service`（**Elasticsearch**）、`devops.event.deployment`（**MySQL**，表 `deployment_events`）。一个对象、三种存储后端，都在同一套模型之下。
+方法：`__list_method__`、`list_data_set`、`get_metrics`、`get_logs`。服务的数据集：`devops.metric.service`（Prometheus）、`devops.log.service`（Elasticsearch）、`devops.event.deployment`（MySQL）。`list_data_set` 返回 `get_metrics` / `get_logs` 要用的 `domain` + `name`——从实体取，而不是去扫 `.umodel`。
 
-### 6. 读指标 → plan → 执行
+### 指标
 
 ```bash
 umctl query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops','devops.metric.service','request_count', step='30s')" -o json
 ```
 
-→ 一个 `prometheus_promql` plan，携带
-`sum(rate(devops_service_request_total{service_id="10000000000000000000000000000101"}[1m]))`，
-打到 `http://localhost:9090`——service id 已替换好，无需手写 PromQL。demo 起着时**直接执行**（checkout-service ≈120 req/s）；否则把 endpoint 改成你自己的 Prometheus。见 skill 的 [metrics-logs 指南](../../skills/umodel-query/references/metrics-logs.md)。
+返回一个 `prometheus_promql` plan：`sum(rate(devops_service_request_total{service_id="10000000000000000000000000000101"}[1m]))`，endpoint `http://localhost:9090`，service id 已绑定。开源返回 plan，由调用方执行。`deploy/` 起着时直接跑；否则把 endpoint 改成你的 Prometheus。见 [metrics-logs](../../skills/umodel-query/references/metrics-logs.md)。
 
-### 7. 读日志 → plan → 执行
+### 日志
 
 ```bash
 umctl query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops','devops.log.service', query='level = \"ERROR\"')" -o json
 ```
 
-→ 一个 `elasticsearch_dsl` plan：对索引 `devops-service-logs-*`、`http://localhost:9200` 的 bool/filter 查询。demo 起着时**直接执行**（checkout-service 的 ERROR 行——payment 超时、503、熔断）；否则改成你自己的 ES。
+返回一个 `elasticsearch_dsl` plan，查询索引 `devops-service-logs-*`，endpoint `http://localhost:9200`。`devops.event.deployment` 建模在 MySQL 上、可被发现，但可执行的 plan 方法是 `get_metrics`（Prometheus）和 `get_logs`（Elasticsearch）。
 
-> `devops.event.deployment` event_set 建模在 **MySQL** 上（第 5 步 / `.umodel` 可发现），展示一套模型覆盖三种后端。目前可执行的 plan 方法是 `get_metrics`（Prometheus）和 `get_logs`（Elasticsearch）。
+## 配合 Agent
 
-## 用 Agent 取数（`umodel-query` skill）
-
-[`umodel-query`](../../skills/umodel-query) skill 教 Agent 自主完成以上全部——发现模型、读对象与拓扑、检索、把 `get_metrics` / `get_logs` 的 plan 变成真实数值。demo 起着时（见上），把 Agent 指向 UModel，用自然语言提问：
-
-```text
-export UMCTL_ADDR=http://localhost:8080      # 或把 skill 的 MCP 目标设成同一地址
-
-提问："列出 devops 的服务和状态，然后读 checkout-service 的请求速率、错误率、p95 延迟，
-      并给出最近的 ERROR 日志。它为什么 degraded?"
-```
-
-Agent 会发现模型、定位 `checkout-service`、取它的 `get_metrics` / `get_logs` plan、打到 `localhost:9090` / `localhost:9200`，报出偏高的错误率（~15%）、高 p95（~1.9s）、以及超时/503/熔断的 ERROR 行——无需手写 PromQL 或 ES DSL。再加 [`umodel-rca`](../../skills/umodel-rca) 做根因分析。安装见 [skills README](../../skills/README.md)。
+[`umodel-query`](../../skills/umodel-query) skill 执行上面这些读取，并执行返回的 plan。`deploy/` 起着时，把它指向 `http://localhost:8080`（`UMCTL_ADDR`，或 MCP 目标），用自然语言提问——例如"读 checkout-service 的请求速率、错误率、p95 延迟，以及最近的 ERROR 日志"。[`umodel-rca`](../../skills/umodel-rca) 在其上做根因分析。安装见 [skills/README.md](../../skills/README.md)。
 
 ## 内容
 
@@ -117,16 +90,16 @@ Agent 会发现模型、定位 `checkout-service`、取它的 `get_metrics` / `g
 | Kubernetes EntitySet | `umodel/k8s/entity_set/` | 7 | 粗粒度集群、命名空间、工作负载、Pod、节点、Service、Ingress。 |
 | 企业 demo EntitySet | `umodel/automaker/entity_set/`, `umodel/game/entity_set/`, `umodel/supplier/entity_set/` | 18 | 复用的企业实体拓扑定义。 |
 | EntitySetLink | `umodel/*/link/entity_set_link/`, `umodel/cross-domain/link/entity_set_link/` | 42 | 域内和跨域拓扑语义。 |
-| DevOps DataSet | `umodel/devops/metric_set/`, `umodel/devops/log_set/`, `umodel/devops/event_set/` | 3 | 用于 EntitySet DataSet 发现的最小服务指标、日志和部署事件。 |
-| DataLink 和 StorageLink | `umodel/devops/link/data_link/`, `umodel/devops/link/storage_link/` | 6 | 连接 `devops.service` 到 DataSet，并连接 DataSet 到 Storage。 |
-| Storage 定义 | `umodel/devops/storage/` | 3 | Prometheus、Elasticsearch 和 MySQL 查询规划元数据。 |
+| DevOps DataSet | `umodel/devops/metric_set/`, `umodel/devops/log_set/`, `umodel/devops/event_set/` | 3 | 用于数据集发现的服务指标、日志、部署事件。 |
+| DataLink 和 StorageLink | `umodel/devops/link/data_link/`, `umodel/devops/link/storage_link/` | 6 | 连接 `devops.service` 到数据集，数据集到 Storage。 |
+| Storage 定义 | `umodel/devops/storage/` | 3 | Prometheus、Elasticsearch、MySQL 查询规划元数据。 |
 | 部署栈 | `deploy/` | — | 一键 demo：`docker-compose` + 已灌数的 Prometheus / Elasticsearch + `start.sh` / `verify.sh`。 |
 | Runtime entities | `sample-data/entities.json` | 93 | CMS 2.0 兼容实体 payload。 |
 | Runtime relations | `sample-data/relations.json` | 125 | CMS 2.0 兼容拓扑 payload。 |
 
-## 手动导入
+## 导入到其他 workspace
 
-导入到其他 workspace（quickstart 服务会自动导入）：
+quickstart 服务会自动导入。导入到其他 workspace：
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/samples/demo/multi-domain-quickstart:import \
@@ -134,10 +107,9 @@ curl -X POST http://localhost:8080/api/v1/samples/demo/multi-domain-quickstart:i
   -d '{}'
 ```
 
-## 维护规则
+## 维护
 
-- 保持模型 YAML、entity payload、relation payload 和文档一致。
-- 保持 DevOps 可观测链路足够小：一个服务 `metric_set`、一个服务 `log_set`、一个服务 `event_set`，以及对应的 `data_link` / `storage_link`。
-- quickstart 里的 k8s 保持粗粒度。
-- DataSet/Storage 定义保持为 quickstart discovery 专用的最小版本。
-- 修改后运行 `make example-validate` 和 `go test ./internal/sampledata ./internal/bootstrap ./internal/query`。
+- 模型 YAML、entity payload、relation payload、文档保持一致。
+- DevOps 可观测链路保持最小：一个服务 `metric_set`、一个 `log_set`、一个 `event_set`，及对应 `data_link` / `storage_link`。
+- k8s 保持粗粒度。
+- 改完本 pack 后运行 `make example-validate` 和 `go test ./internal/sampledata ./internal/bootstrap ./internal/query`。

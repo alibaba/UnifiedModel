@@ -1,98 +1,63 @@
-# Quickstart demo stack — read real data from Prometheus + Elasticsearch
+# Quickstart demo stack
 
 中文版本：[README.zh-CN.md](README.zh-CN.md)
 
-One command brings up the full **smart data-retrieval (智能读数)** demo: **UModel** (serving the
-`multi-domain-quickstart` pack) + a real **Prometheus** + a real **Elasticsearch**, seeded so the
-pack's `get_metrics` / `get_logs` plans return real values. You then connect your own agent
-(Qoder / Codex / Claude Code) with the [`umodel-query`](../../skills/umodel-query) skill and read
-the graph and the telemetry end to end.
+Brings up UModel (serving the `multi-domain-quickstart` pack) with a seeded Prometheus and
+Elasticsearch, so the pack's `get_metrics` / `get_logs` plans execute against real backends.
+Connect an agent with the [`umodel-query`](../../../skills/umodel-query) skill, or run
+[`verify.sh`](verify.sh).
 
-## Prerequisites
+## Requirements
 
-- Docker + Docker Compose (Elasticsearch needs ~2 GB of memory available to Docker).
-- An agent with the `umodel-query` skill, and `umctl` on PATH (or a Go toolchain). See the
-  [skill setup](../../skills/umodel-query/SKILL.md).
+Docker or Podman with Compose. Elasticsearch needs ~2 GB available to the engine.
 
-## 1. Start the stack (one command)
+## Start
 
 ```bash
-docker compose -f examples/quickstart-multidomain/deploy/docker-compose.yml up
+sh examples/quickstart-multidomain/deploy/start.sh
 ```
 
-Wait until the `es-seed` service prints `seed complete` (first run also pulls images and starts
-Elasticsearch — a minute or two). What's now running:
+`start.sh` runs `docker compose` (or `podman compose`) up, waits for the Elasticsearch seed and
+the first Prometheus scrapes, and prints the endpoints. It runs:
 
 | Service | URL | Role |
 |---|---|---|
-| UModel | `http://localhost:8080` | object graph + plan provider (the `demo` workspace) |
-| Prometheus | `http://localhost:9090` | real metrics backend (seeded by the exporter) |
-| Elasticsearch | `http://localhost:9200` | real logs backend (seeded with service logs) |
-| exporter | (internal) | emits the demo metric series Prometheus scrapes |
+| UModel | `http://localhost:8080` | object graph + plan provider (`demo` workspace) |
+| Prometheus | `http://localhost:9090` | metrics backend, fed by the exporter |
+| Elasticsearch | `http://localhost:9200` | logs backend, seeded at startup |
+| exporter | internal | emits the metric series Prometheus scrapes |
 
-The seeded data tells a story: **checkout-service** (`…0101`) is degraded — high error rate
-(~15%) and high p99/p95 latency, with ERROR logs (timeouts, 503s, retry-budget exhaustion);
-catalog-api / delivery-service / telemetry-collector are healthy. Give Prometheus ~1 minute of
-scrapes before querying so `rate()` has samples.
+Seeded data: `checkout-service` is degraded — ~15% error rate, high p95, and ERROR logs (timeouts,
+503s, retry-budget exhaustion); the other services are healthy. The telemetry is synthetic, shaped
+to the pack's queries.
 
-## 2. Connect your agent
+## Read it
 
-Install the skill and point the agent at UModel (the skill is CLI-first; MCP works too):
+The pack's storage endpoints point at `http://localhost:9090` / `http://localhost:9200`, so the
+`get_metrics` / `get_logs` plans run as returned — no endpoint override.
 
-```bash
-# Claude Code
-/plugin marketplace add alibaba/UnifiedModel && /plugin install umodel@unifiedmodel
-export UMCTL_ADDR=http://localhost:8080      # so umctl talks to the demo UModel
-```
+With the [`umodel-query`](../../../skills/umodel-query) skill, point the agent at
+`http://localhost:8080` (`UMCTL_ADDR`, or the MCP target) and ask in natural language, e.g. "read
+checkout-service's request rate, error rate, p95 latency, and recent ERROR logs."
 
-Qoder / Codex: install/point the skill the same way and set the UModel address to
-`http://localhost:8080`.
-
-## 3. Read data (the plan → execute flow)
-
-`get_metrics` / `get_logs` return an executable **plan**. Its endpoint is a model placeholder
-(`prometheus.devops.example:9090`, `https://elasticsearch.devops.example:9200`) — the agent
-**overrides it with this stack's real endpoints**:
-
-- Prometheus → **`http://localhost:9090`** (plain HTTP; no tenant/auth needed for the demo)
-- Elasticsearch → **`http://localhost:9200`** (plain HTTP; security disabled for the demo)
-
-This is exactly the "read the plan, adapt the endpoint, run it" flow the
-[`umodel-query` skill](../../skills/umodel-query/references/metrics-logs.md) teaches.
-
-**Ask the agent**, e.g.:
-
-> "List the devops services and their status, then for checkout-service read its request rate,
-> error rate, and p95 latency, and show its recent ERROR logs. Why is it degraded?"
-
-The agent discovers the model, finds checkout-service (`…0101`), pulls the `get_metrics` /
-`get_logs` plans from UModel, runs them against `localhost:9090` / `localhost:9200`, and reports
-the elevated error rate + latency + the timeout/503 ERROR lines.
-
-## Smoke test (optional, no agent)
-
-`verify.sh` runs the same chain by hand (needs `jq` + `umctl`/Go):
+Without an agent:
 
 ```bash
 sh examples/quickstart-multidomain/deploy/verify.sh
 ```
 
-It lists the services, fetches each metric plan and runs the PromQL against `:9090`, and fetches
-the log plan and runs the `_search` against `:9200` — printing checkout-service's request/error
-rates, p95, and ERROR log lines.
+`verify.sh` lists the services, runs each metric plan's PromQL against `:9090`, and runs the log
+plan's `_search` against `:9200`.
 
 ## Teardown
 
 ```bash
-docker compose -f examples/quickstart-multidomain/deploy/docker-compose.yml down -v
+docker compose -f examples/quickstart-multidomain/deploy/docker-compose.yml down -v   # or: podman compose …
 ```
 
 ## Notes
 
-- All telemetry here is **synthetic**, generated to match the pack's queries — it is a demo, not
-  real production data.
-- The `multi-domain-quickstart` pack's storage endpoints are intentional placeholders; this stack
-  doesn't modify the pack — the agent points the plan at the local backends (as designed).
-- The pack also models a **MySQL** event_set (`devops.event.deployment`); it's discoverable via
-  `list_data_set`, but the plan-returning fetch methods are `get_metrics` (Prometheus) and
-  `get_logs` (Elasticsearch).
+- Telemetry is synthetic — a demo, not production data.
+- `devops.event.deployment` is modeled on MySQL and is discoverable via `list_data_set`, but the
+  executable plan methods are `get_metrics` (Prometheus) and `get_logs` (Elasticsearch); the stack
+  seeds Prometheus and Elasticsearch only.
