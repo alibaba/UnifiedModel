@@ -256,8 +256,11 @@ func (s *MemoryStore) Capabilities(ctx context.Context) (model.GraphStoreCapabil
 		TimeVisibility:     true,
 		ServerSideFilter:   false,
 		MaxDepth:           2,
-		MaxLimit:           100,
-		Timeout:            "10s",
+		// Memory backs --quickstart / MCP / demos and has no storage backend, so
+		// it serves a generous row ceiling. Kept >= the default local.ladybug
+		// provider's 1000 so any production-valid `limit` is also valid here.
+		MaxLimit: 10000,
+		Timeout:  "10s",
 	}, nil
 }
 
