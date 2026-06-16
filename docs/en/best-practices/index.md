@@ -14,4 +14,4 @@ _More practices coming._
 
 ## Agent integration
 
-_More practices coming._
+- [Read the object graph with an AI agent](./agent-reads-the-object-graph)

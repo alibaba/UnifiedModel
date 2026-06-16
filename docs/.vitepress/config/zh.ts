@@ -58,6 +58,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
     items: [
       { text: '概览', link: '/zh/best-practices/' },
       { text: '稳定、按域限定的身份', link: '/zh/best-practices/stable-identity' },
+      { text: '用 AI Agent 读取对象图', link: '/zh/best-practices/agent-reads-the-object-graph' },
     ],
   },
   {

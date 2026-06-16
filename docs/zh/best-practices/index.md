@@ -14,4 +14,4 @@ _更多实践陆续加入。_
 
 ## Agent 集成
 
-_更多实践陆续加入。_
+- [用 AI Agent 读取对象图](./agent-reads-the-object-graph)

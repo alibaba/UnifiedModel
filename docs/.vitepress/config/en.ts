@@ -58,6 +58,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
     items: [
       { text: 'Overview', link: '/en/best-practices/' },
       { text: 'Stable, domain-scoped identity', link: '/en/best-practices/stable-identity' },
+      { text: 'Read the object graph with an AI agent', link: '/en/best-practices/agent-reads-the-object-graph' },
     ],
   },
   {
