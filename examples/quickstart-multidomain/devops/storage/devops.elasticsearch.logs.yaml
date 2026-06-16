@@ -12,7 +12,7 @@ metadata:
     en_us: "Elasticsearch-compatible log index used by the quickstart service log set."
     zh_cn: "Quickstart 服务日志集使用的 Elasticsearch 兼容日志索引。"
 spec:
-  endpoint: "https://elasticsearch.devops.example:9200"
+  endpoint: "http://localhost:9200"
   index: "devops-service-logs-*"
   index_pattern: "devops-service-logs-${yyyy.MM.dd}"
   version: "8.x"

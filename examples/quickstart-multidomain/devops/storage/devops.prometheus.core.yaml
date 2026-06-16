@@ -12,7 +12,7 @@ metadata:
     en_us: "Prometheus-compatible metrics endpoint used by the quickstart service metric set."
     zh_cn: "Quickstart 服务指标集使用的 Prometheus 兼容指标端点。"
 spec:
-  endpoint: "http://prometheus.devops.example:9090"
+  endpoint: "http://localhost:9090"
   api_prefix: "/api/v1"
   default_query_type: range
   default_step: 1m
