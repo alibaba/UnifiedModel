@@ -42,7 +42,8 @@ sh examples/quickstart-multidomain/deploy/verify.sh
 ## 关停
 
 ```bash
-docker compose -f examples/quickstart-multidomain/deploy/docker-compose.yml down -v   # 或:podman compose …
+sh examples/quickstart-multidomain/deploy/stop.sh          # 停止并删除容器、网络、卷
+sh examples/quickstart-multidomain/deploy/stop.sh --all    # 连构建的镜像也删
 ```
 
 ## 说明

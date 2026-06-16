@@ -52,7 +52,8 @@ plan's `_search` against `:9200`.
 ## Teardown
 
 ```bash
-docker compose -f examples/quickstart-multidomain/deploy/docker-compose.yml down -v   # or: podman compose …
+sh examples/quickstart-multidomain/deploy/stop.sh          # stop + remove containers, network, volumes
+sh examples/quickstart-multidomain/deploy/stop.sh --all    # also remove the built image
 ```
 
 ## Notes

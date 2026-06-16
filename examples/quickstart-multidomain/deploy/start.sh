@@ -56,5 +56,5 @@ cat <<EOF
        error rate, and p95 latency, and show its recent ERROR logs. Why is it degraded?"
 
     Smoke-test without an agent:  sh "$DIR/verify.sh"
-    Tear down:                    $COMPOSE -f "$COMPOSE_FILE" down -v
+    Stop & clean up:              sh "$DIR/stop.sh"   (add --all to also remove the image)
 EOF
