@@ -34,7 +34,10 @@ ALLOWED_PROVIDER_IMPORTS = {
 
 
 def iter_files() -> list[pathlib.Path]:
-    ignored_parts = {".git", ".venv", "__pycache__", "node_modules"}
+    # .claude holds gitignored local agent artifacts — nested git worktrees of
+    # other branches and copies of tooling — which are not the source tree under
+    # review and would otherwise trip the path-exact self-exclusion / allowlist.
+    ignored_parts = {".git", ".venv", "__pycache__", "node_modules", ".claude"}
     files: list[pathlib.Path] = []
     for path in ROOT.rglob("*"):
         if not path.is_file() or path.suffix not in TEXT_SUFFIXES:
