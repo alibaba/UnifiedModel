@@ -5,9 +5,13 @@
 // executes against the backing storage. Rendering is therefore pure
 // string/map construction with no heavy dependencies (no storage drivers, no
 // build tags). A Renderer turns a normalized Request into the "query" block
-// embedded in the plan envelope; the Registry maps (storage kind, method) to a
-// Renderer, replacing the hardcoded switch on storage.Kind that used to live in
-// the executor — mirroring how GraphStore providers sit behind a contract.
+// embedded in the plan envelope. The Registry maps (family, method) to a
+// Renderer; the query package bridges a storage kind to a family with a small
+// default map, and a storage may override that by declaring spec.family — so a
+// new backend that shares an existing query family needs no Go code, only
+// configuration. This replaces the hardcoded switch on storage.Kind that used
+// to live in the executor, mirroring how GraphStore providers sit behind a
+// contract.
 package planrender
 
 import "github.com/alibaba/UnifiedModel/pkg/model"
@@ -45,12 +49,12 @@ type Request struct {
 // executor will run.
 type Renderer interface {
 	// Family is the query-model archetype this renderer implements (e.g.
-	// "label-timeseries", "document-search"). Multiple storage kinds may share
-	// one family.
+	// "label-timeseries", "document-search"). Storages route to a renderer by
+	// family, so multiple storage kinds may share one renderer.
 	Family() string
-	// Handles reports whether this renderer can render the given storage kind
-	// and method.
-	Handles(storageKind string, m Method) bool
+	// SupportsMethod reports whether this renderer's family handles the given
+	// method (a metrics family renders get_metrics, a log family get_logs).
+	SupportsMethod(m Method) bool
 	// Render builds the storage-native query block (the plan's "query" field).
 	Render(req Request) (map[string]any, error)
 }
@@ -65,16 +69,20 @@ type Registry struct {
 func NewRegistry() *Registry { return &Registry{} }
 
 // Register adds a renderer to the registry. Later registrations take precedence
-// on overlapping (kind, method), so register built-ins first and any overrides
-// after.
+// on overlapping (family, method), so register built-ins first and any
+// overrides after.
 func (r *Registry) Register(rd Renderer) { r.renderers = append(r.renderers, rd) }
 
-// Find returns the renderer that Handles the given storage kind and method.
+// Find returns the renderer for the given family that supports method m. An
+// empty family never matches, routing to the executor's passthrough.
 // Later-registered renderers win, so an override registered after the built-ins
 // shadows them.
-func (r *Registry) Find(storageKind string, m Method) (Renderer, bool) {
+func (r *Registry) Find(family string, m Method) (Renderer, bool) {
+	if family == "" {
+		return nil, false
+	}
 	for i := len(r.renderers) - 1; i >= 0; i-- {
-		if r.renderers[i].Handles(storageKind, m) {
+		if r.renderers[i].Family() == family && r.renderers[i].SupportsMethod(m) {
 			return r.renderers[i], true
 		}
 	}

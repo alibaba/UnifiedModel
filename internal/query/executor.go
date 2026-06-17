@@ -768,7 +768,8 @@ func selectedMetricSpecs(metricSet model.UModelElement, metricName string) ([]ma
 }
 
 func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int) map[string]any {
-	if r, ok := e.registry.Find(storage.Kind, planrender.MethodGetMetrics); ok {
+	family := firstNonEmpty(stringValue(storage.Spec["family"]), defaultFamilyForKind(storage.Kind))
+	if r, ok := e.registry.Find(family, planrender.MethodGetMetrics); ok {
 		if out, err := r.Render(planrender.Request{
 			Method:             planrender.MethodGetMetrics,
 			DataSet:            metricSet,
@@ -788,7 +789,7 @@ func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storag
 			return out
 		}
 	}
-	// No renderer registered for this storage kind: pass the inputs through unrendered.
+	// No renderer for this storage family: pass the inputs through unrendered.
 	return map[string]any{
 		"dialect":      storage.Kind,
 		"metrics":      metricQueryItems(metrics),
@@ -1077,7 +1078,8 @@ func escapePromQLStringContent(value string) string {
 }
 
 func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) map[string]any {
-	if r, ok := e.registry.Find(storage.Kind, planrender.MethodGetLogs); ok {
+	family := firstNonEmpty(stringValue(storage.Spec["family"]), defaultFamilyForKind(storage.Kind))
+	if r, ok := e.registry.Find(family, planrender.MethodGetLogs); ok {
 		if out, err := r.Render(planrender.Request{
 			Method:             planrender.MethodGetLogs,
 			DataSet:            logSet,
@@ -1094,7 +1096,7 @@ func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage mode
 			return out
 		}
 	}
-	// No renderer registered for this storage kind: pass the inputs through unrendered.
+	// No renderer for this storage family: pass the inputs through unrendered.
 	return map[string]any{
 		"dialect":      storage.Kind,
 		"entity_ids":   entityIDs,

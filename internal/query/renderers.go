@@ -9,9 +9,8 @@ type labelTimeseriesRenderer struct{}
 
 func (labelTimeseriesRenderer) Family() string { return "label-timeseries" }
 
-func (labelTimeseriesRenderer) Handles(storageKind string, m planrender.Method) bool {
-	return m == planrender.MethodGetMetrics &&
-		(storageKind == "prometheus" || storageKind == "aliyun_prometheus")
+func (labelTimeseriesRenderer) SupportsMethod(m planrender.Method) bool {
+	return m == planrender.MethodGetMetrics
 }
 
 func (labelTimeseriesRenderer) Render(req planrender.Request) (map[string]any, error) {
@@ -26,13 +25,29 @@ type documentSearchRenderer struct{}
 
 func (documentSearchRenderer) Family() string { return "document-search" }
 
-func (documentSearchRenderer) Handles(storageKind string, m planrender.Method) bool {
-	return m == planrender.MethodGetLogs && storageKind == "elasticsearch"
+func (documentSearchRenderer) SupportsMethod(m planrender.Method) bool {
+	return m == planrender.MethodGetLogs
 }
 
 func (documentSearchRenderer) Render(req planrender.Request) (map[string]any, error) {
 	return elasticsearchLogQuery(req.DataSet, req.Storage, req.DataLinkMapping, req.StorageLinkMapping,
 		req.EntityIDs, req.EntityQuery, req.DataFilter, req.MethodQuery, req.EntityData, req.Limit), nil
+}
+
+// defaultFamilyForKind maps a built-in storage kind to its query family, used
+// when a storage does not declare spec.family. A storage whose kind is not
+// listed here can still select a family by setting spec.family — that is how a
+// new same-family backend (e.g. a Prometheus-compatible store) routes to an
+// existing renderer with no Go code, only configuration.
+func defaultFamilyForKind(kind string) string {
+	switch kind {
+	case "prometheus", "aliyun_prometheus":
+		return "label-timeseries"
+	case "elasticsearch":
+		return "document-search"
+	default:
+		return ""
+	}
 }
 
 // newDefaultRegistry returns a registry pre-loaded with the built-in family
