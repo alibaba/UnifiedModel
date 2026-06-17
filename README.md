@@ -19,9 +19,9 @@ With UModel, you can:
 
 ## Demo
 
-<video src="https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4" controls width="800"></video>
+<video src="https://github.com/user-attachments/assets/3cdc72de-2f78-495c-baf9-7066c1d9792f" controls></video>
 
-An AI agent reads across the object graph in the `quickstart-multidomain` workspace (90 seconds): it discovers services, walks cross-domain topology, and pulls metrics and logs through model-scoped query plans, without hand-writing a single query. If the player does not load, [watch the clip directly](https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4).
+An AI agent reads across the object graph in the `quickstart-multidomain` workspace (90 seconds): it discovers services, walks cross-domain topology, and pulls metrics and logs through model-scoped query plans, without hand-writing a single query.
 
 ## Why UModel
 
