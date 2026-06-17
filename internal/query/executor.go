@@ -9,16 +9,18 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/alibaba/UnifiedModel/internal/query/planrender"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
 
 type Executor struct {
-	graph graphStore
+	graph    graphStore
+	registry *planrender.Registry
 }
 
 func NewExecutor(graph graphStore) *Executor {
-	return &Executor{graph: graph}
+	return &Executor{graph: graph, registry: newDefaultRegistry()}
 }
 
 func (e *Executor) Execute(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
@@ -226,7 +228,7 @@ func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string
 		})
 	}
 
-	queryPlan := logQueryPlan(plan, dataLink, logSet, bindings[0])
+	queryPlan := e.logQueryPlan(plan, dataLink, logSet, bindings[0])
 	if plan.Format == model.FormatAgent {
 		return agentPlanResult(queryPlan), nil
 	}
@@ -259,7 +261,7 @@ func (e *Executor) executeEntitySetGetMetrics(ctx context.Context, workspace str
 		return model.QueryResult{}, err
 	}
 
-	queryPlan := metricQueryPlan(plan, dataLink, metricSet, bindings[0], metrics)
+	queryPlan := e.metricQueryPlan(plan, dataLink, metricSet, bindings[0], metrics)
 	if plan.Format == model.FormatAgent {
 		return agentPlanResult(queryPlan), nil
 	}
@@ -591,7 +593,7 @@ func storageBindingsForDataSet(elements []model.UModelElement, dataSet model.UMo
 	return out
 }
 
-func logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet model.UModelElement, binding storageBinding) map[string]any {
+func (e *Executor) logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet model.UModelElement, binding storageBinding) map[string]any {
 	dataLinkMapping := mapValue(dataLink.Spec["fields_mapping"])
 	storageLinkMapping := mapValue(binding.Link.Spec["fields_mapping"])
 	entityIDs := stringSliceValue(plan.Filters["ids"])
@@ -619,7 +621,7 @@ func logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet mod
 			"storage_link": agentLinkRef(binding.Link, isAgent, plan.IncludeSpec),
 		},
 		"params_echo": echoParams(plan.EntityCall.Parameters),
-		"query":       buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit),
+		"query":       e.buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit),
 	}
 	if plan.TimeRange.From != nil || plan.TimeRange.To != nil {
 		queryPlan["time_range"] = plan.TimeRange
@@ -627,7 +629,7 @@ func logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet mod
 	return queryPlan
 }
 
-func metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricSet model.UModelElement, binding storageBinding, metrics []map[string]any) map[string]any {
+func (e *Executor) metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricSet model.UModelElement, binding storageBinding, metrics []map[string]any) map[string]any {
 	dataLinkMapping := mapValue(dataLink.Spec["fields_mapping"])
 	storageLinkMapping := mapValue(binding.Link.Spec["fields_mapping"])
 	entityIDs := stringSliceValue(plan.Filters["ids"])
@@ -659,7 +661,7 @@ func metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricS
 			"storage_link": agentLinkRef(binding.Link, isAgent, plan.IncludeSpec),
 		},
 		"params_echo": echoParams(plan.EntityCall.Parameters),
-		"query":       buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit),
+		"query":       e.buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit),
 	}
 	if plan.TimeRange.From != nil || plan.TimeRange.To != nil {
 		queryPlan["time_range"] = plan.TimeRange
@@ -765,23 +767,39 @@ func selectedMetricSpecs(metricSet model.UModelElement, metricName string) ([]ma
 	return out, nil
 }
 
-func buildMetricStorageQuery(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int) map[string]any {
-	switch storage.Kind {
-	case "prometheus", "aliyun_prometheus":
-		return prometheusMetricQuery(metricSet, storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, entityData, queryType, step, limit)
-	default:
-		return map[string]any{
-			"dialect":      storage.Kind,
-			"metrics":      metricQueryItems(metrics),
-			"entity_ids":   entityIDs,
-			"entity_data":  entityDataSummary(entityData),
-			"entity_query": entityQuery,
-			"data_filter":  dataFilter,
-			"query":        methodQuery,
-			"query_type":   firstNonEmpty(queryType, defaultMetricQueryMode(metrics), stringValue(storage.Spec["default_query_type"])),
-			"step":         firstNonEmpty(step, stringValue(storage.Spec["default_step"])),
-			"limit":        limit,
+func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int) map[string]any {
+	if r, ok := e.registry.Find(storage.Kind, planrender.MethodGetMetrics); ok {
+		if out, err := r.Render(planrender.Request{
+			Method:             planrender.MethodGetMetrics,
+			DataSet:            metricSet,
+			Storage:            storage,
+			DataLinkMapping:    dataLinkMapping,
+			StorageLinkMapping: storageLinkMapping,
+			Metrics:            metrics,
+			EntityIDs:          entityIDs,
+			EntityQuery:        entityQuery,
+			DataFilter:         dataFilter,
+			MethodQuery:        methodQuery,
+			EntityData:         entityData,
+			QueryType:          queryType,
+			Step:               step,
+			Limit:              limit,
+		}); err == nil {
+			return out
 		}
+	}
+	// No renderer registered for this storage kind: pass the inputs through unrendered.
+	return map[string]any{
+		"dialect":      storage.Kind,
+		"metrics":      metricQueryItems(metrics),
+		"entity_ids":   entityIDs,
+		"entity_data":  entityDataSummary(entityData),
+		"entity_query": entityQuery,
+		"data_filter":  dataFilter,
+		"query":        methodQuery,
+		"query_type":   firstNonEmpty(queryType, defaultMetricQueryMode(metrics), stringValue(storage.Spec["default_query_type"])),
+		"step":         firstNonEmpty(step, stringValue(storage.Spec["default_step"])),
+		"limit":        limit,
 	}
 }
 
@@ -1058,20 +1076,33 @@ func escapePromQLStringContent(value string) string {
 	return replacer.Replace(value)
 }
 
-func buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) map[string]any {
-	switch storage.Kind {
-	case "elasticsearch":
-		return elasticsearchLogQuery(logSet, storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, entityData, limit)
-	default:
-		return map[string]any{
-			"dialect":      storage.Kind,
-			"entity_ids":   entityIDs,
-			"entity_data":  entityDataSummary(entityData),
-			"entity_query": entityQuery,
-			"data_filter":  dataFilter,
-			"query":        methodQuery,
-			"limit":        limit,
+func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) map[string]any {
+	if r, ok := e.registry.Find(storage.Kind, planrender.MethodGetLogs); ok {
+		if out, err := r.Render(planrender.Request{
+			Method:             planrender.MethodGetLogs,
+			DataSet:            logSet,
+			Storage:            storage,
+			DataLinkMapping:    dataLinkMapping,
+			StorageLinkMapping: storageLinkMapping,
+			EntityIDs:          entityIDs,
+			EntityQuery:        entityQuery,
+			DataFilter:         dataFilter,
+			MethodQuery:        methodQuery,
+			EntityData:         entityData,
+			Limit:              limit,
+		}); err == nil {
+			return out
 		}
+	}
+	// No renderer registered for this storage kind: pass the inputs through unrendered.
+	return map[string]any{
+		"dialect":      storage.Kind,
+		"entity_ids":   entityIDs,
+		"entity_data":  entityDataSummary(entityData),
+		"entity_query": entityQuery,
+		"data_filter":  dataFilter,
+		"query":        methodQuery,
+		"limit":        limit,
 	}
 }
 
