@@ -59,5 +59,82 @@ spec:
       generator: "sum(rate(platform_service_error_total{service_id=\"$service_id\"}[1m])) / sum(rate(platform_service_request_total{service_id=\"$service_id\"}[1m]))"
       aggregator: avg
       golden_metric: true
+    - name: latency_p50_ms
+      display_name:
+        en_us: "P50 Latency"
+        zh_cn: "P50 延迟"
+      unit: ms
+      data_format: ms
+      type: gauge
+      query_mode: range
+      generator: "histogram_quantile(0.50, sum(rate(platform_service_request_duration_seconds_bucket{service_id=\"$service_id\"}[1m])) by (le)) * 1000"
+      aggregator: avg
+      golden_metric: false
+    - name: latency_p95_ms
+      display_name:
+        en_us: "P95 Latency"
+        zh_cn: "P95 延迟"
+      unit: ms
+      data_format: ms
+      type: gauge
+      query_mode: range
+      generator: "histogram_quantile(0.95, sum(rate(platform_service_request_duration_seconds_bucket{service_id=\"$service_id\"}[1m])) by (le)) * 1000"
+      aggregator: avg
+      golden_metric: false
+    - name: client_retry_rate
+      display_name:
+        en_us: "Client Retry Rate"
+        zh_cn: "客户端重试率"
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "sum(rate(platform_service_client_retry_total{service_id=\"$service_id\"}[1m])) / sum(rate(platform_service_client_request_total{service_id=\"$service_id\"}[1m]))"
+      aggregator: avg
+      golden_metric: true
+    - name: upstream_timeout_rate
+      display_name:
+        en_us: "Upstream Timeout Rate"
+        zh_cn: "上游超时率"
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "sum(rate(platform_service_upstream_timeout_total{service_id=\"$service_id\"}[1m])) / sum(rate(platform_service_upstream_request_total{service_id=\"$service_id\"}[1m]))"
+      aggregator: avg
+      golden_metric: true
+    - name: inflight_requests
+      display_name:
+        en_us: "In-flight Requests"
+        zh_cn: "在途请求数"
+      unit: count
+      data_format: KMB
+      type: gauge
+      query_mode: range
+      generator: "sum(platform_service_inflight_requests{service_id=\"$service_id\"})"
+      aggregator: avg
+      golden_metric: false
+    - name: cpu_utilization
+      display_name:
+        en_us: "CPU Utilization"
+        zh_cn: "CPU 使用率"
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "avg(platform_service_cpu_utilization_ratio{service_id=\"$service_id\"})"
+      aggregator: avg
+      golden_metric: false
+    - name: memory_utilization
+      display_name:
+        en_us: "Memory Utilization"
+        zh_cn: "内存使用率"
+      unit: percent
+      data_format: percent
+      type: gauge
+      query_mode: range
+      generator: "avg(platform_service_memory_utilization_ratio{service_id=\"$service_id\"})"
+      aggregator: avg
+      golden_metric: false
   query_type: prom
   needs_processing: true

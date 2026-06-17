@@ -56,7 +56,7 @@ make quickstart QUICKSTART_SAMPLE=examples/incident-investigation
 
 API: `http://localhost:8080` | Web UI: `http://localhost:5173`
 
-加载 3 个域（Platform / Runtime / Business）、11 个对象类型、65 个实体、83 条关系、1 个 Runbook。
+加载 3 个域（Platform / Runtime / Business）、11 个对象类型、95 个实体、126 条关系、1 个 Runbook。每个服务都带实时遥测快照（QPS、错误率、P99/P50 延迟、CPU/内存、错误预算）和近期错误日志；支付链路经 `payment-router` 扇出到 支付宝 / 微信支付 / 银联 通道、`risk-control` 与 `ledger-service`——retry-storm 的爆炸半径在对象图里直接可见。
 
 仅启动 API（不含 Web UI）：
 

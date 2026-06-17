@@ -55,11 +55,51 @@ spec:
     - name: business_value
       type: string
       display_name: { en_us: "Business Value", zh_cn: "业务价值" }
+    - name: tier
+      type: string
+      display_name: { en_us: "Tier", zh_cn: "层级" }
+      description:
+        en_us: "Topology tier: edge, core, payment, platform, support."
+        zh_cn: "拓扑层级：edge、core、payment、platform、support。"
+    - name: version
+      type: string
+      display_name: { en_us: "Version", zh_cn: "版本" }
+    - name: replicas
+      type: string
+      display_name: { en_us: "Replicas", zh_cn: "副本(就绪/期望)" }
+      description: { en_us: "Ready/desired replica count.", zh_cn: "就绪/期望副本数。" }
+    - name: qps
+      type: string
+      display_name: { en_us: "QPS", zh_cn: "QPS" }
+    - name: error_rate
+      type: string
+      display_name: { en_us: "Error Rate", zh_cn: "错误率" }
+    - name: latency_p99_ms
+      type: string
+      display_name: { en_us: "P99 Latency (ms)", zh_cn: "P99 延迟(ms)" }
+    - name: latency_p50_ms
+      type: string
+      display_name: { en_us: "P50 Latency (ms)", zh_cn: "P50 延迟(ms)" }
+    - name: cpu_utilization
+      type: string
+      display_name: { en_us: "CPU Utilization", zh_cn: "CPU 使用率" }
+    - name: memory_utilization
+      type: string
+      display_name: { en_us: "Memory Utilization", zh_cn: "内存使用率" }
+    - name: error_budget
+      type: string
+      display_name: { en_us: "Error Budget Remaining", zh_cn: "错误预算剩余" }
+    - name: recent_error_logs
+      type: string
+      display_name: { en_us: "Recent Error Logs", zh_cn: "近期错误日志" }
+      description:
+        en_us: "Representative recent ERROR/WARN log lines observed on the service."
+        zh_cn: "服务上观测到的代表性近期 ERROR/WARN 日志行。"
   primary_key_fields:
     - id
   id_generator: "id"
   name_fields:
     - display_name
-  ordered_fields: ["id", "display_name", "status", "owner", "sla_tier", "language", "environment"]
+  ordered_fields: ["id", "display_name", "status", "tier", "sla_tier", "owner", "version", "qps", "error_rate", "latency_p99_ms", "latency_p50_ms", "cpu_utilization", "memory_utilization", "error_budget", "environment"]
   first_observed_time_field: "__first_observed_time__"
   last_observed_time_field: "__last_observed_time__"

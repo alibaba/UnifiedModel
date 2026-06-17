@@ -56,7 +56,7 @@ make quickstart QUICKSTART_SAMPLE=examples/incident-investigation
 
 API: `http://localhost:8080` | Web UI: `http://localhost:5173`
 
-Loads 3 domains (Platform / Runtime / Business), 11 entity sets, 65 entities, 83 relations, 1 runbook.
+Loads 3 domains (Platform / Runtime / Business), 11 entity sets, 95 entities, 126 relations, 1 runbook. Every service carries a live telemetry snapshot (QPS, error rate, P99/P50 latency, CPU/memory, error budget) plus recent error logs, and the payment path fans out through `payment-router` to the Alipay / WeChat Pay / UnionPay channels, `risk-control`, and `ledger-service` — so the retry-storm blast radius is visible in the graph.
 
 Alternative (API only, no Web UI):
 

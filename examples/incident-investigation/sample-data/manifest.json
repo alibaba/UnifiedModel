@@ -36,8 +36,8 @@
     "storages": 2,
     "data_links": 2,
     "storage_links": 2,
-    "entities": 65,
-    "relations": 83
+    "entities": 95,
+    "relations": 126
   },
   "included_kinds": [
     "entity_set",
