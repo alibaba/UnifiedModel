@@ -23,6 +23,10 @@ import type {
   WriteResult,
 } from './types'
 
+// REQUEST_TIMEOUT_MS bounds every API call so a hung request cannot leave the UI
+// stuck in a loading state forever.
+const REQUEST_TIMEOUT_MS = 60_000
+
 export class ApiError extends Error {
   readonly code: string
   readonly status: number
@@ -182,11 +186,26 @@ export class UModelApi {
   }
 
   private async request<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: init.method || 'GET',
-      headers: init.body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
-    })
+    let response: Response
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        method: init.method || 'GET',
+        headers: init.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+        body: init.body === undefined ? undefined : JSON.stringify(init.body),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'TimeoutError') {
+        throw new ApiError(0, {
+          error: {
+            code: 'TIMEOUT',
+            message: `request timed out after ${REQUEST_TIMEOUT_MS / 1000}s`,
+            retryable: true,
+          },
+        })
+      }
+      throw error
+    }
     const contentType = response.headers.get('content-type') || ''
     const payload = contentType.includes('application/json') ? await response.json() : undefined
     if (!response.ok) {
