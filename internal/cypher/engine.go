@@ -531,28 +531,52 @@ func readRelTypes(text string) ([]string, string) {
 	}
 }
 
+// maxCypherPathDepth bounds variable-length relationship patterns (`*min..max`)
+// so a single query cannot drive unbounded path expansion / recursion. An
+// open-ended range (`*1..`) is clamped to this ceiling; an explicit bound that
+// exceeds it (or overflows int) is rejected.
+const maxCypherPathDepth = 16
+
 func readDepth(text string) (int, int, string, error) {
 	text = strings.TrimSpace(text)
-	readNumber := func(s string) (int, string) {
+	// readNumber returns the leading run of digits, whether any were present,
+	// and whether they overflowed int (strconv.Atoi clamps to MaxInt on a range
+	// error, so the discarded error previously hid an unbounded upper bound).
+	readNumber := func(s string) (n int, rest string, present, overflow bool) {
 		i := 0
 		for i < len(s) && s[i] >= '0' && s[i] <= '9' {
 			i++
 		}
 		if i == 0 {
-			return 0, s
+			return 0, s, false, false
 		}
-		n, _ := strconv.Atoi(s[:i])
-		return n, s[i:]
+		v, err := strconv.Atoi(s[:i])
+		if err != nil {
+			return 0, s[i:], true, true
+		}
+		return v, s[i:], true, false
 	}
-	min, rest := readNumber(text)
+	depthExceeded := func() error {
+		return apperrors.WithDetails(apperrors.CodeQueryParseError,
+			"cypher relationship depth exceeds the maximum",
+			map[string]string{"max_depth": strconv.Itoa(maxCypherPathDepth)})
+	}
+
+	min, rest, _, minOverflow := readNumber(text)
+	if minOverflow {
+		return 0, 0, "", depthExceeded()
+	}
 	max := min
 	if strings.HasPrefix(rest, "..") {
 		rest = rest[2:]
-		if parsed, next := readNumber(rest); parsed > 0 {
+		if parsed, next, present, overflow := readNumber(rest); overflow {
+			return 0, 0, "", depthExceeded()
+		} else if present && parsed > 0 {
 			max = parsed
 			rest = next
 		} else {
-			max = 10
+			// Open-ended range (`*1..`): bound to the maximum.
+			max = maxCypherPathDepth
 		}
 	}
 	if min == 0 {
@@ -563,6 +587,9 @@ func readDepth(text string) (int, int, string, error) {
 	}
 	if max < min {
 		return 0, 0, "", apperrors.New(apperrors.CodeQueryParseError, "cypher relationship depth is invalid")
+	}
+	if min > maxCypherPathDepth || max > maxCypherPathDepth {
+		return 0, 0, "", depthExceeded()
 	}
 	return min, max, rest, nil
 }
