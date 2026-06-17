@@ -62,6 +62,48 @@ test.describe('Query capability via UI', () => {
     expect(hasContent || (await page.locator('text=entity_set').count()) > 0).toBeTruthy()
   })
 
+  test('submit preview surfaces delete write failures', async ({ page }) => {
+    await page.route('**/api/v1/umodel/demo/elements', async (route) => {
+      if (route.request().method() !== 'DELETE') {
+        await route.continue()
+        return
+      }
+
+      const body = route.request().postDataJSON() as { ids?: string[] }
+      const id = body.ids?.[0] || 'unknown'
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          accepted: 0,
+          failed: 1,
+          items: [{
+            id,
+            ok: false,
+            code: 'NOT_IMPLEMENTED',
+            message: 'delete dependency checks are not implemented in the current service',
+          }],
+        }),
+      })
+    })
+
+    await page.getByRole('button', { name: 'Table' }).click()
+    await expect(page.locator('.ume-data-table tbody tr').first()).toBeVisible({ timeout: 10_000 })
+
+    const linkRow = page.locator('.ume-data-table tbody tr', { hasText: 'EntitySetLink' }).first()
+    await expect(linkRow).toBeVisible()
+    await linkRow.locator('.ume-table-delete-button').click()
+    await expect(page.getByRole('button', { name: /^Submit/ })).toBeEnabled()
+
+    await page.getByRole('button', { name: /^Submit/ }).click()
+    await expect(page.locator('text=Submit Preview')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Confirm & Submit' }).click()
+    await expect(page.locator('.ume-submit-failure')).toContainText('Delete accepted 0 item(s), failed 1 item(s).')
+    await expect(page.locator('.ume-submit-failure')).toContainText('NOT_IMPLEMENTED')
+    await expect(page.locator('.ume-submit-failure')).toContainText('delete dependency checks are not implemented')
+  })
+
   test('api debugger shows agent discovery tools', async ({ page }) => {
     await page.getByRole('button', { name: 'API Debugger' }).click()
     await expect(page).toHaveURL(/\/workspaces\/demo\/api-debug$/)

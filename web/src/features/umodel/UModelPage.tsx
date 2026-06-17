@@ -28,7 +28,7 @@ import {
   type NodeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import type { QueryResult, UModelElement } from '../../api/types'
+import type { BatchItemResult, QueryResult, UModelElement, WriteResult } from '../../api/types'
 import { UModelApi } from '../../api/client'
 import { Button, EmptyState, IconButton, SegmentedControl } from '../../design/components'
 import { useI18n, type TFunction } from '../../i18n'
@@ -80,6 +80,11 @@ import './umodel.css'
 
 type SidebarTab = 'summary' | 'settings'
 
+interface SubmitFailure {
+  summary: string
+  details: string[]
+}
+
 export function UModelPage({
   api,
   workspaceId,
@@ -97,6 +102,7 @@ export function UModelPage({
   const [layouting, setLayouting] = useState(false)
   const [error, setError] = useState('')
   const [, setMessage] = useState('')
+  const [submitFailure, setSubmitFailure] = useState<SubmitFailure | null>(null)
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null)
   const [mode, setMode] = useState<ViewMode>('graph')
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('summary')
@@ -425,6 +431,7 @@ export function UModelPage({
   async function commitDraft() {
     if (!hasChanges) return
     setCommitting(true)
+    setSubmitFailure(null)
     setError('')
     setMessage('')
     try {
@@ -432,27 +439,39 @@ export function UModelPage({
       if (upserts.length > 0) {
         const validation = await api.validateUModel(workspaceId, upserts)
         if (!validation.valid) {
-          setError(formatValidationErrors(validation.errors, t))
+          const failure = buildSubmitFailure(
+            t('umodelExplorer.submitFailure.validation'),
+            formatValidationErrorLines(validation.errors, t),
+          )
+          setSubmitFailure(failure)
+          setError(failure.summary)
           return
         }
         const result = await api.putUModel(workspaceId, upserts)
-        if (result.failed > 0) {
-          setError(stringify(result))
+        const failure = formatWriteFailure(result, t('umodelExplorer.submitFailure.operation.upsert'), t)
+        if (failure) {
+          setSubmitFailure(failure)
+          setError(failure.summary)
           return
         }
       }
       if (diff.deleted.length > 0) {
         const result = await api.deleteUModel(workspaceId, diff.deleted.map(elementKey))
-        if (result.failed > 0) {
-          setError(stringify(result))
+        const failure = formatWriteFailure(result, t('umodelExplorer.submitFailure.operation.delete'), t)
+        if (failure) {
+          setSubmitFailure(failure)
+          setError(failure.summary)
           return
         }
       }
       setDiffOpen(false)
+      setSubmitFailure(null)
       await load()
       setMessage(t('umodelExplorer.message.submitted', { upserts: upserts.length, deletes: diff.deleted.length }))
     } catch (nextError) {
-      setError(formatError(nextError))
+      const failure = buildSubmitFailure(t('umodelExplorer.submitFailure.unexpected'), [formatError(nextError)])
+      setSubmitFailure(failure)
+      setError(failure.summary)
     } finally {
       setCommitting(false)
     }
@@ -631,7 +650,10 @@ export function UModelPage({
             <button
               className="ume-submit-button"
               disabled={!hasChanges}
-              onClick={() => setDiffOpen(true)}
+              onClick={() => {
+                setSubmitFailure(null)
+                setDiffOpen(true)
+              }}
               type="button"
               title={t('umodelExplorer.action.reviewDiffSubmit')}
             >
@@ -759,7 +781,11 @@ export function UModelPage({
           diff={diff}
           serverElements={serverElements}
           committing={committing}
-          onClose={() => setDiffOpen(false)}
+          submitFailure={submitFailure}
+          onClose={() => {
+            setDiffOpen(false)
+            setSubmitFailure(null)
+          }}
           onFocusElement={focusSingleElement}
           onSubmit={() => void commitDraft()}
         />
@@ -1543,6 +1569,7 @@ function DiffDialog({
   diff,
   serverElements,
   committing,
+  submitFailure,
   onClose,
   onFocusElement,
   onSubmit,
@@ -1550,6 +1577,7 @@ function DiffDialog({
   diff: DraftDiff
   serverElements: UModelElement[]
   committing: boolean
+  submitFailure: SubmitFailure | null
   onClose: () => void
   onFocusElement: (element: UModelElement) => void
   onSubmit: () => void
@@ -1578,7 +1606,7 @@ function DiffDialog({
             <strong>{t('umodelExplorer.dialog.diff.title')}</strong>
             <span>{t('umodelExplorer.dialog.diff.description')}</span>
           </div>
-          <button className="ume-icon-button subtle" onClick={onClose} type="button">
+          <button className="ume-icon-button subtle" disabled={committing} onClick={onClose} type="button">
             <X size={15} />
           </button>
         </header>
@@ -1587,6 +1615,18 @@ function DiffDialog({
           <span>{t('umodelExplorer.dialog.diff.modified')} <strong>{diff.modified.length}</strong></span>
           <span>{t('umodelExplorer.dialog.diff.deleted')} <strong>{diff.deleted.length}</strong></span>
         </div>
+        {submitFailure && (
+          <div className="ume-submit-failure" role="alert">
+            <strong>{submitFailure.summary}</strong>
+            {submitFailure.details.length > 0 && (
+              <ul>
+                {submitFailure.details.map((detail, index) => (
+                  <li key={`${index}-${detail}`}>{detail}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         <div className="ume-dialog-body">
           <div className="ume-diff-list">
             {changes.map(({ type, element }, index) => (
@@ -1657,10 +1697,10 @@ function DiffDialog({
           </div>
         </div>
         <footer>
-          <button className="ume-secondary-inline" onClick={onClose} type="button">{t('common.cancel')}</button>
+          <button className="ume-secondary-inline" disabled={committing} onClick={onClose} type="button">{t('common.cancel')}</button>
           <button className="ume-primary-button" disabled={committing || changes.length === 0} onClick={onSubmit} type="button">
             <Save size={14} />
-            {t('umodelExplorer.action.confirmSubmit')}
+            {committing ? t('umodelExplorer.action.submitting') : t('umodelExplorer.action.confirmSubmit')}
           </button>
         </footer>
       </section>
@@ -1723,10 +1763,46 @@ function normalizeUModelElement(value: unknown, t?: TFunction): UModelElement {
   return element
 }
 
-function formatValidationErrors(errors: Array<{ field?: string; reason?: string }> | undefined, t: TFunction) {
+function formatValidationErrorLines(errors: Array<{ field?: string; reason?: string }> | undefined, t: TFunction) {
   return (errors || [])
     .map((item) => `${item.field || t('umodelExplorer.validation.elementLabel')}: ${item.reason || t('umodelExplorer.validation.failed')}`)
-    .join('\n') || t('umodelExplorer.validation.failed')
+}
+
+function formatValidationErrors(errors: Array<{ field?: string; reason?: string }> | undefined, t: TFunction) {
+  return formatValidationErrorLines(errors, t).join('\n') || t('umodelExplorer.validation.failed')
+}
+
+function buildSubmitFailure(summary: string, details: string[]): SubmitFailure {
+  return { summary, details: details.filter(Boolean) }
+}
+
+function formatWriteFailure(result: WriteResult, operation: string, t: TFunction): SubmitFailure | null {
+  if (result.failed <= 0) return null
+  const failedItems = (result.items || []).filter((item) => !item.ok)
+  const visibleItems = failedItems.slice(0, 8)
+  const details = visibleItems.map((item) => formatBatchFailure(item, t))
+  const hiddenCount = failedItems.length - visibleItems.length
+  if (hiddenCount > 0) {
+    details.push(t('umodelExplorer.submitFailure.moreItems', { count: hiddenCount }))
+  }
+  if (details.length === 0) {
+    details.push(t('umodelExplorer.submitFailure.noItemDetails'))
+  }
+  return {
+    summary: t('umodelExplorer.submitFailure.writeResult', {
+      operation,
+      accepted: result.accepted,
+      failed: result.failed,
+    }),
+    details,
+  }
+}
+
+function formatBatchFailure(item: BatchItemResult, t: TFunction) {
+  const id = item.id || t('umodelExplorer.submitFailure.unknownItem')
+  const code = item.code ? ` [${item.code}]` : ''
+  const message = item.message || t('umodelExplorer.submitFailure.noMessage')
+  return `${id}${code}: ${message}`
 }
 
 type DraftChangeType = 'added' | 'modified' | 'deleted'
