@@ -43,6 +43,7 @@ public class UModel {
         TYPE_REGISTRY.put("sls_metricstore:v1.0.0", SlsMetricstoreV100::new);
         TYPE_REGISTRY.put("storage_link:v1.0.0", StorageLinkV100::new);
         TYPE_REGISTRY.put("trace_set:v1.0.0", TraceSetV100::new);
+        TYPE_REGISTRY.put("victoriametrics:v1.0.0", VictoriametricsV100::new);
     }
 
     /**

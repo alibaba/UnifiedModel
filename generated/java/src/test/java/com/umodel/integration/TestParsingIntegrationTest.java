@@ -704,6 +704,36 @@ public class TestParsingIntegrationTest {
     }
 
     @Test
+    public void testVictoriametricsJsonParsing() {
+        String json = "{\"kind\":\"victoriametrics\",\"schema\":{\"url\":\"umodel.aliyun.com\",\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_victoriametrics\",\"display_name\":{\"zh_cn\":\"测试victoriametrics\",\"en_us\":\"Test victoriametrics\"},\"domain\":\"test.domain\",\"launch_stage\":\"ga\",\"tags\":{\"category\":\"test\"}},\"spec\":{\"_data\":\"placeholder\"}}";
+
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertTrue(obj instanceof VictoriametricsV100);
+        assertEquals("victoriametrics", obj.getKind());
+
+        VictoriametricsV100 typed = (VictoriametricsV100) obj;
+        SchemaV1 schema = typed.getSchema();
+        assertNotNull(schema);
+        assertEquals("umodel.aliyun.com", schema.getUrl());
+        assertEquals("v1.0.0", schema.getVersion());
+
+        MetadataV1 metadata = typed.getMetadata();
+        assertNotNull(metadata);
+        assertEquals("test_victoriametrics", metadata.getName());
+        assertEquals("test.domain", metadata.getDomain());
+        assertEquals("ga", metadata.getLaunchStage());
+
+        SemanticStringV1 displayName = metadata.getDisplayName();
+        assertNotNull(displayName);
+        assertEquals("Test victoriametrics", displayName.getEnUs());
+
+        Map<String, String> tags = metadata.getTags();
+        assertNotNull(tags);
+        assertEquals("test", tags.get("category"));
+    }
+
+    @Test
     public void testUModelInterfaceFunctions() {
         String metricJson = "{\"kind\":\"aliyun_prometheus\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test\"}}";
         UModelCoreObject metricObj = UModel.parseUModelJson(metricJson);

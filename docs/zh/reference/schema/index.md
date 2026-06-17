@@ -49,6 +49,7 @@ L1–L3 的贡献方式见贡献指南。
 - [sls_entitystore](./core/storage/sls-entitystore)
 - [sls_logstore](./core/storage/sls-logstore)
 - [sls_metricstore](./core/storage/sls-metricstore)
+- [victoriametrics](./core/storage/victoriametrics)
 
 ### 构建块
 

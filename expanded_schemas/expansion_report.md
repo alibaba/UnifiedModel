@@ -1,8 +1,8 @@
 # UModel Schema 展开报告
 
 ## 📊 统计信息
-- 共处理schema文件: 23
-- 共加载类型定义: 41
+- 共处理schema文件: 24
+- 共加载类型定义: 42
 
 ## 📋 处理的Schema列表
 - **entity_set**: 1 个版本
@@ -21,6 +21,7 @@
 - **sls_logstore**: 1 个版本
 - **external_storage**: 1 个版本
 - **prometheus**: 1 个版本
+- **victoriametrics**: 1 个版本
 - **sls_metricstore**: 1 个版本
 - **explorer_link**: 1 个版本
 - **runbook_link**: 1 个版本
@@ -71,3 +72,4 @@
 - **toolkit**: toolkit:v1
 - **trace_set**: trace_set:v1.0.0
 - **value_mapping**: value_mapping:v1
+- **victoriametrics**: victoriametrics:v1.0.0

@@ -582,4 +582,28 @@ public class SchemaTest {
 
         assertNull(obj.validate());
     }
+
+    @Test
+    public void testVictoriametricsV100() {
+        VictoriametricsV100 obj = new VictoriametricsV100();
+
+        assertEquals("victoriametrics", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+        assertTrue(obj instanceof UModelCoreObject);
+        assertFalse(obj instanceof UModelLinkObject);
+
+        MetadataV1 metadata = new MetadataV1();
+        metadata.setName("test_victoriametrics");
+        obj.setMetadata(metadata);
+        assertEquals(metadata, obj.getMetadata());
+        assertEquals("test_victoriametrics", obj.getMetadata().getName());
+
+        SchemaV1 schema = new SchemaV1();
+        schema.setVersion("v1.0.0");
+        obj.setSchema(schema);
+        assertEquals(schema, obj.getSchema());
+        assertEquals("v1.0.0", obj.getSchema().getVersion());
+
+        assertNull(obj.validate());
+    }
 }

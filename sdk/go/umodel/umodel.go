@@ -49,6 +49,7 @@ var TypeRegistry = map[string]func() interface{}{
 	"sls_metricstore:v1.0.0":    func() interface{} { return &SlsMetricstoreV100{} },
 	"storage_link:v1.0.0":       func() interface{} { return &StorageLinkV100{} },
 	"trace_set:v1.0.0":          func() interface{} { return &TraceSetV100{} },
+	"victoriametrics:v1.0.0":    func() interface{} { return &VictoriametricsV100{} },
 }
 
 // ParseType 根据类型名称解析对象

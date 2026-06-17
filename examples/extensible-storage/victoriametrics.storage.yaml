@@ -1,0 +1,26 @@
+kind: victoriametrics
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.victoriametrics.core"
+  domain: devops
+  display_name:
+    en_us: "DevOps VictoriaMetrics"
+    zh_cn: "DevOps VictoriaMetrics"
+  description:
+    en_us: "PromQL-compatible VictoriaMetrics endpoint. UModel ships no VictoriaMetrics code; declaring spec.family routes it through the label-timeseries query family."
+    zh_cn: "PromQL 兼容的 VictoriaMetrics 端点。UModel 不包含任何 VictoriaMetrics 代码；声明 spec.family 即可经由 label-timeseries 查询家族渲染。"
+spec:
+  family: label-timeseries
+  endpoint: "http://localhost:8428"
+  api_prefix: "/api/v1"
+  default_query_type: range
+  default_step: 1m
+  lookback_delta: 5m
+  external_labels:
+    workspace: quickstart
+    domain: devops
+  tags:
+    sample: extensible-storage
+    role: metrics

@@ -49,6 +49,7 @@ See the contribution guide for how to propose L1–L3 content.
 - [sls_entitystore](./core/storage/sls-entitystore)
 - [sls_logstore](./core/storage/sls-logstore)
 - [sls_metricstore](./core/storage/sls-metricstore)
+- [victoriametrics](./core/storage/victoriametrics)
 
 ### Building blocks
 

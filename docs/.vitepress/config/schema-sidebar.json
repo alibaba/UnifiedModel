@@ -113,6 +113,10 @@
         {
           "text": "sls_metricstore",
           "link": "/en/reference/schema/core/storage/sls-metricstore"
+        },
+        {
+          "text": "victoriametrics",
+          "link": "/en/reference/schema/core/storage/victoriametrics"
         }
       ]
     },
@@ -235,6 +239,10 @@
         {
           "text": "sls_metricstore",
           "link": "/zh/reference/schema/core/storage/sls-metricstore"
+        },
+        {
+          "text": "victoriametrics",
+          "link": "/zh/reference/schema/core/storage/victoriametrics"
         }
       ]
     },

@@ -186,6 +186,13 @@ def _register_types():
     except (ImportError, AttributeError) as e:
         pass  # 模块 trace_set 导入失败: {e}
 
+    # 注册 victoriametrics 相关类型
+    try:
+        from . import victoriametrics
+        TYPE_REGISTRY["victoriametrics:v1.0.0"] = getattr(victoriametrics, "VictoriametricsV100", None)
+    except (ImportError, AttributeError) as e:
+        pass  # 模块 victoriametrics 导入失败: {e}
+
 
 # 延迟注册所有类型，避免循环导入
 def register_all_types():

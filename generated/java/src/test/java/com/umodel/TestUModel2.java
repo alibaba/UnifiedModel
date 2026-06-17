@@ -229,6 +229,15 @@ public class TestUModel2 {
     }
 
     @Test
+    public void testParseUModelJsonVictoriametrics() {
+        String json = "{\"kind\":\"victoriametrics\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_victoriametrics\"}}";
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertEquals("victoriametrics", obj.getKind());
+        assertTrue(obj instanceof VictoriametricsV100);
+    }
+
+    @Test
     public void testParseUModelJsonWithCompatibleVersion() {
         String json = "{\"kind\":\"aliyun_prometheus\",\"schema\":{\"version\":\"v0.1.0\"},\"metadata\":{\"name\":\"test\"}}";
         UModelCoreObject obj = UModel.parseUModelJson(json);
@@ -285,6 +294,7 @@ public class TestUModel2 {
         assertTrue(UModel.isCoreObject(new SlsMetricstoreV100()));
         assertTrue(UModel.isCoreObject(new StorageLinkV100()));
         assertTrue(UModel.isCoreObject(new TraceSetV100()));
+        assertTrue(UModel.isCoreObject(new VictoriametricsV100()));
         assertFalse(UModel.isCoreObject("test"));
         assertFalse(UModel.isCoreObject(null));
     }
@@ -314,6 +324,7 @@ public class TestUModel2 {
         assertFalse(UModel.isLinkObject(new SlsMetricstoreV100()));
         assertTrue(UModel.isLinkObject(new StorageLinkV100()));
         assertFalse(UModel.isLinkObject(new TraceSetV100()));
+        assertFalse(UModel.isLinkObject(new VictoriametricsV100()));
         assertFalse(UModel.isLinkObject("test"));
         assertFalse(UModel.isLinkObject(null));
     }
