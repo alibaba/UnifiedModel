@@ -8,6 +8,12 @@ English: [README.md](README.md)
 
 Docker 或 Podman,带 Compose。Elasticsearch 需要给引擎约 2 GB 内存。
 
+demo 占用宿主端口 `8080`(UModel)、`9090`(Prometheus)、`9200`(Elasticsearch)。`start.sh` 会先做端口预检:任一被占用就直接报错退出——避免它在"localhost:端口其实是别的服务"时误报 ready。要与已存在的 umodel-server / Prometheus / Elasticsearch 共存,改用空闲端口:
+
+```bash
+UMODEL_PORT=18080 PROM_PORT=19090 ES_PORT=19200 sh examples/incident-investigation/deploy/start.sh
+```
+
 ## 启动
 
 ```bash

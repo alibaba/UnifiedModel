@@ -12,6 +12,15 @@ and run a live root-cause analysis, or run [`verify.sh`](verify.sh).
 
 Docker or Podman with Compose. Elasticsearch needs ~2 GB available to the engine.
 
+The demo publishes host ports `8080` (UModel), `9090` (Prometheus), and `9200` (Elasticsearch).
+`start.sh` refuses to start if any of them is already in use — so it never reports "ready" while
+actually talking to an unrelated service on the same port. To run alongside an existing
+umodel-server / Prometheus / Elasticsearch, pick free ports:
+
+```bash
+UMODEL_PORT=18080 PROM_PORT=19090 ES_PORT=19200 sh examples/incident-investigation/deploy/start.sh
+```
+
 ## Start
 
 ```bash

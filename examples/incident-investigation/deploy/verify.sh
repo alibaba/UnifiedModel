@@ -7,9 +7,11 @@
 # a Go toolchain (falls back to `go run ./cmd/umctl`).
 set -eu
 
-UM="${UM_URL:-http://localhost:8080}"
-PROM="${PROM_URL:-http://localhost:9090}"
-ES="${ES_URL:-http://localhost:9200}"
+# Honour the same host-port overrides as start.sh (UMODEL_PORT / PROM_PORT / ES_PORT),
+# or a full URL override (UM_URL / PROM_URL / ES_URL).
+UM="${UM_URL:-http://localhost:${UMODEL_PORT:-8080}}"
+PROM="${PROM_URL:-http://localhost:${PROM_PORT:-9090}}"
+ES="${ES_URL:-http://localhost:${ES_PORT:-9200}}"
 PG="63718b78868895d2590551b27ec6f51c"   # payment-gateway
 CK="149632df43354373835df2717cb8fb19"   # checkout-service
 NOW=$(date +%s)

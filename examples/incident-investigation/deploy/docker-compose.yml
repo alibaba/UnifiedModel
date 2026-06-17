@@ -20,7 +20,7 @@ services:
       context: ../../..
       dockerfile: examples/incident-investigation/deploy/umodel.Dockerfile
     ports:
-      - "8080:8080"   # UModel API (umctl --addr / MCP target)
+      - "${UMODEL_PORT:-8080}:8080"   # UModel API (umctl --addr / MCP target); override host port with UMODEL_PORT
 
   exporter:
     image: python:3.12-slim
@@ -50,7 +50,7 @@ services:
       - backfill:/backfill:ro
       - promdata:/prometheus
     ports:
-      - "9090:9090"   # the agent runs the plan's PromQL against http://localhost:9090
+      - "${PROM_PORT:-9090}:9090"   # the agent runs the plan's PromQL here; override host port with PROM_PORT
     # NOTE: no depends_on metrics-gen — podman-compose can leave a service "created" (never
     # started) when it depends on a one-shot that has already exited; the in-container wait
     # below handles ordering instead.
@@ -82,7 +82,7 @@ services:
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "9200:9200"   # the agent runs the plan's _search against http://localhost:9200
+      - "${ES_PORT:-9200}:9200"   # the agent runs the plan's _search here; override host port with ES_PORT
 
   # One-shot: generate ~72h of logs (healthy INFO -> retry WARN -> ERROR flood) and bulk-load.
   es-seed:
