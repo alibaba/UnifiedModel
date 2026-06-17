@@ -24,7 +24,7 @@
     "root_cause_config": "cfg-checkout-retry",
     "root_cause_service": "svc-checkout",
     "red_herring_deploy": "deploy-pay-gw-v321",
-    "amplifier_promotion": "promo-618-flash"
+    "amplifier_promotion": "promo-flash-sale"
   },
   "counts": {
     "entity_sets": 11,

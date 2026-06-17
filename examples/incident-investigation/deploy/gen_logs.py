@@ -7,7 +7,7 @@ always shows "the last three days". Standard library only.
 The log volume and severity follow the modeled timeline (README "Timeline"):
 
     P0  healthy        [now-72h, now-24h)   sparse INFO across the platform
-    T-48h                                   618 promotion scheduled (business event)
+    T-48h                                   flash-sale promotion scheduled (business event)
     T-24h                                   checkout config change: max_retries 2 -> 5
     P1  retries-up     [now-24h, now-4h)    rising WARN: client retries, slow upstreams
     T-12h                                   payment-gw v3.2.1 rollout (logging change)
@@ -115,7 +115,7 @@ def main():
 
     # --- T-48h: promotion scheduled (the business trigger) ---
     docs.append(doc(now - 48 * HOUR, "order-service", "INFO",
-                    "campaign '618 Flash Sale' scheduled: multiplier=3.5, planned_qps=12000, status=scheduled"))
+                    "campaign 'Flash Sale' scheduled: multiplier=3.5, planned_qps=12000, status=scheduled"))
 
     # --- T-24h: checkout config change (the latent root cause) ---
     docs.append(doc(now - 24 * HOUR, "checkout-service", "AUDIT",

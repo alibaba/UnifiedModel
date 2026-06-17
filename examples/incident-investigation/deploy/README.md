@@ -4,7 +4,7 @@
 
 Brings up UModel (serving the `incident-investigation` pack) with a seeded Prometheus and
 Elasticsearch whose data matches the modeled incident — a payment-gateway SLO breach driven by a
-checkout retry storm during the 618 flash sale. Connect an agent with the
+checkout retry storm during the flash sale. Connect an agent with the
 [`umodel-query`](../../../skills/umodel-query) + [`umodel-rca`](../../../skills/umodel-rca) skills
 and run a live root-cause analysis, or run [`verify.sh`](verify.sh).
 
@@ -39,7 +39,7 @@ pack's [timeline](../README.md):
 |---|---|---|
 | healthy | T-72h … T-24h | everything nominal |
 | retries-up | T-24h … T-4h | the `max_retries` 2→5 config change steps `checkout-service` client-retry rate 8% → 55%; the T-12h `payment-gw v3.2.1` deploy leaves **no** metric trace |
-| breach | T-4h … now | 618 goes active (3.5×) → retry storm: `payment-gateway` p99 ≈ 2000ms, ~14.8% errors, high upstream-timeout rate; `payment-router` and the Alipay / WeChat Pay / UnionPay channels slow and erroring |
+| breach | T-4h … now | the flash sale goes active (3.5×) → retry storm: `payment-gateway` p99 ≈ 2000ms, ~14.8% errors, high upstream-timeout rate; `payment-router` and the Alipay / WeChat Pay / UnionPay channels slow and erroring |
 
 So an instant query sees the current breach and a range query sees the arc — retry rate inflecting
 at the config change, latency and errors at the promotion, and the deployment ruled out by its flat
@@ -55,7 +55,7 @@ The pack's storage endpoints point at `http://localhost:9090` / `http://localhos
 
 The agent characterizes the symptom from real telemetry (`get_metrics latency_p99_ms` /
 `error_rate`, `get_logs level="ERROR"`), traverses the topology to the upstream `checkout-service`,
-its `checkout-retry-policy-v2` config change and the active 618 promotion, rules out the
+its `checkout-retry-policy-v2` config change and the active flash-sale promotion, rules out the
 `payment-gw v3.2.1` deployment (a logging change), and concludes the retry-amplification storm.
 
 Without an agent:

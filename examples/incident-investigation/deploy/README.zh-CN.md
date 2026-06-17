@@ -2,7 +2,7 @@
 
 English: [README.md](README.md)
 
-拉起 UModel(载入 `incident-investigation` pack)加一个已灌数的 Prometheus 和 Elasticsearch,数据与建模的故障一致——618 大促期间 checkout 重试风暴导致 payment-gateway SLO 击穿。用带 [`umodel-query`](../../../skills/umodel-query) + [`umodel-rca`](../../../skills/umodel-rca) skill 的 Agent 接入做一次现场根因分析,或直接跑 [`verify.sh`](verify.sh)。
+拉起 UModel(载入 `incident-investigation` pack)加一个已灌数的 Prometheus 和 Elasticsearch,数据与建模的故障一致——大促期间 checkout 重试风暴导致 payment-gateway SLO 击穿。用带 [`umodel-query`](../../../skills/umodel-query) + [`umodel-rca`](../../../skills/umodel-rca) skill 的 Agent 接入做一次现场根因分析,或直接跑 [`verify.sh`](verify.sh)。
 
 ## 前置要求
 
@@ -33,7 +33,7 @@ sh examples/incident-investigation/deploy/start.sh
 |---|---|---|
 | healthy | T-72h … T-24h | 全平台正常 |
 | retries-up | T-24h … T-4h | `max_retries` 2→5 配置变更使 `checkout-service` 客户端重试率 8% → 55%;T-12h 的 `payment-gw v3.2.1` 部署**无任何指标痕迹** |
-| breach | T-4h … now | 618 激活(3.5×)→ 重试风暴:`payment-gateway` p99≈2000ms、错误率约 14.8%、上游超时率高;`payment-router` 与 支付宝/微信/银联 通道又慢又报错 |
+| breach | T-4h … now | 促销激活(3.5×)→ 重试风暴:`payment-gateway` p99≈2000ms、错误率约 14.8%、上游超时率高;`payment-router` 与 支付宝/微信/银联 通道又慢又报错 |
 
 所以 instant 查询看到当前击穿、range 查询看到整条弧线——重试率在配置变更时刻拐头、延迟与错误在大促时刻拐头、而部署因曲线平直被排除。`verify.sh` 两者都会打印。
 
@@ -43,7 +43,7 @@ pack 的 storage endpoint 已指向 `http://localhost:9090` / `http://localhost:
 
 > payment-gateway 劣化了,找根因。
 
-Agent 会用真实遥测刻画症状(`get_metrics latency_p99_ms` / `error_rate`、`get_logs level="ERROR"`),沿拓扑回溯到上游 `checkout-service`、它的 `checkout-retry-policy-v2` 配置变更和正在进行的 618 促销,排除 `payment-gw v3.2.1` 部署(只是日志变更),最终定位到重试放大风暴。
+Agent 会用真实遥测刻画症状(`get_metrics latency_p99_ms` / `error_rate`、`get_logs level="ERROR"`),沿拓扑回溯到上游 `checkout-service`、它的 `checkout-retry-policy-v2` 配置变更和正在进行的 促销,排除 `payment-gw v3.2.1` 部署(只是日志变更),最终定位到重试放大风暴。
 
 不接 Agent:
 

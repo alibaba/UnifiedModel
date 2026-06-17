@@ -1199,7 +1199,7 @@
     "owner": "growth-engineering",
     "target_services": "svc-checkout,svc-pay-gw,svc-order",
     "id": "2075b0b4bd066a9ce610624bd5c3389e",
-    "display_name": "618 Flash Sale - Electronics"
+    "display_name": "Flash Sale - Electronics"
   },
   {
     "__domain__": "business",

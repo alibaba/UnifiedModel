@@ -11,7 +11,7 @@ The history follows the modeled timeline (README "Timeline"), anchored to wall-c
     P1  retries-up        [now-24h, now-4h)    T-24h config change -> checkout
                                                client_retry_rate steps 8% -> 55%;
                                                T-12h deploy lands with NO metric effect
-    P2  promo breach      [now-4h,  now]        618 goes active (3.5x) -> retry storm:
+    P2  promo breach      [now-4h,  now]        the flash sale goes active (3.5x) -> retry storm:
                                                latency / errors / upstream timeouts spike
 
 So a range query shows retry_rate inflecting at the config change, everything else

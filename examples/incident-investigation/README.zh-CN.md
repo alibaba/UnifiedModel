@@ -6,7 +6,7 @@
 payment-gateway (degraded, platinum SLO)
   ← calls ← checkout-service
                ← affects ← cfg-checkout-retry (max_retries 2→5, 24h前)
-                              ← triggers ← 618 Flash Sale (3.5x traffic)
+                              ← triggers ← Flash Sale (3.5x traffic)
 
 排除: payment-gw v3.2.1 (12h前, trivial logging change)
 根因: 4000 × 3.5 × 2.5 = 35,000 QPS → 8.75x 过载
@@ -21,7 +21,7 @@ payment-gateway (degraded, platinum SLO)
 
 | 时间 | 事件 |
 |------|------|
-| T-48h | 促销活动 "618 Flash Sale" 创建，status=scheduled |
+| T-48h | 促销活动 "Flash Sale" 创建，status=scheduled |
 | T-24h | 配置变更 `cfg-checkout-retry` 生效：max_retries 2→5, timeout 500→2000ms |
 | T-12h | 部署 `payment-gw v3.2.1` 上线（轻微变更：日志格式调整） |
 | T-4h | 促销活动激活，流量开始爬升（3.5 倍放大） |
@@ -162,7 +162,7 @@ umctl query run demo \
   | project display_name, traffic_multiplier, expected_peak_qps, actual_peak_qps"
 ```
 
-预期输出：`618 Flash Sale | 3.5 | 12000 | 38000` — 实际流量远超预期。
+预期输出：`Flash Sale | 3.5 | 12000 | 38000` — 实际流量远超预期。
 
 ### 第 6 步：评估业务影响（跨域查询）
 
@@ -201,7 +201,7 @@ Agent 按 Runbook 协议执行：
    - LLM 判断 change_summary 为 trivial
    - 结论匹配：**Deployment Ruled Out** (severity=info)
 5. **执行 Observation #3** (business_traffic_pressure)
-   - 跨域查询发现 `618 Flash Sale` (actual 38000 > expected 12000)
+   - 跨域查询发现 `Flash Sale` (actual 38000 > expected 12000)
    - 结论匹配：**Promotion Traffic Exceeds Capacity** (severity=error)
 6. **关联分析** — 计算放大因子：3.5 × (5/2) = 8.75x
 7. **加载 Knowledge** — `retry_storm_pattern` 确认模式匹配
@@ -220,7 +220,7 @@ Agent 按 Runbook 协议执行：
 | recent_deployment_correlation | Deployment Ruled Out | info |
 | business_traffic_pressure | Promotion Traffic Exceeds Capacity | error |
 
-根因：checkout-service 配置变更 (retry 2→5) × 618 促销 (3.5x) = 8.75x 过载
+根因：checkout-service 配置变更 (retry 2→5) × 促销 (3.5x) = 8.75x 过载
 
 推荐操作：
   Tool: rollback_config_change

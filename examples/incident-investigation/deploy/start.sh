@@ -56,7 +56,7 @@ cat <<EOF
       "payment-gateway is degraded — find the root cause."
     The agent reads its metrics/logs (get_metrics / get_logs run against the real
     Prometheus / Elasticsearch above), traverses the topology to checkout-service's
-    retry config change and the 618 promotion, and concludes the retry storm.
+    retry config change and the flash-sale promotion, and concludes the retry storm.
 
     Smoke-test without an agent:  sh "$DIR/verify.sh"
     Stop & clean up:              sh "$DIR/stop.sh"   (add --all to also remove the image)

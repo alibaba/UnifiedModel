@@ -78,7 +78,7 @@ assert_contains "$result" "retry" "Step 3: config change involves retry"
 
 # Step 4: Find active promotion (business layer)
 result=$(run_mcp '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query_spl_execute","arguments":{"workspace":"demo","query":".entity with(domain='"'"'business'"'"', name='"'"'business.promotion'"'"', query='"'"'active'"'"')"}}}')
-assert_contains "$result" "618" "Step 4: active promotion is 618 Flash Sale"
+assert_contains "$result" "Flash Sale" "Step 4: active promotion is Flash Sale"
 
 # Step 5: Check red herring deployment
 result=$(run_mcp '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query_spl_execute","arguments":{"workspace":"demo","query":".entity with(domain='"'"'platform'"'"', name='"'"'platform.deployment'"'"', query='"'"'payment'"'"')"}}}')

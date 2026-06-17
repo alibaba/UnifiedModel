@@ -6,7 +6,7 @@ A scenario-driven example showing how UModel's object graph + Runbook enables AI
 payment-gateway (degraded, platinum SLO)
   <- calls <- checkout-service
                <- affects <- cfg-checkout-retry (max_retries 2->5, 24h ago)
-                              <- triggers <- 618 Flash Sale (3.5x traffic)
+                              <- triggers <- Flash Sale (3.5x traffic)
 
 Ruled out: payment-gw v3.2.1 (12h ago, trivial logging change)
 Root cause: 4000 x 3.5 x 2.5 = 35,000 QPS -> 8.75x overload
@@ -21,7 +21,7 @@ Root cause: 4000 x 3.5 x 2.5 = 35,000 QPS -> 8.75x overload
 
 | Time | Event |
 |------|-------|
-| T-48h | Promotion "618 Flash Sale" created, status=scheduled |
+| T-48h | Promotion "Flash Sale" created, status=scheduled |
 | T-24h | Config change `cfg-checkout-retry` applied: max_retries 2->5, timeout 500->2000ms |
 | T-12h | Deployment `payment-gw v3.2.1` rolled out (trivial: logging format change) |
 | T-4h | Promotion goes active, traffic ramp begins (3.5x multiplier) |
@@ -162,7 +162,7 @@ umctl query run demo \
   | project display_name, traffic_multiplier, expected_peak_qps, actual_peak_qps"
 ```
 
-Expected: `618 Flash Sale | 3.5 | 12000 | 38000` — actual traffic far exceeds plan.
+Expected: `Flash Sale | 3.5 | 12000 | 38000` — actual traffic far exceeds plan.
 
 ### Step 6: Assess business impact (cross-domain)
 
@@ -201,7 +201,7 @@ The agent follows the runbook protocol:
    - LLM judges change_summary as trivial
    - Conclusion: **Deployment Ruled Out** (severity=info)
 5. **Observation #3** (business_traffic_pressure)
-   - Cross-domain query finds `618 Flash Sale` (actual 38000 > expected 12000)
+   - Cross-domain query finds `Flash Sale` (actual 38000 > expected 12000)
    - Conclusion: **Promotion Traffic Exceeds Capacity** (severity=error)
 6. **Correlation** — calculates amplification: 3.5 x (5/2) = 8.75x
 7. **Knowledge** — loads `retry_storm_pattern`, confirms pattern match
@@ -220,7 +220,7 @@ Based on Runbook platform.service.ops:
 | recent_deployment_correlation | Deployment Ruled Out | info |
 | business_traffic_pressure | Promotion Traffic Exceeds Capacity | error |
 
-Root cause: checkout-service config change (retry 2->5) x 618 promotion (3.5x) = 8.75x overload
+Root cause: checkout-service config change (retry 2->5) x flash-sale promotion (3.5x) = 8.75x overload
 
 Recommended action:
   Tool: rollback_config_change
