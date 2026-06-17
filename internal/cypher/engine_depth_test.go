@@ -24,3 +24,19 @@ func TestReadDepthCaps(t *testing.T) {
 		}
 	}
 }
+
+// TestReadDepthRejectsExplicitZeroUpperBound distinguishes an absent upper bound
+// (`*1..`, open-ended → clamp to the ceiling) from an explicit zero upper bound
+// (`*1..0`). An explicit zero is an empty/invalid range and must be rejected, not
+// silently widened to the ceiling.
+func TestReadDepthRejectsExplicitZeroUpperBound(t *testing.T) {
+	for _, in := range []string{"1..0", "2..0", "..0"} {
+		if mn, mx, _, err := readDepth(in); err == nil {
+			t.Errorf("readDepth(%q) should reject an explicit zero upper bound, got %d..%d nil", in, mn, mx)
+		}
+	}
+	// A bare "0" (single bound, no range) keeps its existing 1..1 normalization.
+	if mn, mx, _, err := readDepth("0"); err != nil || mn != 1 || mx != 1 {
+		t.Fatalf(`readDepth("0") = %d..%d, err=%v; want 1..1`, mn, mx, err)
+	}
+}

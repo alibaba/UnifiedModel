@@ -567,11 +567,16 @@ func readDepth(text string) (int, int, string, error) {
 		return 0, 0, "", depthExceeded()
 	}
 	max := min
+	hasRange := false
 	if strings.HasPrefix(rest, "..") {
+		hasRange = true
 		rest = rest[2:]
 		if parsed, next, present, overflow := readNumber(rest); overflow {
 			return 0, 0, "", depthExceeded()
-		} else if present && parsed > 0 {
+		} else if present {
+			// Explicit upper bound, including 0. A zero (`*1..0`) is kept as-is so
+			// the max < min check below rejects it instead of silently widening it
+			// to the ceiling.
 			max = parsed
 			rest = next
 		} else {
@@ -582,7 +587,10 @@ func readDepth(text string) (int, int, string, error) {
 	if min == 0 {
 		min = 1
 	}
-	if max == 0 {
+	// Only default a missing upper bound from min. When a range was given, max is
+	// already determined (an explicit value, or the open-ended ceiling), so an
+	// explicit `..0` must not be normalized away here.
+	if max == 0 && !hasRange {
 		max = min
 	}
 	if max < min {
