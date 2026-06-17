@@ -509,7 +509,10 @@ func methodOf(payload map[string]any) string {
 }
 
 func normalizeLimit(limit, fallback int) int {
-	if limit <= 0 {
+	if limit < 0 {
+		return 1<<31 - 1
+	}
+	if limit == 0 {
 		return fallback
 	}
 	return limit

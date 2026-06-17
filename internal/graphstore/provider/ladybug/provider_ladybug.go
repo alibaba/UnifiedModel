@@ -856,7 +856,10 @@ func ladybugPath(root string, workspace model.WorkspaceMetadata) string {
 }
 
 func boundedLimit(limit int) int {
-	if limit <= 0 {
+	if limit < 0 {
+		return 1000
+	}
+	if limit == 0 {
 		return 100
 	}
 	if limit > 1000 {
