@@ -1,5 +1,5 @@
 .PHONY: help check-env install-env setup setup-ui expand doc docs-schema docs-schema-check example-validate check-manifest
-.PHONY: build build-service build-cli install-cli build-ui build-sdk-go dev quickstart dev-api dev-web deploy serve-ui status stop-all stop-dev stop-deploy test test-service test-ui test-ui-e2e test-capability test-quickstart-health test-ladybug verify verify-go verify-python verify-java guard ci clean
+.PHONY: build build-service build-cli install-cli build-ui build-sdk-go dev quickstart dev-api dev-web deploy serve-ui status stop-all stop-dev stop-deploy test test-service test-ui test-ui-e2e test-capability test-quickstart-health test-ladybug vulncheck verify verify-go verify-python verify-java guard ci clean
 
 VENV_PYTHON := .venv/bin/python
 CONDA_PYTHON := $(if $(CONDA_PREFIX),$(CONDA_PREFIX)/bin/python)
@@ -134,6 +134,11 @@ serve-ui: build-ui
 
 test-service:
 	go test ./...
+
+# Scan for known vulnerabilities (the repo's modules + reachable stdlib). Std-lib
+# findings track the Go toolchain version; keep it current to clear them.
+vulncheck:
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
 test-ui:
 	@PNPM="$(PNPM)" bash ./scripts/env.sh web-build

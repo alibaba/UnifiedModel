@@ -1,0 +1,39 @@
+# Dependency update automation. Grouped + weekly to keep PR volume low.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      go-modules:
+        patterns: ["*"]
+  - package-ecosystem: gomod
+    directory: "/sdk/go"
+    schedule:
+      interval: weekly
+    groups:
+      go-sdk:
+        patterns: ["*"]
+  - package-ecosystem: pip
+    directory: "/tools"
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: "/web"
+    schedule:
+      interval: weekly
+    groups:
+      web:
+        patterns: ["*"]
+  - package-ecosystem: npm
+    directory: "/docs"
+    schedule:
+      interval: weekly
+    groups:
+      docs:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
