@@ -82,3 +82,37 @@ func TestImportRejectsSymlinkEscape(t *testing.T) {
 		t.Fatalf("import via in-root symlink to outside should be INVALID_ARGUMENT, got: %v", err)
 	}
 }
+
+// TestImportRejectsNestedSymlinkFileEscape covers a symlinked import file nested
+// inside an allowed directory that points outside the import root. The top-level
+// path (the directory) is legitimately inside the root, so confineImportPath
+// passes it; the escape only happens for a file discovered by the directory
+// walk, which must therefore re-check every collected file.
+func TestImportRejectsNestedSymlinkFileEscape(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	const es = "kind: entity_set\nschema:\n  url: u\n  version: v0.1.0\nmetadata:\n  name: devops.service\n  domain: devops\nspec:\n  fields:\n    - name: id\n      type: string\n  primary_key_fields: [id]\n  id_generator: id\n"
+
+	// A valid pack file outside the root — valid so that, absent the fix, it
+	// would import cleanly rather than failing on a parse error.
+	outside := t.TempDir()
+	secret := filepath.Join(outside, "secret.yaml")
+	if err := os.WriteFile(secret, []byte(es), 0o644); err != nil {
+		t.Fatalf("write secret: %v", err)
+	}
+
+	// An allowed directory inside the root, containing a symlinked yaml that
+	// points at the outside file.
+	pack := filepath.Join(root, "pack")
+	if err := os.MkdirAll(pack, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.Symlink(secret, filepath.Join(pack, "outside.yaml")); err != nil {
+		t.Skipf("symlinks unavailable on this platform: %v", err)
+	}
+
+	svc := NewService(graphstore.NewMemoryStore(), WithImportRoot(root))
+	if _, err := svc.Import(ctx, "demo", model.UModelImportRequest{Path: pack}); !apperrors.IsCode(err, apperrors.CodeInvalidArgument) {
+		t.Fatalf("nested symlink file escaping the root should be INVALID_ARGUMENT, got: %v", err)
+	}
+}
