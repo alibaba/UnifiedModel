@@ -64,6 +64,17 @@ func WithDetails(code Code, message string, details map[string]string) *Error {
 	return &Error{Code: code, Message: message, Retryable: retryableCodes[code], Details: details}
 }
 
+// Retryable builds an *Error for the given code.
+//
+// Deprecated: retryability is now derived from the code (see New), so this is
+// equivalent to New(code, message) — it no longer force-marks the error
+// retryable regardless of code. Prefer New or WithDetails. Retained because
+// pkg/errors is a public, stable contract and dropping the exported symbol would
+// break external Go callers.
+func Retryable(code Code, message string) *Error {
+	return New(code, message)
+}
+
 func As(err error) (*Error, bool) {
 	var target *Error
 	if stderrors.As(err, &target) {

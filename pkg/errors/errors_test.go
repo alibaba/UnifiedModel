@@ -56,6 +56,21 @@ func TestIsRetryable(t *testing.T) {
 	}
 }
 
+// TestRetryableDeprecatedDelegatesToNew pins the deprecated constructor's new
+// behavior: it is kept for source compatibility but now derives retryability
+// from the code (like New), rather than force-marking every error retryable.
+func TestRetryableDeprecatedDelegatesToNew(t *testing.T) {
+	if got := Retryable(CodeTimeout, "x"); !got.Retryable {
+		t.Error("Retryable(CodeTimeout) should be retryable")
+	}
+	if got := Retryable(CodeNotFound, "x"); got.Retryable {
+		t.Error("Retryable(CodeNotFound) should not be retryable (now derived from code)")
+	}
+	if got := Retryable(CodeInvalidArgument, "msg"); got.Code != CodeInvalidArgument || got.Message != "msg" {
+		t.Errorf("Retryable should preserve code and message, got %+v", got)
+	}
+}
+
 // TestRetryableSerialized guards the JSON contract: the field clients read must
 // carry the correct value, true for transient codes and false otherwise.
 func TestRetryableSerialized(t *testing.T) {
