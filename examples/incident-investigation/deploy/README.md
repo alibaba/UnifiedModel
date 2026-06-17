@@ -74,10 +74,15 @@ sh examples/incident-investigation/deploy/stop.sh --all    # also remove the bui
 ## Notes
 
 - Telemetry is synthetic, shaped to match the modeled incident — a demo, not production data.
-- Metric history is generated relative to "now" and loaded with `promtool tsdb create-blocks-from
-  openmetrics` before Prometheus starts; the exporter then continues the same series live, so instant
-  queries stay fresh. Logs are likewise generated relative to "now".
-- The pack's deployment / config-change / incident entities carry fixed (illustrative) timestamps;
-  the now-relative part is the seeded Prometheus / Elasticsearch telemetry.
+- Everything is relative to "now", so the demo never expires. Metric history is generated relative
+  to now and loaded with `promtool tsdb create-blocks-from openmetrics` before Prometheus starts; the
+  exporter then continues the same series live. Logs are generated relative to now. The entity
+  timeline (deployment / config-change / incident / promotion timestamps) is re-anchored to now at
+  startup by the demo image's entrypoint — config ~now-24h, deploy ~now-12h, promo active ~now-4h,
+  incident ~now — matching the telemetry.
+- The logs include correlated request traces: a failed checkout shares one `trace_id` across
+  `checkout-service → payment-gateway → payment-router → channel → provider`, so you can follow a
+  single request down the stack and see the timeout originate downstream and surface up as retry
+  exhaustion. They also carry the config-change, deployment, and circuit-breaker landmark events.
 - The pack also models a MySQL deployment-event set and a runbook; the executable plan methods
   seeded here are `get_metrics` (Prometheus) and `get_logs` (Elasticsearch).

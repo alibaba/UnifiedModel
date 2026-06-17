@@ -55,20 +55,46 @@ def pod(name):
     return f"{name.replace('-service', '').replace('-', '')[:10]}-{RNG.randint(1000, 9999):04x}-{RNG.choice('abcdefghjkmnp')}{RNG.randint(10, 99)}"
 
 
-def trace():
-    t = "%016x" % RNG.getrandbits(64)
-    return t, t[:12]
-
-
-def doc(ts, name, severity, msg, http="200", upstream="", latency=0, code="", env="prod"):
-    tid, sid = trace()
+def doc(ts, name, severity, msg, http="200", upstream="", latency=0, code="", env="prod", tid=None):
+    # tid lets a caller correlate several docs into one distributed trace; otherwise random.
+    t = tid or ("%016x" % RNG.getrandbits(64))
+    sp = "%012x" % RNG.getrandbits(48)
     return {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts)),
         "svc_id": ID[name], "env": env, "severity": severity, "log_message": msg,
-        "trace_id": tid, "span_id": sid, "http_status": http,
+        "trace_id": t, "span_id": sp, "http_status": http,
         "upstream_service": upstream, "latency_ms": latency, "error_code": code,
         "pod": pod(name),
     }
+
+
+PROVIDERS = {"channel-alipay": "alipay-openapi", "channel-wechatpay": "wechatpay-api",
+             "channel-unionpay": "unionpay-gw"}
+
+
+def chain(ts):
+    """One failed checkout as a correlated trace flowing down the payment path, so an RCA can
+    follow a single request: checkout -> payment-gateway -> payment-router -> channel -> provider.
+    Every hop shares the trace_id and orderId; the timeout originates downstream and surfaces up
+    as retry exhaustion."""
+    ch = RNG.choice(list(PROVIDERS))
+    tid = "%016x" % RNG.getrandbits(64)
+    oid = RNG.randint(10 ** 9, 10 ** 10)
+    lat = RNG.randint(2000, 2600)
+    return [
+        doc(ts, "checkout-service", "ERROR",
+            f"POST /api/checkout/confirm orderId={oid}: payment confirm failed after 5 retries; order abandoned",
+            http="504", upstream="payment-gateway", latency=lat + 60, code="PAYMENT_FAILED", tid=tid),
+        doc(ts, "payment-gateway", "ERROR",
+            f"charge orderId={oid} failed: upstream payment-router timeout after 2000ms; retry 5/5 exhausted",
+            http="504", upstream="payment-router", latency=lat, code="UPSTREAM_TIMEOUT", tid=tid),
+        doc(ts, "payment-router", "ERROR",
+            f"route orderId={oid} -> {ch}: timeout after {lat - 120}ms; circuit half-open, no capacity to retry",
+            http="504", upstream=ch, latency=lat - 120, code="UPSTREAM_TIMEOUT", tid=tid),
+        doc(ts, ch, "ERROR",
+            f"provider gateway timeout ({PROVIDERS[ch]}) for orderId={oid}",
+            http="504", upstream=PROVIDERS[ch], latency=lat - 180, code="PROVIDER_TIMEOUT", tid=tid),
+    ]
 
 
 def main():
@@ -79,8 +105,12 @@ def main():
     t = now - 72 * HOUR
     while t < now - 24 * HOUR:
         name = RNG.choice(HEALTHY + ["checkout-service", "payment-gateway"])
-        docs.append(doc(t, name, "INFO", f"request completed {RNG.choice(['GET','POST'])} /api 200",
-                        latency=RNG.randint(8, 90)))
+        if name in ("checkout-service", "payment-gateway"):
+            docs.append(doc(t, name, "INFO", "charge completed ok (latency within SLO)",
+                            http="200", upstream="payment-router", latency=RNG.randint(40, 160)))
+        else:
+            docs.append(doc(t, name, "INFO", f"request completed {RNG.choice(['GET','POST'])} /api 200",
+                            latency=RNG.randint(8, 90)))
         t += RNG.randint(18 * 60, 32 * 60)
 
     # --- T-48h: promotion scheduled (the business trigger) ---
@@ -114,26 +144,29 @@ def main():
                     "rollout payment-gw v3.2.1 complete: logging format change + correlation-id header propagation",
                     code="DEPLOY"))
 
-    # --- P2 promo breach: ERROR flood on the payment path ---
-    errors = [
-        ("payment-gateway", "payment-router", "504", "upstream timeout calling payment-router after 2000ms; retry 5/5 exhausted", 2003, "UPSTREAM_TIMEOUT"),
-        ("payment-gateway", "payment-router", "503", "payment-router returned 503 Service Unavailable, shedding charge request", 1985, "UPSTREAM_UNAVAILABLE"),
+    # --- P2 promo breach: ERROR flood on the payment path, as correlated request traces
+    # (follow one trace_id down the stack) interleaved with standalone saturation signals ---
+    standalone = [
         ("payment-gateway", "payment-router", "500", "circuit breaker OPEN for payment-router (downstream error rate 14.8%)", 5, "CIRCUIT_OPEN"),
-        ("payment-router", "channel-alipay", "504", "channel-alipay timeout after 2400ms; no capacity to retry", 2410, "UPSTREAM_TIMEOUT"),
-        ("payment-router", "", "503", "all payment channels saturated; charge queue depth 1840", 12, "QUEUE_SATURATED"),
-        ("channel-alipay", "alipay-openapi", "504", "provider gateway timeout (Alipay openapi)", 2380, "PROVIDER_TIMEOUT"),
+        ("payment-router", "", "503", "all payment channels saturated; charge queue depth {q}", 14, "QUEUE_SATURATED"),
         ("channel-wechatpay", "wechatpay-api", "503", "throttled by provider: WECHATPAY_RATE_LIMITED", 30, "PROVIDER_THROTTLED"),
-        ("checkout-service", "payment-gateway", "504", "payment confirm failed: payment-gateway 504 after 5 retries; order abandoned", 2050, "PAYMENT_FAILED"),
-        ("checkout-service", "payment-gateway", "499", "client closed request while awaiting payment confirm", 3000, "CLIENT_CLOSED"),
+        ("payment-gateway", "payment-router", "503", "payment-router returned 503 Service Unavailable, shedding charge request", 1985, "UPSTREAM_UNAVAILABLE"),
+        ("checkout-service", "payment-gateway", "499", "client closed request while awaiting payment confirm (5/5 retries pending)", 3000, "CLIENT_CLOSED"),
     ]
     t = now - 4 * HOUR
+    k = 0
     while t < now:
         age_min = (now - t) / 60
-        # density rises toward now: ~1 every 4 min early, ~1 every 45 s near the peak
+        # density rises toward now: ~1 event every 4 min early, ~1 every 45 s near the peak
         gap = int(45 + age_min / 240.0 * (240 - 45))
-        src, up, http, msg, lat, code = RNG.choice(errors)
-        sev = "ERROR" if http != "499" else "WARN"
-        docs.append(doc(t, src, sev, msg, http=http, upstream=up, latency=lat, code=code))
+        if k % 2 == 0:
+            docs.extend(chain(t))                      # one full follow-the-trace failure
+        else:
+            src, up, http, msg, lat, code = RNG.choice(standalone)
+            sev = "WARN" if http == "499" else "ERROR"
+            docs.append(doc(t, src, sev, msg.format(q=RNG.randint(1500, 2200)),
+                            http=http, upstream=up, latency=lat, code=code))
+        k += 1
         t += max(gap, 30)
 
     docs.sort(key=lambda d: d["timestamp"])

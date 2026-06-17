@@ -54,4 +54,17 @@ arc "t-30h pre-config"  "$CK_RETRY" 108000
 arc "t-12h post-config" "$CK_RETRY" 43200
 arc "now"               "$CK_RETRY" 0
 
+echo "== 6) follow one failing request across the stack (correlated trace) =="
+tid=$(curl -s "$ES/platform-service-logs-*/_search" -H 'Content-Type: application/json' \
+  -d '{"size":1,"query":{"bool":{"filter":[{"term":{"svc_id":"'"$PG"'"}},{"term":{"error_code":"UPSTREAM_TIMEOUT"}}]}}}' \
+  | jq -r '.hits.hits[0]._source.trace_id // empty')
+if [ -n "$tid" ]; then
+  echo "   trace_id=$tid  (checkout -> payment-gateway -> payment-router -> channel -> provider)"
+  curl -s "$ES/platform-service-logs-*/_search" -H 'Content-Type: application/json' \
+    -d '{"size":10,"sort":[{"latency_ms":"desc"}],"query":{"term":{"trace_id":"'"$tid"'"}}}' \
+    | jq -r '.hits.hits[]._source | "   \(.severity) \(.http_status) up=\(.upstream_service) \(.log_message)"'
+else
+  echo "   (no correlated trace found yet)"
+fi
+
 echo "== done =="

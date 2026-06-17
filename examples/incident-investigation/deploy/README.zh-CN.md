@@ -61,6 +61,6 @@ sh examples/incident-investigation/deploy/stop.sh --all    # 连构建的镜像�
 ## 说明
 
 - 遥测均为合成数据,按建模的故障塑形——是 demo,不是生产数据。
-- 指标历史相对"现在"生成,在 Prometheus 启动前用 `promtool tsdb create-blocks-from openmetrics` 载入;exporter 随后实时续上同一组序列,所以 instant 查询始终新鲜。日志同样相对"现在"生成。
-- pack 的部署 / 配置变更 / 故障实体带固定(示意性)时间戳;相对"现在"的部分是灌入的 Prometheus / Elasticsearch 遥测。
+- 一切都相对"现在",所以 demo 永不过期。指标历史相对 now 生成,在 Prometheus 启动前用 `promtool tsdb create-blocks-from openmetrics` 载入,exporter 随后实时续上;日志相对 now 生成;实体时间线(部署 / 配置变更 / 故障 / 促销时间戳)由 demo 镜像入口脚本在启动时统一位移到 now —— 配置 ~now-24h、部署 ~now-12h、促销激活 ~now-4h、故障 ~now —— 与遥测一致。
+- 日志包含**跨服务关联 trace**:一次失败的 checkout 用同一个 `trace_id` 串起 `checkout-service → payment-gateway → payment-router → channel → provider`,可顺着一条请求下钻、看到超时源自下游并上溯为重试耗尽;另含配置变更、部署、熔断等地标事件。
 - pack 还建模了 MySQL 部署事件集和一个 runbook;这里灌的可执行 plan 方法是 `get_metrics`(Prometheus)和 `get_logs`(Elasticsearch)。
