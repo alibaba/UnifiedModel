@@ -99,12 +99,24 @@ func (s *Service) confineImportPath(p string) (string, error) {
 		return "", apperrors.WithDetails(apperrors.CodeInternal, "invalid import root", map[string]string{"reason": err.Error()})
 	}
 	rootAbs = filepath.Clean(rootAbs)
+	// Resolve symlinks in the root so containment is checked against the real path.
+	if resolvedRoot, rerr := filepath.EvalSymlinks(rootAbs); rerr == nil {
+		rootAbs = resolvedRoot
+	}
 
 	abs, err := filepath.Abs(p)
 	if err != nil {
 		return "", apperrors.WithDetails(apperrors.CodeInvalidArgument, "invalid import path", map[string]string{"path": p})
 	}
 	abs = filepath.Clean(abs)
+	// Resolve symlinks before the containment check so an in-root symlink cannot
+	// point outside the import root. EvalSymlinks also fails closed for a path
+	// that does not exist.
+	resolvedAbs, err := filepath.EvalSymlinks(abs)
+	if err != nil {
+		return "", apperrors.WithDetails(apperrors.CodeInvalidArgument, "import path is not accessible", map[string]string{"path": p})
+	}
+	abs = resolvedAbs
 
 	rel, err := filepath.Rel(rootAbs, abs)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {

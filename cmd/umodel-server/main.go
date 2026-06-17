@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
 	"github.com/alibaba/UnifiedModel/internal/graphstore"
@@ -60,7 +61,16 @@ func main() {
 	if *uiDir != "" {
 		log.Printf("serving web UI from %s", *uiDir)
 	}
-	if err := http.ListenAndServe(*addr, app.HandlerWithUI(*uiDir)); err != nil {
+	server := &http.Server{
+		Addr:              *addr,
+		Handler:           app.HandlerWithUI(*uiDir),
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      120 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1 MiB
+	}
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }

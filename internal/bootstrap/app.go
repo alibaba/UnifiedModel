@@ -628,8 +628,13 @@ func workspaceAction(path, prefix string) (string, string, bool) {
 	return parts[0], parts[1], true
 }
 
+// maxRequestBodyBytes caps a decoded JSON request body so a single request
+// cannot exhaust server memory.
+const maxRequestBodyBytes = 32 << 20 // 32 MiB
+
 func decodeJSON(w http.ResponseWriter, r *http.Request, target any) bool {
 	defer r.Body.Close()
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {
