@@ -182,6 +182,9 @@ func (s *MemoryStore) WriteRelations(ctx context.Context, batch model.RelationWr
 }
 
 func (s *MemoryStore) QueryEntities(ctx context.Context, plan model.EntityQueryPlan) (model.QueryResult, error) {
+	if err := ctx.Err(); err != nil {
+		return model.QueryResult{}, err
+	}
 	limit := normalizeLimit(plan.Limit, 100)
 
 	s.mu.RLock()
@@ -195,6 +198,9 @@ func (s *MemoryStore) QueryEntities(ctx context.Context, plan model.EntityQueryP
 	sort.Strings(keys)
 
 	for _, key := range keys {
+		if err := ctx.Err(); err != nil {
+			return model.QueryResult{}, err
+		}
 		payload := s.entities[plan.Workspace][key]
 		if !entityMatches(payload, plan) {
 			continue
@@ -213,6 +219,9 @@ func (s *MemoryStore) QueryEntities(ctx context.Context, plan model.EntityQueryP
 }
 
 func (s *MemoryStore) QueryTopo(ctx context.Context, plan model.TopoQueryPlan) (model.QueryResult, error) {
+	if err := ctx.Err(); err != nil {
+		return model.QueryResult{}, err
+	}
 	limit := normalizeLimit(plan.Limit, 100)
 
 	s.mu.RLock()
@@ -230,6 +239,9 @@ func (s *MemoryStore) QueryTopo(ctx context.Context, plan model.TopoQueryPlan) (
 	sort.Strings(keys)
 
 	for _, key := range keys {
+		if err := ctx.Err(); err != nil {
+			return model.QueryResult{}, err
+		}
 		payload := s.relations[plan.Workspace][key]
 		if !relationMatches(payload, plan) {
 			continue

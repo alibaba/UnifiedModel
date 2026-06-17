@@ -2,6 +2,8 @@ package query
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
@@ -104,10 +106,19 @@ func (s *Service) Execute(ctx context.Context, workspace string, req model.Query
 		return model.QueryResult{}, err
 	}
 
+	// Bound execution by the active provider's declared timeout. The deadline is
+	// set here; the stores honor ctx and abort in-flight scans, and ctx errors
+	// are mapped to CodeTimeout below.
+	if d := parseQueryTimeout(caps.Timeout); d > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, d)
+		defer cancel()
+	}
+
 	if shouldRouteToSearch(plan) {
 		searchRes, mode, err := dispatchSearch(ctx, s.search, workspace, plan)
 		if err != nil {
-			return model.QueryResult{}, err
+			return model.QueryResult{}, asQueryTimeout(ctx, err)
 		}
 		result := searchResultToQueryResult(searchRes, plan.Source, plan.Limit)
 		explain := buildExplain(plan, caps, health)
@@ -118,11 +129,37 @@ func (s *Service) Execute(ctx context.Context, workspace string, req model.Query
 
 	result, err := s.executor.Execute(ctx, workspace, plan)
 	if err != nil {
-		return model.QueryResult{}, err
+		return model.QueryResult{}, asQueryTimeout(ctx, err)
 	}
 	explain := buildExplain(plan, caps, health)
 	result.Explain = &explain
 	return result, nil
+}
+
+// parseQueryTimeout parses a provider's declared timeout (e.g. "10s"). Empty or
+// non-positive values disable the deadline.
+func parseQueryTimeout(s string) time.Duration {
+	if s == "" {
+		return 0
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil || d <= 0 {
+		return 0
+	}
+	return d
+}
+
+// asQueryTimeout maps a context deadline/cancellation into a CodeTimeout error so
+// callers get a stable, machine-actionable timeout signal; other errors pass
+// through unchanged.
+func asQueryTimeout(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || ctx.Err() != nil {
+		return apperrors.New(apperrors.CodeTimeout, "query exceeded the provider time limit")
+	}
+	return err
 }
 
 func (s *Service) Explain(ctx context.Context, workspace string, req model.QueryRequest) (model.QueryExplain, error) {

@@ -249,3 +249,18 @@ func TestMemoryStoreMaxLimitNotBelowDefaultProvider(t *testing.T) {
 		t.Fatalf("memory MaxLimit = %d, want >= 1000 so production-valid limits stay portable", caps.MaxLimit)
 	}
 }
+
+// TestQueryRespectsContextCancellation verifies the memory store honors a
+// cancelled context and aborts instead of scanning — the store-side half of the
+// query-timeout contract (the Service sets the deadline; the store respects it).
+func TestQueryRespectsContextCancellation(t *testing.T) {
+	store := NewMemoryStore()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := store.QueryEntities(ctx, model.EntityQueryPlan{Workspace: "demo"}); err != context.Canceled {
+		t.Fatalf("QueryEntities with cancelled ctx: got %v, want context.Canceled", err)
+	}
+	if _, err := store.QueryTopo(ctx, model.TopoQueryPlan{Workspace: "demo"}); err != context.Canceled {
+		t.Fatalf("QueryTopo with cancelled ctx: got %v, want context.Canceled", err)
+	}
+}

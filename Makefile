@@ -133,7 +133,7 @@ serve-ui: build-ui
 	go run $(GO_RUN_TAGS) ./cmd/umodel-server --addr "$(API_ADDR)" --data "$(DATA_ROOT)" --graphstore "$(GRAPHSTORE)" --ui-dir web/dist $(if $(filter 1 true TRUE yes YES on ON,$(QUICKSTART)),--quickstart --quickstart-workspace "$(QUICKSTART_WORKSPACE)" --quickstart-sample "$(QUICKSTART_SAMPLE)")
 
 test-service:
-	go test ./...
+	go test -race ./...
 
 test-ui:
 	@PNPM="$(PNPM)" bash ./scripts/env.sh web-build
