@@ -1,8 +1,8 @@
 # UModel Schema 展开报告
 
 ## 📊 统计信息
-- 共处理schema文件: 24
-- 共加载类型定义: 42
+- 共处理schema文件: 25
+- 共加载类型定义: 43
 
 ## 📋 处理的Schema列表
 - **entity_set**: 1 个版本
@@ -14,6 +14,7 @@
 - **entity_source**: 1 个版本
 - **profile_set**: 1 个版本
 - **log_set**: 1 个版本
+- **clickhouse**: 1 个版本
 - **aliyun_prometheus**: 1 个版本
 - **mysql**: 1 个版本
 - **sls_entitystore**: 1 个版本
@@ -34,6 +35,7 @@
 - **action_config**: action_config:v1
 - **aliyun_prometheus**: aliyun_prometheus:v1.0.0
 - **automation_config**: automation_config:v1
+- **clickhouse**: clickhouse:v1.0.0
 - **constraint_type**: constraint_type:v1
 - **data_link**: data_link:v1.0.0
 - **elasticsearch**: elasticsearch:v1.0.0

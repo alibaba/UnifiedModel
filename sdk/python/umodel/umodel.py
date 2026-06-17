@@ -32,6 +32,13 @@ def _register_types():
     except (ImportError, AttributeError) as e:
         pass  # 模块 aliyun_prometheus 导入失败: {e}
 
+    # 注册 clickhouse 相关类型
+    try:
+        from . import clickhouse
+        TYPE_REGISTRY["clickhouse:v1.0.0"] = getattr(clickhouse, "ClickhouseV100", None)
+    except (ImportError, AttributeError) as e:
+        pass  # 模块 clickhouse 导入失败: {e}
+
     # 注册 data_link 相关类型
     try:
         from . import data_link

@@ -27,6 +27,7 @@ func ParseYAML(data []byte, v interface{}) error {
 // TypeRegistry 类型注册表，用于动态创建类型实例
 var TypeRegistry = map[string]func() interface{}{
 	"aliyun_prometheus:v1.0.0":  func() interface{} { return &AliyunPrometheusV100{} },
+	"clickhouse:v1.0.0":         func() interface{} { return &ClickhouseV100{} },
 	"data_link:v1.0.0":          func() interface{} { return &DataLinkV100{} },
 	"elasticsearch:v1.0.0":      func() interface{} { return &ElasticsearchV100{} },
 	"entity_set:v1.0.0":         func() interface{} { return &EntitySetV100{} },

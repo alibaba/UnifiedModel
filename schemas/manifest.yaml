@@ -23,6 +23,7 @@ versions:
       - elasticsearch:v1.0.0
       - prometheus:v1.0.0
       - victoriametrics:v1.0.0
+      - clickhouse:v1.0.0
       - mysql:v1.0.0
       - entity_set_link:v1.0.0
       - entity_source_link:v1.0.0

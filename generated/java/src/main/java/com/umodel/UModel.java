@@ -21,6 +21,7 @@ public class UModel {
     static {
         // 注册所有类型
         TYPE_REGISTRY.put("aliyun_prometheus:v1.0.0", AliyunPrometheusV100::new);
+        TYPE_REGISTRY.put("clickhouse:v1.0.0", ClickhouseV100::new);
         TYPE_REGISTRY.put("data_link:v1.0.0", DataLinkV100::new);
         TYPE_REGISTRY.put("elasticsearch:v1.0.0", ElasticsearchV100::new);
         TYPE_REGISTRY.put("entity_set:v1.0.0", EntitySetV100::new);

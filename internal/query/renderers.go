@@ -56,5 +56,6 @@ func newDefaultRegistry() *planrender.Registry {
 	r := planrender.NewRegistry()
 	r.Register(labelTimeseriesRenderer{})
 	r.Register(documentSearchRenderer{})
+	r.Register(sqlTableRenderer{})
 	return r
 }

@@ -17,6 +17,7 @@ from .event_set import *
 from .entity_source import *
 from .profile_set import *
 from .log_set import *
+from .clickhouse import *
 from .aliyun_prometheus import *
 from .mysql import *
 from .sls_entitystore import *

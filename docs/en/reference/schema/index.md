@@ -42,6 +42,7 @@ See the contribution guide for how to propose L1–L3 content.
 ### Storage
 
 - [aliyun_prometheus](./core/storage/aliyun-prometheus)
+- [clickhouse](./core/storage/clickhouse)
 - [elasticsearch](./core/storage/elasticsearch)
 - [external_storage](./core/storage/external-storage)
 - [mysql](./core/storage/mysql)

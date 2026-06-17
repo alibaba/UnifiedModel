@@ -37,7 +37,8 @@ func TestDefaultRegistryResolvesFamilies(t *testing.T) {
 		{"document-search", planrender.MethodGetLogs, true},
 		{"label-timeseries", planrender.MethodGetLogs, false},   // metrics family, not logs
 		{"document-search", planrender.MethodGetMetrics, false}, // log family, not metrics
-		{"sql-table", planrender.MethodGetMetrics, false},       // no such family yet
+		{"sql-table", planrender.MethodGetMetrics, true},        // SQL metrics family
+		{"sql-table", planrender.MethodGetLogs, false},          // sql-table is metrics-only for now
 		{"", planrender.MethodGetMetrics, false},                // passthrough
 	}
 	for _, c := range cases {
