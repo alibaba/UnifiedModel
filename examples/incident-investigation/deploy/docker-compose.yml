@@ -1,0 +1,51 @@
+name: umodel-incident-demo
+
+# One command brings up UModel (serving the incident-investigation pack) plus a real
+# Prometheus and a real Elasticsearch, seeded so the pack's get_metrics / get_logs plans
+# return data that matches the modeled incident (payment-gateway SLO breach + retry storm).
+# Connect an agent with the umodel-query + umodel-rca skills and run a live RCA. See README.md.
+
+services:
+  umodel:
+    build:
+      context: ../../..
+      dockerfile: examples/incident-investigation/deploy/umodel.Dockerfile
+    ports:
+      - "8080:8080"   # UModel API (umctl --addr / MCP target)
+
+  exporter:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./exporter.py:/app/exporter.py:ro
+    command: ["python", "exporter.py"]
+    expose:
+      - "9100"        # scraped by Prometheus on the compose network
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"   # the agent runs the plan's PromQL against http://localhost:9090
+    depends_on:
+      - exporter
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"   # the agent runs the plan's _search against http://localhost:9200
+
+  es-seed:
+    image: curlimages/curl:8.10.1
+    volumes:
+      - ./es-seed.sh:/es-seed.sh:ro
+      - ./logs.ndjson:/logs.ndjson:ro
+    command: ["sh", "/es-seed.sh"]
+    depends_on:
+      - elasticsearch
+    restart: "no"

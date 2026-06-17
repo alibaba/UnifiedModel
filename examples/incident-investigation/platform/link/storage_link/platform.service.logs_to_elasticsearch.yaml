@@ -24,3 +24,9 @@ spec:
     level: severity
     message: log_message
     trace_id: trace_id
+    span_id: span_id
+    http_status: http_status
+    upstream_service: upstream_service
+    latency_ms: latency_ms
+    error_code: error_code
+    pod: pod

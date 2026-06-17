@@ -12,7 +12,7 @@ metadata:
     en_us: "Elasticsearch-compatible log index used by the incident-investigation service log set."
     zh_cn: "故障排查 Demo 服务日志集使用的 Elasticsearch 兼容日志索引。"
 spec:
-  endpoint: "https://elasticsearch.platform.example:9200"
+  endpoint: "http://localhost:9200"
   index: "platform-service-logs-*"
   index_pattern: "platform-service-logs-${yyyy.MM.dd}"
   version: "8.x"

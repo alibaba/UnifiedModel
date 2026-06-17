@@ -1,0 +1,32 @@
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:11Z","svc_id":"63718b78868895d2590551b27ec6f51c","env":"prod","severity":"ERROR","log_message":"upstream timeout calling payment-router after 2000ms; retry 5/5 exhausted","trace_id":"a1f3c2d4e5b60001","span_id":"a1f3c2d4e5b6","http_status":"504","upstream_service":"payment-router","latency_ms":2003,"error_code":"UPSTREAM_TIMEOUT","pod":"payment-gw-6b9f-xk2"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:13Z","svc_id":"63718b78868895d2590551b27ec6f51c","env":"prod","severity":"ERROR","log_message":"circuit breaker OPEN for payment-router (downstream error rate 14.8%)","trace_id":"a1f3c2d4e5b60002","span_id":"a1f3c2d4e5b7","http_status":"503","upstream_service":"payment-router","latency_ms":5,"error_code":"CIRCUIT_OPEN","pod":"payment-gw-6b9f-xk2"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:18Z","svc_id":"63718b78868895d2590551b27ec6f51c","env":"prod","severity":"ERROR","log_message":"payment-router returned 503 Service Unavailable, shedding charge request","trace_id":"a1f3c2d4e5b60003","span_id":"a1f3c2d4e5b8","http_status":"503","upstream_service":"payment-router","latency_ms":1987,"error_code":"UPSTREAM_5XX","pod":"payment-gw-6b9f-tn4"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:06:52Z","svc_id":"63718b78868895d2590551b27ec6f51c","env":"prod","severity":"WARN","log_message":"p99 latency 2150ms breaches platinum SLO 800ms","trace_id":"a1f3c2d4e5b60004","span_id":"a1f3c2d4e5b9","http_status":"200","upstream_service":"payment-router","latency_ms":2150,"error_code":"","pod":"payment-gw-6b9f-xk2"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:21Z","svc_id":"08409c1c4464bf2bc6346c777a2fabc7","env":"prod","severity":"ERROR","log_message":"alipay channel timeout after 2000ms","trace_id":"b7e1a9c0d2330001","span_id":"b7e1a9c0d233","http_status":"504","upstream_service":"channel-alipay","latency_ms":2001,"error_code":"UPSTREAM_TIMEOUT","pod":"payment-router-7c9d-aa"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:23Z","svc_id":"08409c1c4464bf2bc6346c777a2fabc7","env":"prod","severity":"ERROR","log_message":"connection pool to channel-alipay saturated (80/80), rejecting acquire","trace_id":"b7e1a9c0d2330002","span_id":"b7e1a9c0d234","http_status":"503","upstream_service":"channel-alipay","latency_ms":12,"error_code":"POOL_EXHAUSTED","pod":"payment-router-7c9d-bb"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:09Z","svc_id":"08409c1c4464bf2bc6346c777a2fabc7","env":"prod","severity":"ERROR","log_message":"retry amplification detected: inbound 11800 req/s = 3.4x baseline 3470 req/s","trace_id":"b7e1a9c0d2330003","span_id":"b7e1a9c0d235","http_status":"200","upstream_service":"checkout-service","latency_ms":1840,"error_code":"OVERLOAD","pod":"payment-router-7c9d-cc"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:25Z","svc_id":"6b3718c2b64fd131c1d7c0f1362c6d41","env":"prod","severity":"ERROR","log_message":"Alipay upstream gateway responded 504 after 2000ms (timeout rate 15%)","trace_id":"c9d4e1f2a3340001","span_id":"c9d4e1f2a334","http_status":"504","upstream_service":"alipay-openapi","latency_ms":2004,"error_code":"UPSTREAM_TIMEOUT","pod":"channel-alipay-58f7-aa"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:27Z","svc_id":"6b3718c2b64fd131c1d7c0f1362c6d41","env":"prod","severity":"ERROR","log_message":"token bucket exhausted, shedding 8% of charge requests","trace_id":"c9d4e1f2a3340002","span_id":"c9d4e1f2a335","http_status":"429","upstream_service":"alipay-openapi","latency_ms":3,"error_code":"RATE_LIMITED","pod":"channel-alipay-58f7-bb"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:30Z","svc_id":"3640dfa237be9bc61ced0fd7af8c7dad","env":"prod","severity":"WARN","log_message":"WeChat Pay p99 1620ms above 1200ms target under retry load","trace_id":"d2a3b4c5e6450001","span_id":"d2a3b4c5e645","http_status":"200","upstream_service":"wechatpay-api","latency_ms":1620,"error_code":"","pod":"channel-wechatpay-9a1b-aa"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:06:40Z","svc_id":"149632df43354373835df2717cb8fb19","env":"prod","severity":"WARN","log_message":"payment_client retry 3/5 to payment-gateway (timeout 2000ms)","trace_id":"e5b6c7d8f9560001","span_id":"e5b6c7d8f956","http_status":"504","upstream_service":"payment-gateway","latency_ms":2000,"error_code":"UPSTREAM_TIMEOUT","pod":"checkout-svc-5d8c-aa"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:06:58Z","svc_id":"149632df43354373835df2717cb8fb19","env":"prod","severity":"WARN","log_message":"outbound retry budget 78% consumed under flash-sale load (config max_retries=5)","trace_id":"e5b6c7d8f9560002","span_id":"e5b6c7d8f957","http_status":"200","upstream_service":"payment-gateway","latency_ms":1980,"error_code":"","pod":"checkout-svc-5d8c-bb"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:07:35Z","svc_id":"149632df43354373835df2717cb8fb19","env":"prod","severity":"ERROR","log_message":"checkout failed: payment-gateway unavailable after 5 retries (order ord-8830124)","trace_id":"e5b6c7d8f9560003","span_id":"e5b6c7d8f958","http_status":"502","upstream_service":"payment-gateway","latency_ms":10250,"error_code":"PAYMENT_UNAVAILABLE","pod":"checkout-svc-5d8c-aa"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:05:30Z","svc_id":"9f71098638361b9aa76a350a16f25626","env":"prod","severity":"WARN","log_message":"cart-svc replica OOMKilled, restarting (2/3 ready)","trace_id":"f6c7d8e9a0670001","span_id":"f6c7d8e9a067","http_status":"200","upstream_service":"","latency_ms":720,"error_code":"OOM","pod":"cart-svc-77b4-cc"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:06:05Z","svc_id":"c04f73b02ebb6c7727e3e431876338db","env":"prod","severity":"INFO","log_message":"ledger entry committed for settlement batch sb-20260618-1407","trace_id":"a0b1c2d3e4780001","span_id":"a0b1c2d3e478","http_status":"200","upstream_service":"","latency_ms":42,"error_code":"","pod":"ledger-svc-1f8a-aa"}
+{"index":{}}
+{"timestamp":"2026-06-18T14:05:10Z","svc_id":"394ba4c250378ded9a5a2c4d5bec47c9","env":"prod","severity":"INFO","log_message":"token validated for principal user-44910 (cache hit)","trace_id":"b1c2d3e4f5890001","span_id":"b1c2d3e4f589","http_status":"200","upstream_service":"","latency_ms":4,"error_code":"","pod":"auth-svc-9e2a-aa"}
