@@ -32,6 +32,18 @@ func (idx *schemaIndex) add(element model.UModelElement) {
 	}
 }
 
+func (idx *schemaIndex) deleteByKey(key string) (model.UModelElement, bool) {
+	element, ok := idx.byKey[key]
+	if !ok {
+		return model.UModelElement{}, false
+	}
+	delete(idx.byKey, key)
+	if element.Kind != "" && element.Domain != "" && element.Name != "" {
+		delete(idx.byKindDomainName, indexKey(element.Kind, element.Domain, element.Name))
+	}
+	return cloneElement(element), true
+}
+
 func (idx *schemaIndex) find(kind, domain, name string) (model.UModelElement, bool) {
 	element, ok := idx.byKindDomainName[indexKey(kind, domain, name)]
 	return cloneElement(element), ok
@@ -48,6 +60,22 @@ func (s *Service) mergeIndex(workspace string, elements []model.UModelElement) {
 	for _, element := range elements {
 		idx.add(element)
 	}
+}
+
+func (s *Service) removeIndex(workspace string, ids []string) []model.UModelElement {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	idx := s.indexes[workspace]
+	if idx == nil {
+		return nil
+	}
+	elements := make([]model.UModelElement, 0, len(ids))
+	for _, id := range ids {
+		if element, ok := idx.deleteByKey(id); ok {
+			elements = append(elements, element)
+		}
+	}
+	return elements
 }
 
 func (s *Service) replaceIndex(workspace string, elements []model.UModelElement) {

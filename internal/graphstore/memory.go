@@ -59,6 +59,32 @@ func (s *MemoryStore) PutUModelElements(ctx context.Context, batch model.UModelE
 	return model.WriteResult{Accepted: len(batch.Elements), Items: items}, nil
 }
 
+func (s *MemoryStore) DeleteUModelElements(ctx context.Context, workspace string, ids []string) (model.WriteResult, error) {
+	if workspace == "" {
+		return model.WriteResult{}, fmt.Errorf("workspace is required")
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.ensureWorkspaceLocked(workspace)
+
+	items := make([]model.BatchItemResult, 0, len(ids))
+	for _, rawID := range ids {
+		id := strings.TrimSpace(rawID)
+		if id == "" {
+			items = append(items, writeFailure(id, apperrors.CodeValidationFailed, "umodel element id is required"))
+			continue
+		}
+		if _, exists := s.umodels[workspace][id]; !exists {
+			items = append(items, writeFailure(id, apperrors.CodeNotFound, "umodel element not found"))
+			continue
+		}
+		delete(s.umodels[workspace], id)
+		items = append(items, model.BatchItemResult{ID: id, OK: true})
+	}
+	return summarizeItems(items), nil
+}
+
 func (s *MemoryStore) GetUModelSnapshot(ctx context.Context, req model.UModelSnapshotRequest) (model.UModelSnapshot, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

@@ -2991,7 +2991,6 @@ body.ume-resizing-detail .ume-detail-panel {
 }
 
 .ume-submit-failure {
-  margin: var(--ume-space-3) var(--ume-space-4) 0;
   padding: var(--ume-space-3);
   border: 1px solid rgba(220, 38, 38, 0.22);
   border-radius: var(--ume-radius-lg);
@@ -3017,6 +3016,15 @@ body.ume-resizing-detail .ume-detail-panel {
   font-family: var(--ume-font-mono);
   font-size: var(--ume-text-xs);
   line-height: 1.5;
+}
+
+.ume-submit-failure-slot {
+  min-height: 0;
+  padding: 0 var(--ume-space-4);
+}
+
+.ume-submit-failure-slot.visible {
+  padding-top: var(--ume-space-3);
 }
 
 .ume-diff-row {

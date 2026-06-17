@@ -35,6 +35,10 @@ func (p *Provider) PutUModelElements(ctx context.Context, batch model.UModelElem
 	return model.WriteResult{}, unavailable()
 }
 
+func (p *Provider) DeleteUModelElements(ctx context.Context, workspace string, ids []string) (model.WriteResult, error) {
+	return model.WriteResult{}, unavailable()
+}
+
 func (p *Provider) GetUModelSnapshot(ctx context.Context, req model.UModelSnapshotRequest) (model.UModelSnapshot, error) {
 	return model.UModelSnapshot{}, unavailable()
 }

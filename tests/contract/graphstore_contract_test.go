@@ -8,6 +8,7 @@ import (
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
 	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	"github.com/alibaba/UnifiedModel/pkg/contract"
+	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
 
@@ -111,6 +112,27 @@ func exerciseGraphStore(t *testing.T, store contract.GraphStore) {
 	}
 	if snapshot.Elements[0].Version != "v1" || snapshot.Elements[0].Spec["display_name"] != "APM Service" {
 		t.Fatalf("unexpected umodel snapshot: %+v", snapshot.Elements[0])
+	}
+	missingDelete, err := store.DeleteUModelElements(ctx, "demo", []string{"apm/missing/entity_set"})
+	if err != nil {
+		t.Fatalf("delete missing umodel: %v", err)
+	}
+	if missingDelete.Failed != 1 || missingDelete.Items[0].Code != string(apperrors.CodeNotFound) {
+		t.Fatalf("expected missing umodel delete failure, got %+v", missingDelete)
+	}
+	deleteResult, err := store.DeleteUModelElements(ctx, "demo", []string{"apm/apm.service/entity_set"})
+	if err != nil {
+		t.Fatalf("delete umodel: %v", err)
+	}
+	if deleteResult.Accepted != 1 || deleteResult.Failed != 0 || deleteResult.Items[0].ID != "apm/apm.service/entity_set" {
+		t.Fatalf("unexpected umodel delete result: %+v", deleteResult)
+	}
+	snapshot, err = store.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: "demo"})
+	if err != nil {
+		t.Fatalf("snapshot after delete: %v", err)
+	}
+	if len(snapshot.Elements) != 0 {
+		t.Fatalf("expected deleted umodel element to be absent, got %+v", snapshot.Elements)
 	}
 
 	if _, err := store.WriteEntities(ctx, model.EntityWriteBatch{Workspace: "demo", Entities: []model.EntityPayload{entity("54013ba69c196820e56801f1ef5aad54")}}); err != nil {

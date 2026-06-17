@@ -27,6 +27,7 @@ type GraphStore interface {
 	OpenWorkspace(ctx context.Context, workspace model.WorkspaceMetadata) error
 	EnsureSchema(ctx context.Context, workspace string) error
 	PutUModelElements(ctx context.Context, batch model.UModelElementBatch) (model.WriteResult, error)
+	DeleteUModelElements(ctx context.Context, workspace string, ids []string) (model.WriteResult, error)
 	GetUModelSnapshot(ctx context.Context, req model.UModelSnapshotRequest) (model.UModelSnapshot, error)
 	WriteEntities(ctx context.Context, batch model.EntityWriteBatch) (model.WriteResult, error)
 	WriteRelations(ctx context.Context, batch model.RelationWriteBatch) (model.WriteResult, error)

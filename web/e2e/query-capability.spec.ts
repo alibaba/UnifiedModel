@@ -97,6 +97,11 @@ test.describe('Query capability via UI', () => {
 
     await page.getByRole('button', { name: /^Submit/ }).click()
     await expect(page.locator('text=Submit Preview')).toBeVisible()
+    const drawerBox = await page.locator('.ume-diff-drawer').boundingBox()
+    const confirmBox = await page.getByRole('button', { name: 'Confirm & Submit' }).boundingBox()
+    expect(drawerBox).not.toBeNull()
+    expect(confirmBox).not.toBeNull()
+    expect(confirmBox!.y).toBeGreaterThan(drawerBox!.y + drawerBox!.height - 120)
 
     await page.getByRole('button', { name: 'Confirm & Submit' }).click()
     await expect(page.locator('.ume-submit-failure')).toContainText('Delete accepted 0 item(s), failed 1 item(s).')

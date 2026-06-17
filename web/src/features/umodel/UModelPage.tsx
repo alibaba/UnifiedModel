@@ -1615,18 +1615,20 @@ function DiffDialog({
           <span>{t('umodelExplorer.dialog.diff.modified')} <strong>{diff.modified.length}</strong></span>
           <span>{t('umodelExplorer.dialog.diff.deleted')} <strong>{diff.deleted.length}</strong></span>
         </div>
-        {submitFailure && (
-          <div className="ume-submit-failure" role="alert">
-            <strong>{submitFailure.summary}</strong>
-            {submitFailure.details.length > 0 && (
-              <ul>
-                {submitFailure.details.map((detail, index) => (
-                  <li key={`${index}-${detail}`}>{detail}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+        <div className={`ume-submit-failure-slot ${submitFailure ? 'visible' : ''}`}>
+          {submitFailure && (
+            <div className="ume-submit-failure" role="alert">
+              <strong>{submitFailure.summary}</strong>
+              {submitFailure.details.length > 0 && (
+                <ul>
+                  {submitFailure.details.map((detail, index) => (
+                    <li key={`${index}-${detail}`}>{detail}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
         <div className="ume-dialog-body">
           <div className="ume-diff-list">
             {changes.map(({ type, element }, index) => (

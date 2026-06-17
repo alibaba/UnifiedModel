@@ -15,6 +15,7 @@ import (
 
 type graphStore interface {
 	PutUModelElements(ctx context.Context, batch model.UModelElementBatch) (model.WriteResult, error)
+	DeleteUModelElements(ctx context.Context, workspace string, ids []string) (model.WriteResult, error)
 	GetUModelSnapshot(ctx context.Context, req model.UModelSnapshotRequest) (model.UModelSnapshot, error)
 }
 
@@ -161,16 +162,68 @@ func (s *Service) PutElements(ctx context.Context, batch model.UModelElementBatc
 }
 
 func (s *Service) DeleteElements(ctx context.Context, workspace string, ids []string) (model.WriteResult, error) {
-	items := make([]model.BatchItemResult, 0, len(ids))
-	for _, id := range ids {
-		items = append(items, model.BatchItemResult{
-			ID:      id,
-			OK:      false,
-			Code:    string(apperrors.CodeNotImplemented),
-			Message: "delete dependency checks are not implemented in the current service",
-		})
+	if workspace == "" {
+		return model.WriteResult{}, apperrors.New(apperrors.CodeInvalidArgument, "workspace is required")
 	}
-	return model.WriteResult{Failed: len(items), Items: items}, nil
+	result, err := s.graph.DeleteUModelElements(ctx, workspace, ids)
+	if err != nil {
+		return model.WriteResult{}, err
+	}
+
+	deletedIDs := acceptedItemIDs(result.Items)
+	if len(deletedIDs) == 0 {
+		return result, nil
+	}
+	deletedElements := s.removeIndex(workspace, deletedIDs)
+	if s.search != nil {
+		if err := s.search.DeleteByDocID(ctx, workspace, umodelSearchDocIDs(deletedIDs, deletedElements)); err != nil {
+			result.Warnings = append(result.Warnings, model.ErrorDetail{
+				Field:  "search_index",
+				Reason: err.Error(),
+			})
+		}
+	}
+	return result, nil
+}
+
+func acceptedItemIDs(items []model.BatchItemResult) []string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if item.OK && item.ID != "" {
+			ids = append(ids, item.ID)
+		}
+	}
+	return ids
+}
+
+func umodelSearchDocIDs(ids []string, elements []model.UModelElement) []string {
+	docIDs := make([]string, 0, len(ids)+len(elements))
+	seen := make(map[string]struct{}, len(ids)+len(elements))
+	add := func(id string) {
+		if id == "" {
+			return
+		}
+		if _, ok := seen[id]; ok {
+			return
+		}
+		seen[id] = struct{}{}
+		docIDs = append(docIDs, id)
+	}
+	for _, id := range ids {
+		add("umodel/" + id)
+	}
+	for _, element := range elements {
+		key := model.UModelElementKey(element)
+		if key == "" || element.Kind != "runbook_set" {
+			continue
+		}
+		for _, section := range []string{"knowledge", "observations", "actions", "automations", "skills"} {
+			if value, ok := element.Spec[section]; ok && value != nil {
+				add("runbook_set/" + key + "/" + section)
+			}
+		}
+	}
+	return docIDs
 }
 
 func (s *Service) RebuildIndex(ctx context.Context, workspace string) error {

@@ -57,6 +57,14 @@ func TestHTTPQuickFlow(t *testing.T) {
 	if len(rows(t, umodelRows)) != 1 {
 		t.Fatalf("expected one umodel row: %+v", umodelRows)
 	}
+	deleteResult := deleteJSON(t, server.URL+"/api/v1/umodel/demo/elements", map[string]any{"ids": []string{"devops/devops.service/entity_set"}})
+	if deleteResult["accepted"] != float64(1) || deleteResult["failed"] != float64(0) {
+		t.Fatalf("expected UModel delete success, got %+v", deleteResult)
+	}
+	deletedRows := post(t, server.URL+"/api/v1/query/demo/execute", map[string]any{"query": ".umodel with(kind='entity_set', domain='devops', name='devops.service') | limit 10"})
+	if len(rows(t, deletedRows)) != 0 {
+		t.Fatalf("deleted UModel element should not be queryable: %+v", deletedRows)
+	}
 	entityRows := post(t, server.URL+"/api/v1/query/demo/execute", map[string]any{"query": ".entity with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101'], topk=1) | project __entity_id__,display_name"})
 	if len(rows(t, entityRows)) != 1 {
 		t.Fatalf("expected one entity row: %+v", entityRows)
@@ -285,6 +293,32 @@ func get(t *testing.T, url string) map[string]any {
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		t.Fatalf("get %s returned %s", url, resp.Status)
+	}
+	var out map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	return out
+}
+
+func deleteJSON(t *testing.T, url string, payload any) map[string]any {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(payload); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	req, err := http.NewRequest(http.MethodDelete, url, &buf)
+	if err != nil {
+		t.Fatalf("new delete request %s: %v", url, err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("delete %s: %v", url, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("delete %s returned %s", url, resp.Status)
 	}
 	var out map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {

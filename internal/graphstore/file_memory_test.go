@@ -69,6 +69,24 @@ func TestFileMemoryStorePersistsAcrossReopen(t *testing.T) {
 	if snapshot.Version != ProviderTypeFileMemory || len(snapshot.Elements) != 1 || snapshot.Elements[0].Spec["display_name"] != "APM Service" {
 		t.Fatalf("unexpected reopened snapshot: %+v", snapshot)
 	}
+	deleted, err := reopened.DeleteUModelElements(ctx, "demo", []string{"apm/apm.service/entity_set"})
+	if err != nil {
+		t.Fatalf("delete persisted umodel: %v", err)
+	}
+	if deleted.Accepted != 1 || deleted.Failed != 0 {
+		t.Fatalf("unexpected delete result: %+v", deleted)
+	}
+	reopenedAgain, err := NewFileMemoryStore(ProviderConfig{DataRoot: root})
+	if err != nil {
+		t.Fatalf("reopen after delete: %v", err)
+	}
+	snapshot, err = reopenedAgain.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: "demo"})
+	if err != nil {
+		t.Fatalf("snapshot after delete: %v", err)
+	}
+	if len(snapshot.Elements) != 0 {
+		t.Fatalf("deleted umodel should not persist after reopen: %+v", snapshot.Elements)
+	}
 
 	entityRows, err := reopened.QueryEntities(ctx, model.EntityQueryPlan{
 		Workspace: "demo",
