@@ -19,7 +19,7 @@ UModel 支持：
 
 ## 演示
 
-https://github.com/user-attachments/assets/3cdc72de-2f78-495c-baf9-7066c1d9792f
+<video src="https://github.com/user-attachments/assets/3cdc72de-2f78-495c-baf9-7066c1d9792f" controls></video>
 
 AI Agent 在 `quickstart-multidomain` workspace 上读取对象图（90 秒）：发现服务、沿跨域拓扑遍历、并通过模型自动生成的查询计划拉取指标和日志，全程不手写一条查询。
 

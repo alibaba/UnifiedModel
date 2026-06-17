@@ -19,7 +19,7 @@ With UModel, you can:
 
 ## Demo
 
-https://github.com/user-attachments/assets/3cdc72de-2f78-495c-baf9-7066c1d9792f
+<video src="https://github.com/user-attachments/assets/3cdc72de-2f78-495c-baf9-7066c1d9792f" controls></video>
 
 An AI agent reads across the object graph in the `quickstart-multidomain` workspace (90 seconds): it discovers services, walks cross-domain topology, and pulls metrics and logs through model-scoped query plans, without hand-writing a single query.
 
