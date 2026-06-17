@@ -78,6 +78,12 @@ jobs:
       - name: Run CI
         run: make ci
 
+      # Smoke-run the benchmarks so they keep compiling and executing. Non-blocking
+      # for now (no perf thresholds yet); drop continue-on-error to gate on perf.
+      - name: Run benchmarks (smoke)
+        run: make bench
+        continue-on-error: true
+
       - name: Run Playwright UI tests
         run: |
           make quickstart &
