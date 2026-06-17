@@ -7,49 +7,28 @@
 
 English version: [README.md](README.md)
 
-**面向 AI、数据治理与运维的开源语义层。** UModel 把分散的 schema、实体、遥测和拓扑，组织成一张 workspace 范围的**对象图**——人、系统和 AI Agent 都通过同一个查询入口读取它，厂商中立、本地运行。
+UModel（Unified Model）是面向企业 AI、数据治理和智能运维的厂商中立语义运行时。它把分散的 schema、实体、业务对象、遥测链接和拓扑关系组织成 workspace-scoped 的对象图上下文，让人、系统和 AI Agent 通过一个本地服务理解并使用这些语义。
 
-AI 与分析卡住，往往不是因为缺数据，而是数据缺少共享的*语义*。UModel 就是补上语义的那一层：一个活的、可查询的语义运行时，而不是被动查阅的数据辞典。
+UModel 支持：
 
-## 看一眼
+- 编写和导入模型包，定义企业对象、运维对象、数据集、链接、存储和拓扑语义。
+- 通过 `.umodel`、`.entity`、`.topo` 这一组 SPL 入口统一查询模型、实体和拓扑。
+- 通过本地 Web UI 探索 workspace。
+- 通过 AgentGateway 和 MCP 连接 Agent client。
+- 使用公开 REST、CLI 和 SDK 契约，不依赖服务端内部实现。
+
+## 演示
 
 <video src="https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4" controls width="800"></video>
 
-一段 90 秒的演示：AI Agent 在 `quickstart-multidomain` workspace 上读取对象图——发现服务、沿跨域拓扑遍历、并通过模型自动生成的查询计划拉取指标和日志，全程不手写一条查询。播放器若未加载，[直接观看视频](https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4)。
-
-## 工作原理
-
-UModel 位于分散的数据源与需要理解它们的人、系统、Agent 之间。语义只编写一次，所有人用同一种方式读取。
-
-```mermaid
-flowchart LR
-  S[Schema]
-  E[实体与业务对象]
-  T[遥测与拓扑]
-  G[(UModel 对象图<br/>workspace 范围)]
-  Q[统一查询入口<br/>.umodel / .entity / .topo]
-  S --> G
-  E --> G
-  T --> G
-  G --> Q
-  Q --> H[人 · Web UI]
-  Q --> Y[系统 · CLI / REST / SDK]
-  Q --> A[AI Agent · MCP / 技能]
-```
-
-用 UModel，你可以：
-
-- **编写和导入模型包**，定义企业对象、运维对象、数据集、链接、存储和拓扑语义。
-- **查询**模型、实体和拓扑——通过 `.umodel`、`.entity`、`.topo` 一组 SPL 入口，走 CLI、REST 或 MCP。
-- **探索** workspace，通过本地 Web UI。
-- **接入 Agent**，通过 AgentGateway 和 MCP，让模型自动生成取数计划（指标/日志），而不是手写查询。
+AI Agent 在 `quickstart-multidomain` workspace 上读取对象图（90 秒）：发现服务、沿跨域拓扑遍历、并通过模型自动生成的查询计划拉取指标和日志，全程不手写一条查询。播放器若未加载，[直接观看视频](https://unifiedmodel-assets.oss-accelerate.aliyuncs.com/QuickStart.mp4)。
 
 ## 为什么需要 UModel
 
-- **加速企业 AI 规模化落地。** 统一语义标准让 AI 跨平台、跨部门、跨工具理解数据含义——更快走向运维、分析、预测和 Agent 工作流。
-- **降低数据治理成本。** 多源数据共享同一套语义语言，数据团队不再反复消耗在口径对齐、字段翻译和上下文重建上。
-- **保持厂商中立。** UModel 独立于任何单一平台、数据工具、可观测栈或 AI 供应商，避免语义层面的厂商锁定。
-- **构建语义操作系统。** 一个活的、可编程的语义运行时，供 Agent 查询与推理——面向多智能体协作的共享上下文，而不是静态辞典。
+- 加速企业 AI 规模化落地。统一语义标准让 AI 模型理解来自不同平台、不同部门、不同工具和不同领域的数据含义，提升智能运维、智能客服、智能分析、智能预测和 Agent 工作流的落地效率。
+- 降低数据治理成本。多数据源、多工具、多系统共享同一套语义语言，数据团队不再反复消耗在口径对齐、字段翻译和上下文重建上，可以把更多精力投入数据价值挖掘。
+- 保障厂商中立与选择自由。UModel 独立于特定平台、数据工具、可观测技术栈或 AI 供应商，企业构建数字化基础设施时可以避免语义层面的厂商锁定。
+- 构建企业级语义操作系统。UModel 从被动查阅的数据辞典，升级为活的、主动的、可被 AI Agent 编程调用的语义运行时，为未来企业多智能体协作提供共享上下文。
 
 ## 项目范围
 
@@ -59,25 +38,45 @@ flowchart LR
 
 ## 五分钟快速开始
 
-依赖：Go 1.22+、Make、Node.js 22+（Web UI），首选 pnpm 9+（支持 `corepack` / `npm exec` fallback）。
+依赖：
 
-检查本地工具链，然后启动 API 和 Web UI 并预加载 demo workspace：
+- Go 1.22 或更新版本。
+- Make。
+- 运行 Web UI 需要 Node.js 22 或更新版本。
+- Web UI 依赖首选 pnpm 9 或更新版本；Makefile 支持 `corepack` 或 `npm exec` fallback。
+
+检查本地工具链：
 
 ```bash
 make check-env
+```
+
+启动 API 和 Web UI，并预加载 demo workspace：
+
+```bash
 make quickstart
 ```
 
-`make quickstart` 会启动本地 API、启动 Web UI，并用 `GRAPHSTORE=memory` 预加载 `demo` workspace；进程停止后不保留本地 demo 数据。
+`make quickstart` 会启动本地 API、启动 Web UI，并用 `GRAPHSTORE=memory` 预加载 `demo` workspace。进程停止后不保留本地 demo 数据。
 
 下一步：
 
 - 打开 `http://localhost:5173`，选择 `demo`，通过 Explorer、Query、Data Store 和 Agent 视图查看 workspace。
-- 通过 AgentGateway 或 MCP 集成 Agent：`umctl agent discover demo`，再通过 `umodel-mcp` 连接 MCP client。
+- 通过 AgentGateway 或 MCP 集成 Agent。先运行 `umctl agent discover demo`，再通过 `umodel-mcp` 连接 MCP client。
 - 通过 CLI 或 REST 使用 Query Service 查询模型、实体和拓扑。
-- 想让 Agent 读取**真实**的指标和日志？拉起带遥测后端的 stack——`sh examples/quickstart-multidomain/deploy/start.sh`——再把 [`umodel-query`](skills/umodel-query) 技能指向它。
 
-用 `make stop-all` 停止本地服务。详细流程：[快速开始](docs/zh/getting-started/quickstart.md) · [Web UI](docs/zh/guides/web-ui.md) · [Query Service](docs/zh/guides/query-service.md) · [MCP](docs/zh/reference/mcp.md)。
+详细流程：
+
+- [快速开始](docs/zh/getting-started/quickstart.md)
+- [Web UI 指南](docs/zh/guides/web-ui.md)
+- [Query Service 指南](docs/zh/guides/query-service.md)
+- [MCP 参考](docs/zh/reference/mcp.md)
+
+停止本地服务：
+
+```bash
+make stop-all
+```
 
 ## Agent 技能
 
@@ -94,15 +93,19 @@ Qoder、Codex、Cursor 等 Agent 加载同样的两个 `SKILL.md` 文件——�
 
 ![UModel 架构](images/architecture.png)
 
-UModel 围绕一张 workspace 范围的对象图运行本地服务：
+UModel 围绕 workspace-scoped object graph 运行本地服务：
 
-- 模型包定义对象词汇：EntitySet、数据集、链接、存储和关系语义。
-- EntityStore 写入运行时实体与拓扑关系，实例化模型。
+- 模型包定义对象词汇：EntitySet、DataSet、Link、Storage 和关系语义。
+- EntityStore 写入运行时实体与拓扑关系，用运行时数据实例化模型。
 - Query Service 是 `.umodel`、`.entity`、`.topo` 的统一读取入口。
 - AgentGateway 和 MCP 为 Agent client 暴露 discovery、resources、query examples 和安全工具。
 - Web UI、CLI、REST 和 SDK client 共享同一套公开契约。
 
-细节：[架构总览](docs/zh/architecture/overview.md) · [运行时流程](docs/zh/architecture/runtime-flow.md) · [Query 与 Agent](docs/zh/architecture/query-and-agent.md)。
+架构细节：
+
+- [架构总览](docs/zh/architecture/overview.md)
+- [运行时流程](docs/zh/architecture/runtime-flow.md)
+- [Query 与 Agent 架构](docs/zh/architecture/query-and-agent.md)
 
 ## 文档
 
@@ -123,13 +126,34 @@ UModel 围绕一张 workspace 范围的对象图运行本地服务：
 
 ## 开发
 
+安装本地依赖：
+
 ```bash
-make install-env     # 安装本地依赖
-make build           # 构建服务、UI 和 Go SDK
-make ci              # 运行本地 CI gate
+make install-env
 ```
 
-定向检查：`make guard`、`make test-service`、`make verify`、`make example-validate`。生成的 Go 和 Python 模型 SDK 位于 `sdk/`；Java SDK 仍在 `generated/java/`。最小 Go service client 位于 `sdk/go/service`。
+构建：
+
+```bash
+make build
+```
+
+运行定向检查：
+
+```bash
+make guard
+make test-service
+make verify
+make example-validate
+```
+
+运行本地 CI gate：
+
+```bash
+make ci
+```
+
+生成的 Go 和 Python 模型 SDK 位于 `sdk/`。Java SDK 当前仍在 `generated/java/`。最小 Go service client 位于 `sdk/go/service`，只封装公开 REST 契约。
 
 ## GraphStore Providers
 
