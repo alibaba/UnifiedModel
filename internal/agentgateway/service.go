@@ -268,6 +268,12 @@ func (s *Service) queryRequest(args map[string]any) (model.QueryRequest, error) 
 	if req.Query == "" {
 		return model.QueryRequest{}, apperrors.New(apperrors.CodeInvalidArgument, "query argument is required")
 	}
+	if req.Limit < 0 {
+		return model.QueryRequest{}, apperrors.New(apperrors.CodeInvalidArgument, "limit must be >= 0")
+	}
+	if req.TimeoutMS < 0 {
+		return model.QueryRequest{}, apperrors.New(apperrors.CodeInvalidArgument, "timeout_ms must be >= 0")
+	}
 	if params, ok := args["parameters"].(map[string]any); ok {
 		req.Params = params
 	}

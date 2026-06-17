@@ -362,18 +362,17 @@ func parsePredicate(expression string) (model.QueryPredicate, error) {
 		return model.QueryPredicate{Field: strings.TrimSpace(args[0]), Op: "contains", Value: parseValue(args[1])}, nil
 	}
 
-	for _, op := range []string{"==", "!=", ">=", "<=", "=", "~", ">", "<"} {
-		if idx := strings.Index(expression, op); idx >= 0 {
-			field := strings.TrimSpace(expression[:idx])
-			value := strings.TrimSpace(expression[idx+len(op):])
-			if field == "" || value == "" {
-				return model.QueryPredicate{}, apperrors.New(apperrors.CodeQueryParseError, "where requires field, operator, and value")
-			}
-			if op == "==" {
-				op = "="
-			}
-			return model.QueryPredicate{Field: field, Op: op, Value: parseValue(value)}, nil
+	ops := []string{"==", "!=", ">=", "<=", "=", "~", ">", "<"}
+	if idx, op := topLevelOperatorIndex(expression, ops); idx >= 0 {
+		field := strings.TrimSpace(expression[:idx])
+		value := strings.TrimSpace(expression[idx+len(op):])
+		if field == "" || value == "" {
+			return model.QueryPredicate{}, apperrors.New(apperrors.CodeQueryParseError, "where requires field, operator, and value")
 		}
+		if op == "==" {
+			op = "="
+		}
+		return model.QueryPredicate{Field: field, Op: op, Value: parseValue(value)}, nil
 	}
 	return model.QueryPredicate{}, apperrors.New(apperrors.CodeQueryParseError, "unsupported where predicate")
 }
@@ -818,6 +817,50 @@ func cutTopLevel(text string, sep rune) (string, string, bool) {
 		return "", "", false
 	}
 	return text[:idx], text[idx+len(string(sep)):], true
+}
+
+// topLevelOperatorIndex returns the byte offset and matched operator of the
+// first operator in ops that sits outside any quoted string or bracket group,
+// so a quoted value containing operator characters (e.g. "a<=b") is not
+// mistaken for the predicate's operator. List multi-character operators before
+// their single-character prefixes (== before =, >= before >) so the longest
+// match wins at a given position.
+func topLevelOperatorIndex(text string, ops []string) (int, string) {
+	depth := 0
+	quote := rune(0)
+	for i, r := range text {
+		if quote != 0 {
+			if quote == '`' && r == '`' && isDoubledBacktick(text, i) {
+				continue
+			}
+			if r == quote && !isEscaped(text, i) {
+				quote = 0
+			}
+			continue
+		}
+		switch r {
+		case '\'', '"', '`':
+			quote = r
+			continue
+		case '(', '[', '{':
+			depth++
+			continue
+		case ')', ']', '}':
+			if depth > 0 {
+				depth--
+			}
+			continue
+		}
+		if depth != 0 {
+			continue
+		}
+		for _, op := range ops {
+			if strings.HasPrefix(text[i:], op) {
+				return i, op
+			}
+		}
+	}
+	return -1, ""
 }
 
 func parseValue(value string) any {
