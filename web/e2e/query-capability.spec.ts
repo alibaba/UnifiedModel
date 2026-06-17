@@ -62,6 +62,50 @@ test.describe('Query capability via UI', () => {
     expect(hasContent || (await page.locator('text=entity_set').count()) > 0).toBeTruthy()
   })
 
+  test('submit delete success closes preview without Monaco model errors', async ({ page }) => {
+    const browserErrors: string[] = []
+    page.on('pageerror', (error) => browserErrors.push(error.message))
+    page.on('console', (message) => {
+      if (message.type() === 'error') browserErrors.push(message.text())
+    })
+    await page.route('**/api/v1/umodel/demo/elements', async (route) => {
+      if (route.request().method() !== 'DELETE') {
+        await route.continue()
+        return
+      }
+
+      const body = route.request().postDataJSON() as { ids?: string[] }
+      const id = body.ids?.[0] || 'unknown'
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          accepted: 1,
+          failed: 0,
+          items: [{
+            id,
+            ok: true,
+          }],
+        }),
+      })
+    })
+
+    await page.getByRole('button', { name: 'Table' }).click()
+    await expect(page.locator('.ume-data-table tbody tr').first()).toBeVisible({ timeout: 10_000 })
+
+    const linkRow = page.locator('.ume-data-table tbody tr', { hasText: 'EntitySetLink' }).first()
+    await expect(linkRow).toBeVisible()
+    await linkRow.locator('.ume-table-delete-button').click()
+
+    await page.getByRole('button', { name: /^Submit/ }).click()
+    await expect(page.locator('.ume-diff-drawer')).toBeVisible()
+    await page.getByRole('button', { name: 'Confirm & Submit' }).click()
+    await expect(page.locator('.ume-diff-drawer')).toBeHidden({ timeout: 10_000 })
+    await page.waitForTimeout(250)
+
+    expect(browserErrors.filter((message) => message.includes('TextModel got disposed before DiffEditorWidget model got reset'))).toEqual([])
+  })
+
   test('submit preview surfaces delete write failures', async ({ page }) => {
     await page.route('**/api/v1/umodel/demo/elements', async (route) => {
       if (route.request().method() !== 'DELETE') {

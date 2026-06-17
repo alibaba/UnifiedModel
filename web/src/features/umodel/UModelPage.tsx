@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import ReactDOM from 'react-dom'
-import Editor, { DiffEditor } from '@monaco-editor/react'
+import Editor, { DiffEditor, useMonaco } from '@monaco-editor/react'
 import * as YAML from 'js-yaml'
 import {
   Box,
@@ -1593,6 +1593,7 @@ function DiffDialog({
   const selected = changes[selectedIndex] || changes[0]
   const originalJson = selected?.type === 'added' ? '' : stringify(selected?.original || {})
   const modifiedJson = selected?.type === 'deleted' ? '' : stringify(selected?.element || {})
+  const selectedModelKey = selected ? `${selected.type}:${elementKey(selected.element)}` : 'empty'
 
   useEffect(() => {
     if (selectedIndex >= changes.length) setSelectedIndex(0)
@@ -1674,23 +1675,10 @@ function DiffDialog({
                   <strong>{titleForElement(selected.element)}</strong>
                   <code>{elementKey(selected.element)}</code>
                 </div>
-                <DiffEditor
+                <SafeDiffEditor
+                  modelKey={selectedModelKey}
                   original={originalJson}
                   modified={modifiedJson}
-                  language="json"
-                  theme="vs"
-                  options={{
-                    automaticLayout: true,
-                    fontFamily: 'SF Mono, Fira Code, Consolas, monospace',
-                    fontSize: 12,
-                    minimap: { enabled: false },
-                    originalEditable: false,
-                    readOnly: true,
-                    renderMarginRevertIcon: false,
-                    renderSideBySide: true,
-                    scrollBeyondLastLine: false,
-                    wordWrap: 'on',
-                  }}
                 />
               </>
             ) : (
@@ -1707,6 +1695,70 @@ function DiffDialog({
         </footer>
       </section>
     </div>
+  )
+}
+
+function SafeDiffEditor({
+  modelKey,
+  original,
+  modified,
+}: {
+  modelKey: string
+  original: string
+  modified: string
+}) {
+  const monaco = useMonaco()
+  const monacoRef = useRef(monaco)
+  const modelPathsRef = useRef<Set<string>>(new Set())
+  const safeModelKey = encodeURIComponent(modelKey)
+  const originalModelPath = `inmemory://umodel-diff/${safeModelKey}.original.json`
+  const modifiedModelPath = `inmemory://umodel-diff/${safeModelKey}.modified.json`
+
+  useEffect(() => {
+    monacoRef.current = monaco
+  }, [monaco])
+
+  useEffect(() => {
+    modelPathsRef.current.add(originalModelPath)
+    modelPathsRef.current.add(modifiedModelPath)
+  }, [modifiedModelPath, originalModelPath])
+
+  useEffect(() => {
+    return () => {
+      const monacoInstance = monacoRef.current
+      const modelPaths = Array.from(modelPathsRef.current)
+      window.setTimeout(() => {
+        for (const path of modelPaths) {
+          const model = monacoInstance?.editor.getModel(monacoInstance.Uri.parse(path))
+          model?.dispose()
+        }
+      }, 0)
+    }
+  }, [])
+
+  return (
+    <DiffEditor
+      original={original}
+      modified={modified}
+      language="json"
+      originalModelPath={originalModelPath}
+      modifiedModelPath={modifiedModelPath}
+      keepCurrentOriginalModel
+      keepCurrentModifiedModel
+      theme="vs"
+      options={{
+        automaticLayout: true,
+        fontFamily: 'SF Mono, Fira Code, Consolas, monospace',
+        fontSize: 12,
+        minimap: { enabled: false },
+        originalEditable: false,
+        readOnly: true,
+        renderMarginRevertIcon: false,
+        renderSideBySide: true,
+        scrollBeyondLastLine: false,
+        wordWrap: 'on',
+      }}
+    />
   )
 }
 
