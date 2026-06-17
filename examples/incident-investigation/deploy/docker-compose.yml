@@ -3,6 +3,15 @@ name: umodel-incident-demo
 # One command brings up UModel (serving the incident-investigation pack) plus a real
 # Prometheus and a real Elasticsearch, seeded so the pack's get_metrics / get_logs plans
 # return data that matches the modeled incident (payment-gateway SLO breach + retry storm).
+#
+# The telemetry spans the whole ~72h incident window, not a single snapshot:
+#   * metrics-gen writes ~72h of history that promtool backfills into Prometheus before it
+#     starts; the exporter then continues the same series live from "now".
+#   * es-seed (gen_logs.py) loads ~72h of logs ramping from healthy INFO to the ERROR flood.
+# So instant queries see the current breach and range queries see the full arc: retry_rate
+# inflects at the T-24h config change, latency/errors at the T-4h promo, and the T-12h
+# deployment leaves no trace (the red herring).
+#
 # Connect an agent with the umodel-query + umodel-rca skills and run a live RCA. See README.md.
 
 services:
@@ -20,16 +29,51 @@ services:
       - ./exporter.py:/app/exporter.py:ro
     command: ["python", "exporter.py"]
     expose:
-      - "9100"        # scraped by Prometheus on the compose network
+      - "9100"        # scraped by Prometheus on the compose network (the live "now" tail)
+
+  # One-shot: generate ~72h of historical metrics as an OpenMetrics dump for promtool.
+  metrics-gen:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+      - backfill:/backfill
+    environment:
+      - BACKFILL_OUT=/backfill/openmetrics.txt
+    command: ["python", "gen_backfill.py"]
+    restart: "no"
 
   prometheus:
     image: prom/prometheus:v2.54.1
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - backfill:/backfill:ro
+      - promdata:/prometheus
     ports:
       - "9090:9090"   # the agent runs the plan's PromQL against http://localhost:9090
+    # NOTE: no depends_on metrics-gen — podman-compose can leave a service "created" (never
+    # started) when it depends on a one-shot that has already exited; the in-container wait
+    # below handles ordering instead.
     depends_on:
       - exporter
+    # Wait for the history dump, backfill it once into the TSDB, then run Prometheus.
+    # The dump is copied onto the local data volume first: promtool mmaps its input, and
+    # mmap of a file on the shared backfill volume can SIGBUS (cross-mount page cache); a
+    # plain copy reads coherently and gives promtool a fully-backed local file.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        timeout 150 sh -c 'until [ -f /backfill/done ]; do sleep 1; done' || true
+        if [ ! -f /prometheus/.backfilled ] && [ -f /backfill/openmetrics.txt ]; then
+          cp /backfill/openmetrics.txt /prometheus/_om.txt \
+            && promtool tsdb create-blocks-from openmetrics /prometheus/_om.txt /prometheus \
+            && touch /prometheus/.backfilled || echo "backfill skipped (live metrics only)"
+          rm -f /prometheus/_om.txt
+        fi
+        exec /bin/prometheus \
+          --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --storage.tsdb.retention.time=10d
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
@@ -40,12 +84,17 @@ services:
     ports:
       - "9200:9200"   # the agent runs the plan's _search against http://localhost:9200
 
+  # One-shot: generate ~72h of logs (healthy INFO -> retry WARN -> ERROR flood) and bulk-load.
   es-seed:
-    image: curlimages/curl:8.10.1
+    image: python:3.12-slim
+    working_dir: /app
     volumes:
-      - ./es-seed.sh:/es-seed.sh:ro
-      - ./logs.ndjson:/logs.ndjson:ro
-    command: ["sh", "/es-seed.sh"]
+      - .:/app:ro
+    command: ["python", "gen_logs.py"]
     depends_on:
       - elasticsearch
     restart: "no"
+
+volumes:
+  backfill:
+  promdata:

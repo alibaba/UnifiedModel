@@ -18,20 +18,32 @@ Docker or Podman with Compose. Elasticsearch needs ~2 GB available to the engine
 sh examples/incident-investigation/deploy/start.sh
 ```
 
-`start.sh` runs `docker compose` (or `podman compose`) up, waits for the Elasticsearch seed and
-the first Prometheus scrapes, and prints the endpoints. It runs:
+`start.sh` runs `docker compose` (or `podman compose`) up, waits for the metric backfill, the
+Elasticsearch seed and the first Prometheus scrapes, and prints the endpoints. It runs:
 
 | Service | URL | Role |
 |---|---|---|
 | UModel | `http://localhost:8080` | object graph + plan provider (`demo` workspace) |
-| Prometheus | `http://localhost:9090` | seeded metrics, fed by the exporter |
-| Elasticsearch | `http://localhost:9200` | seeded logs |
-| exporter | internal | emits the `platform_service_*` series Prometheus scrapes |
+| Prometheus | `http://localhost:9090` | ~72h backfilled history + live tail |
+| Elasticsearch | `http://localhost:9200` | ~72h of seeded logs |
+| exporter | internal | emits the live `platform_service_*` series Prometheus scrapes |
+| metrics-gen | internal (one-shot) | writes ~72h of history; `promtool` backfills it before Prometheus starts |
+| es-seed | internal (one-shot) | generates and bulk-loads ~72h of logs |
 
-The seeded telemetry matches the graph: `payment-gateway` p99 ≈ 2150ms with ~14.8% errors and
-high upstream-timeout rate; `checkout-service` drives a ~55% client-retry rate (the `max_retries`
-2→5 config change); `payment-router` and the Alipay / WeChat Pay / UnionPay channels are slow and
-erroring; the rest of the platform is healthy.
+### Telemetry spans the incident window
+
+The seeded telemetry covers the whole ~72h incident, not just the current snapshot, following the
+pack's [timeline](../README.md):
+
+| Phase | Window | What the data shows |
+|---|---|---|
+| healthy | T-72h … T-24h | everything nominal |
+| retries-up | T-24h … T-4h | the `max_retries` 2→5 config change steps `checkout-service` client-retry rate 8% → 55%; the T-12h `payment-gw v3.2.1` deploy leaves **no** metric trace |
+| breach | T-4h … now | 618 goes active (3.5×) → retry storm: `payment-gateway` p99 ≈ 2000ms, ~14.8% errors, high upstream-timeout rate; `payment-router` and the Alipay / WeChat Pay / UnionPay channels slow and erroring |
+
+So an instant query sees the current breach and a range query sees the arc — retry rate inflecting
+at the config change, latency and errors at the promotion, and the deployment ruled out by its flat
+curve. `verify.sh` prints both.
 
 ## Run the RCA
 
@@ -62,5 +74,10 @@ sh examples/incident-investigation/deploy/stop.sh --all    # also remove the bui
 ## Notes
 
 - Telemetry is synthetic, shaped to match the modeled incident — a demo, not production data.
+- Metric history is generated relative to "now" and loaded with `promtool tsdb create-blocks-from
+  openmetrics` before Prometheus starts; the exporter then continues the same series live, so instant
+  queries stay fresh. Logs are likewise generated relative to "now".
+- The pack's deployment / config-change / incident entities carry fixed (illustrative) timestamps;
+  the now-relative part is the seeded Prometheus / Elasticsearch telemetry.
 - The pack also models a MySQL deployment-event set and a runbook; the executable plan methods
   seeded here are `get_metrics` (Prometheus) and `get_logs` (Elasticsearch).

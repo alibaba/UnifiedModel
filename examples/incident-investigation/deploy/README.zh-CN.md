@@ -14,16 +14,28 @@ Docker 或 Podman,带 Compose。Elasticsearch 需要给引擎约 2 GB 内存。
 sh examples/incident-investigation/deploy/start.sh
 ```
 
-`start.sh` 调 `docker compose`(或 `podman compose`)up,等 Elasticsearch 灌数和 Prometheus 首批抓取就绪,并打印地址。它会拉起:
+`start.sh` 调 `docker compose`(或 `podman compose`)up,等指标 backfill、Elasticsearch 灌数和 Prometheus 首批抓取就绪,并打印地址。它会拉起:
 
 | 服务 | URL | 角色 |
 |---|---|---|
 | UModel | `http://localhost:8080` | 对象图 + plan provider(`demo` workspace) |
-| Prometheus | `http://localhost:9090` | 灌好的指标,由 exporter 喂入 |
-| Elasticsearch | `http://localhost:9200` | 灌好的日志 |
-| exporter | 内部 | 产出 Prometheus 抓取的 `platform_service_*` 序列 |
+| Prometheus | `http://localhost:9090` | ~72h backfill 历史 + 实时尾 |
+| Elasticsearch | `http://localhost:9200` | ~72h 日志 |
+| exporter | 内部 | 产出 Prometheus 抓取的实时 `platform_service_*` 序列 |
+| metrics-gen | 内部(一次性) | 生成 ~72h 历史,Prometheus 启动前由 `promtool` backfill |
+| es-seed | 内部(一次性) | 生成并 bulk 写入 ~72h 日志 |
 
-灌入的遥测与图一致:`payment-gateway` p99≈2150ms、错误率约 14.8%、上游超时率高;`checkout-service` 客户端重试率约 55%(`max_retries` 2→5 的配置变更);`payment-router` 与 支付宝/微信/银联 通道又慢又报错;其余健康。
+### 遥测覆盖整个故障窗口
+
+灌入的遥测覆盖完整 ~72h 故障弧线(而非仅当前快照),沿 pack 的[时间线](../README.md):
+
+| 相位 | 窗口 | 数据呈现 |
+|---|---|---|
+| healthy | T-72h … T-24h | 全平台正常 |
+| retries-up | T-24h … T-4h | `max_retries` 2→5 配置变更使 `checkout-service` 客户端重试率 8% → 55%;T-12h 的 `payment-gw v3.2.1` 部署**无任何指标痕迹** |
+| breach | T-4h … now | 618 激活(3.5×)→ 重试风暴:`payment-gateway` p99≈2000ms、错误率约 14.8%、上游超时率高;`payment-router` 与 支付宝/微信/银联 通道又慢又报错 |
+
+所以 instant 查询看到当前击穿、range 查询看到整条弧线——重试率在配置变更时刻拐头、延迟与错误在大促时刻拐头、而部署因曲线平直被排除。`verify.sh` 两者都会打印。
 
 ## 跑 RCA
 
@@ -49,4 +61,6 @@ sh examples/incident-investigation/deploy/stop.sh --all    # 连构建的镜像�
 ## 说明
 
 - 遥测均为合成数据,按建模的故障塑形——是 demo,不是生产数据。
+- 指标历史相对"现在"生成,在 Prometheus 启动前用 `promtool tsdb create-blocks-from openmetrics` 载入;exporter 随后实时续上同一组序列,所以 instant 查询始终新鲜。日志同样相对"现在"生成。
+- pack 的部署 / 配置变更 / 故障实体带固定(示意性)时间戳;相对"现在"的部分是灌入的 Prometheus / Elasticsearch 遥测。
 - pack 还建模了 MySQL 部署事件集和一个 runbook;这里灌的可执行 plan 方法是 `get_metrics`(Prometheus)和 `get_logs`(Elasticsearch)。
