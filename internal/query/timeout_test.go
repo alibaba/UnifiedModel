@@ -38,22 +38,43 @@ func TestAsQueryTimeout(t *testing.T) {
 	if got := asQueryTimeout(bg, other); got != other {
 		t.Fatalf("non-ctx error should pass through unchanged, got %v", got)
 	}
-	for _, e := range []error{context.DeadlineExceeded, context.Canceled} {
-		if got := asQueryTimeout(bg, e); !apperrors.IsCode(got, apperrors.CodeTimeout) {
-			t.Fatalf("asQueryTimeout(%v) should be CodeTimeout, got %v", e, got)
-		}
+	// Deadline expiry is a provider timeout.
+	if got := asQueryTimeout(bg, context.DeadlineExceeded); !apperrors.IsCode(got, apperrors.CodeTimeout) {
+		t.Fatalf("DeadlineExceeded should map to CodeTimeout, got %v", got)
+	}
+	// Cancellation is NOT a timeout: it must pass through unchanged so a
+	// client disconnect / parent cancellation is not reported as a (retryable)
+	// provider timeout.
+	if got := asQueryTimeout(bg, context.Canceled); got != context.Canceled {
+		t.Fatalf("context.Canceled should pass through unchanged, got %v", got)
 	}
 }
 
-// TestExecuteCancelledContextReturnsTimeout proves the end-to-end wiring: a
-// cancelled context flows through Execute -> executor -> memory store, the store
+// TestExecuteDeadlineExceededReturnsTimeout proves the end-to-end wiring: an
+// expired deadline flows through Execute -> executor -> memory store, the store
 // aborts, and the ctx error is mapped to CodeTimeout.
-func TestExecuteCancelledContextReturnsTimeout(t *testing.T) {
+func TestExecuteDeadlineExceededReturnsTimeout(t *testing.T) {
+	svc := NewService(graphstore.NewMemoryStore())
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Hour))
+	defer cancel()
+	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity with(domain='devops', name='devops.service')"})
+	if !apperrors.IsCode(err, apperrors.CodeTimeout) {
+		t.Fatalf("Execute with expired deadline: got %v, want CodeTimeout", err)
+	}
+}
+
+// TestExecuteCancelledContextIsNotTimeout guards against misreporting: a cancelled
+// request must surface an error, but NOT CodeTimeout — it is not a provider
+// timeout and must not look retryable.
+func TestExecuteCancelledContextIsNotTimeout(t *testing.T) {
 	svc := NewService(graphstore.NewMemoryStore())
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity with(domain='devops', name='devops.service')"})
-	if !apperrors.IsCode(err, apperrors.CodeTimeout) {
-		t.Fatalf("Execute with cancelled ctx: got %v, want CodeTimeout", err)
+	if err == nil {
+		t.Fatal("Execute with cancelled ctx should return an error")
+	}
+	if apperrors.IsCode(err, apperrors.CodeTimeout) {
+		t.Fatalf("cancelled ctx must not map to CodeTimeout, got %v", err)
 	}
 }

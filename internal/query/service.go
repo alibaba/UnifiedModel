@@ -149,14 +149,17 @@ func parseQueryTimeout(s string) time.Duration {
 	return d
 }
 
-// asQueryTimeout maps a context deadline/cancellation into a CodeTimeout error so
-// callers get a stable, machine-actionable timeout signal; other errors pass
-// through unchanged.
+// asQueryTimeout maps a query that exceeded the provider's deadline to a stable,
+// machine-actionable CodeTimeout. Only deadline expiry counts: a cancelled
+// context (client disconnect, parent cancellation) is not a provider timeout and
+// must not be reported as one — that would be misleading and, since CodeTimeout
+// is retryable, would wrongly mark a cancelled request as retryable. Cancellation
+// and all other errors pass through unchanged.
 func asQueryTimeout(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || ctx.Err() != nil {
+	if errors.Is(err, context.DeadlineExceeded) || ctx.Err() == context.DeadlineExceeded {
 		return apperrors.New(apperrors.CodeTimeout, "query exceeded the provider time limit")
 	}
 	return err
