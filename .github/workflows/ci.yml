@@ -87,3 +87,47 @@ jobs:
           done
           cd web && npx playwright test --reporter=list
           cd .. && make stop-all
+
+  # The local.ladybug GraphStore provider is behind the `ladybug` build tag and
+  # links a native engine, so the default gate above never exercises it. This
+  # job provisions the engine and runs the tag-gated provider + contract + e2e
+  # suites, so a change that breaks ladybug's contract conformance is caught.
+  ladybug:
+    name: Ladybug Provider (optional graph backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Pin the native engine to the same release as the go-ladybug binding
+      # (go.mod: github.com/LadybugDB/go-ladybug v0.13.1). go-ladybug's own CI
+      # pulls releases/latest — already v0.17.1 — which would link a mismatched
+      # ABI against the v0.13.1 binding we build. Bump this together with go.mod.
+      LBUG_VERSION: v0.13.1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+          cache-dependency-path: go.sum
+
+      - name: Provision liblbug (pinned to the go-ladybug binding)
+        run: |
+          set -euo pipefail
+          asset="liblbug-linux-x86_64.tar.gz"
+          url="https://github.com/LadybugDB/ladybug/releases/download/${LBUG_VERSION}/${asset}"
+          dir="${RUNNER_TEMP}/lbug"
+          mkdir -p "$dir"
+          curl -fL --retry 5 --retry-all-errors --max-time 180 -o "$dir/$asset" "$url"
+          tar -xzf "$dir/$asset" -C "$dir"
+          # go-ladybug's cgo -L/-rpath point at an in-module dir that ships no
+          # .so, so LIBRARY_PATH (link time) and LD_LIBRARY_PATH (run time) are
+          # what actually resolve -llbug.
+          libdir="$(dirname "$(find "$dir" -name 'liblbug.so' | head -1)")"
+          echo "LIBRARY_PATH=${libdir}" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=${libdir}" >> "$GITHUB_ENV"
+
+      - name: Run ladybug provider + contract + e2e suite
+        run: UMODEL_TEST_LADYBUG=1 make test-ladybug
