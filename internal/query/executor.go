@@ -32,9 +32,9 @@ func (e *Executor) Execute(ctx context.Context, workspace string, plan model.Que
 	case ".entity_set":
 		result, err = e.executeEntitySetCall(ctx, workspace, plan)
 	case ".entity":
-		result, err = e.graph.QueryEntities(ctx, model.EntityQueryPlan(plan))
+		result, err = e.graph.QueryEntities(ctx, model.EntityQueryPlan(withFetchLimit(plan)))
 	case ".topo":
-		result, err = e.graph.QueryTopo(ctx, model.TopoQueryPlan(plan))
+		result, err = e.graph.QueryTopo(ctx, model.TopoQueryPlan(withFetchLimit(plan)))
 	default:
 		return model.QueryResult{}, apperrors.New(apperrors.CodeQueryPlanError, "unsupported query source")
 	}
@@ -47,6 +47,29 @@ func (e *Executor) Execute(ctx context.Context, workspace string, plan model.Que
 	result.Columns = columns
 	result.Page = model.PageRequest{Limit: plan.Limit}
 	return result, nil
+}
+
+// fullScanFetchLimit is the provider-side row cap used when the pipeline
+// contains operators (where, sort) that must see the full result set before
+// the final limit is applied. 10 000 matches the MemoryStore MaxLimit; the
+// Ladybug provider caps internally via boundedLimit so a higher value is safe.
+const fullScanFetchLimit = 10000
+
+// withFetchLimit returns a plan copy with an increased Limit when the pipeline
+// contains where or sort operators that process rows after the fetch. Without
+// this, the provider applies the final pipeline limit as a fetch cap, and the
+// downstream filter/sort operates on an incomplete set — e.g.
+// `.topo | where __relation_type__ == 'commit' | limit 5` may return 0 rows
+// because the provider only fetched 5 rows of a different relation type.
+func withFetchLimit(plan model.QueryPlan) model.QueryPlan {
+	for _, op := range plan.Pipeline {
+		if op.Name == "where" || op.Name == "sort" {
+			p := plan
+			p.Limit = fullScanFetchLimit
+			return p
+		}
+	}
+	return plan
 }
 
 func (e *Executor) executeUModel(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
