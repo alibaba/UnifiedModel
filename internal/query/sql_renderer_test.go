@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/alibaba/UnifiedModel/internal/query/planrender"
+	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
 
@@ -58,25 +59,51 @@ func TestConstraintsToSQLWhere(t *testing.T) {
 		c    Constraint
 		want string
 	}{
-		{Constraint{Field: "svc", Op: "eq", Values: []string{"checkout"}}, "svc = 'checkout'"},
-		{Constraint{Field: "svc", Op: "neq", Values: []string{"cart"}}, "svc != 'cart'"},
-		{Constraint{Field: "region", Op: "in", Values: []string{"cn", "us"}}, "region IN ('cn', 'us')"},
-		{Constraint{Field: "region", Op: "in", Values: []string{"cn"}}, "region = 'cn'"},
-		{Constraint{Field: "region", Op: "notin", Values: []string{"cn", "us"}}, "region NOT IN ('cn', 'us')"},
-		{Constraint{Field: "name", Op: "eq", Values: []string{"o'brien"}}, "name = 'o''brien'"}, // quote escaping
+		// Field names are validated and backtick-quoted; values are single-quoted.
+		{Constraint{Field: "svc", Op: "eq", Values: []string{"checkout"}}, "`svc` = 'checkout'"},
+		{Constraint{Field: "svc", Op: "neq", Values: []string{"cart"}}, "`svc` != 'cart'"},
+		{Constraint{Field: "region", Op: "in", Values: []string{"cn", "us"}}, "`region` IN ('cn', 'us')"},
+		{Constraint{Field: "region", Op: "in", Values: []string{"cn"}}, "`region` = 'cn'"},
+		{Constraint{Field: "region", Op: "notin", Values: []string{"cn", "us"}}, "`region` NOT IN ('cn', 'us')"},
+		{Constraint{Field: "name", Op: "eq", Values: []string{"o'brien"}}, "`name` = 'o''brien'"}, // quote escaping
 	}
 	for _, c := range cases {
-		if got := constraintsToSQLWhere([]Constraint{c.c}); got != c.want {
+		got, err := constraintsToSQLWhere([]Constraint{c.c})
+		if err != nil {
+			t.Errorf("constraintsToSQLWhere(%+v) errored: %v", c.c, err)
+			continue
+		}
+		if got != c.want {
 			t.Errorf("constraintsToSQLWhere(%+v) = %q, want %q", c.c, got, c.want)
 		}
 	}
 }
 
+// TestConstraintsToSQLWhereRejectsInjectableField guards the identifier surface:
+// a field name that is not a plain SQL identifier must be rejected, not emitted.
+func TestConstraintsToSQLWhereRejectsInjectableField(t *testing.T) {
+	bad := Constraint{Field: "svc`); DROP TABLE x; --", Op: "eq", Values: []string{"x"}}
+	if _, err := constraintsToSQLWhere([]Constraint{bad}); err == nil {
+		t.Fatal("expected an invalid filter field to be rejected")
+	}
+}
+
 func TestSqlInterval(t *testing.T) {
-	cases := map[string]string{"1m": "1 MINUTE", "30s": "30 SECOND", "100ms": "100 MILLISECOND", "2h": "2 HOUR", "": "1 MINUTE", "5": "5 SECOND"}
-	for step, want := range cases {
-		if got := sqlInterval(step); got != want {
-			t.Errorf("sqlInterval(%q) = %q, want %q", step, got, want)
+	valid := map[string]string{
+		"1m": "1 MINUTE", "30s": "30 SECOND", "100ms": "100 MILLISECOND",
+		"2h": "2 HOUR", "7d": "7 DAY", "1w": "1 WEEK",
+	}
+	for step, want := range valid {
+		got, err := sqlInterval(step)
+		if err != nil || got != want {
+			t.Errorf("sqlInterval(%q) = (%q, %v), want (%q, nil)", step, got, err, want)
+		}
+	}
+	// Strict: empty, missing/invalid unit, non-positive, and injection attempts
+	// are rejected rather than interpolated into the INTERVAL.
+	for _, bad := range []string{"", "5", "0s", "-1m", "1x", "1 m", "1m; DROP TABLE t", "abc", "9999999999999999999999s"} {
+		if _, err := sqlInterval(bad); err == nil {
+			t.Errorf("sqlInterval(%q) should be rejected", bad)
 		}
 	}
 }
@@ -107,17 +134,78 @@ func TestSQLTableRendererGetMetrics(t *testing.T) {
 		t.Fatalf("expected 1 query, got %d", len(queries))
 	}
 	sql, _ := queries[0]["sql"].(string)
+	// Identifiers are backtick-quoted; values stay single-quoted.
 	for _, want := range []string{
-		"toStartOfInterval(timestamp, INTERVAL 1 MINUTE)",
-		"avg(val) AS value",
-		"FROM metrics",
-		"id = 'id1'",
-		"name = 'request_latency'",
-		"timestamp BETWEEN {from} AND {to}",
+		"toStartOfInterval(`timestamp`, INTERVAL 1 MINUTE)",
+		"avg(`val`) AS value",
+		"FROM `metrics`",
+		"`id` = 'id1'",
+		"`name` = 'request_latency'",
+		"`timestamp` BETWEEN {from} AND {to}",
 		"GROUP BY bucket",
 	} {
 		if !strings.Contains(sql, want) {
 			t.Errorf("SQL missing %q:\n%s", want, sql)
+		}
+	}
+}
+
+// TestSQLTableRendererFailsClosedOnRawFilters proves the renderer refuses to emit
+// an under-constrained query: a filter shape the IR cannot express (here an OR)
+// lands in raw, and Render returns an error rather than silently dropping it.
+func TestSQLTableRendererFailsClosedOnRawFilters(t *testing.T) {
+	for _, filter := range []string{"a = 1 or b = 2", "this is (not parseable"} {
+		req := planrender.Request{
+			Method:     planrender.MethodGetMetrics,
+			DataSet:    model.UModelElement{Kind: "metric_set", Name: "svc.metrics"},
+			Storage:    model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"table": "metrics"}},
+			Metrics:    []map[string]any{{"name": "m"}},
+			DataFilter: filter,
+		}
+		if _, err := (sqlTableRenderer{}).Render(req); err == nil {
+			t.Errorf("Render with unsupported filter %q should fail closed", filter)
+		}
+	}
+}
+
+// TestSQLTableRendererRejectsInjection covers the identifier and step injection
+// surfaces: a malformed table/column mapping or a non-duration step must be
+// rejected, not interpolated into the generated SQL.
+func TestSQLTableRendererRejectsInjection(t *testing.T) {
+	base := func() planrender.Request {
+		return planrender.Request{
+			Method:  planrender.MethodGetMetrics,
+			DataSet: model.UModelElement{Kind: "metric_set", Name: "svc.metrics"},
+			Storage: model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"table": "metrics"}},
+			Metrics: []map[string]any{{"name": "m"}},
+			Step:    "1m",
+		}
+	}
+	cases := map[string]func(*planrender.Request){
+		"injectable table":     func(r *planrender.Request) { r.Storage.Spec["table"] = "metrics; DROP TABLE x" },
+		"injectable value col": func(r *planrender.Request) { r.Storage.Spec["value_column"] = "val`)" },
+		"injectable step":      func(r *planrender.Request) { r.Step = "1m; DROP TABLE t" },
+	}
+	for name, mutate := range cases {
+		req := base()
+		mutate(&req)
+		if _, err := (sqlTableRenderer{}).Render(req); err == nil {
+			t.Errorf("%s: Render should reject the request", name)
+		}
+	}
+}
+
+func TestQuoteSQLIdent(t *testing.T) {
+	ok := map[string]string{"svc": "`svc`", "service_id": "`service_id`", "db.metrics": "`db`.`metrics`"}
+	for in, want := range ok {
+		got, err := quoteSQLIdent(in)
+		if err != nil || got != want {
+			t.Errorf("quoteSQLIdent(%q) = (%q, %v), want (%q, nil)", in, got, err, want)
+		}
+	}
+	for _, bad := range []string{"", "1col", "a b", "a;b", "a`b", "a-b", "a.", ".a", "a..b"} {
+		if _, err := quoteSQLIdent(bad); err == nil {
+			t.Errorf("quoteSQLIdent(%q) should be rejected", bad)
 		}
 	}
 }
@@ -133,14 +221,38 @@ func TestClickHouseRoutesViaSQLFamilyWithoutCode(t *testing.T) {
 	metrics := []map[string]any{{"name": "request_latency"}}
 
 	bare := model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"table": "metrics"}}
-	plain := e.buildMetricStorageQuery(metricSet, bare, nil, nil, metrics, []string{"id1"}, "", "", "", nil, "", "", 100)
+	plain, err := e.buildMetricStorageQuery(metricSet, bare, nil, nil, metrics, []string{"id1"}, "", "", "", nil, "", "", 100)
+	if err != nil {
+		t.Fatalf("passthrough should not error: %v", err)
+	}
 	if plain["dialect"] != "clickhouse" {
 		t.Fatalf("without spec.family: expected passthrough dialect clickhouse, got %v", plain["dialect"])
 	}
 
 	configured := model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"family": "sql-table", "table": "metrics"}}
-	rendered := e.buildMetricStorageQuery(metricSet, configured, nil, nil, metrics, []string{"id1"}, "", "", "", nil, "", "", 100)
+	rendered, err := e.buildMetricStorageQuery(metricSet, configured, nil, nil, metrics, []string{"id1"}, "", "", "", nil, "", "", 100)
+	if err != nil {
+		t.Fatalf("sql-table render should not error: %v", err)
+	}
 	if rendered["dialect"] != "clickhouse_sql" {
 		t.Fatalf("with spec.family=sql-table: expected clickhouse_sql plan, got %v", rendered["dialect"])
+	}
+}
+
+// TestRendererErrorPropagatesNotPassthrough proves the executor surfaces a
+// matched renderer's error instead of falling back to an unrendered passthrough
+// that would drop the resolved filters.
+func TestRendererErrorPropagatesNotPassthrough(t *testing.T) {
+	e := NewExecutor(nil)
+	metricSet := model.UModelElement{Kind: "metric_set", Name: "svc.metrics"}
+	metrics := []map[string]any{{"name": "m"}}
+	// family=sql-table is matched, but the OR filter cannot be expressed -> error.
+	storage := model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"family": "sql-table", "table": "metrics"}}
+	out, err := e.buildMetricStorageQuery(metricSet, storage, nil, nil, metrics, nil, "", "a = 1 or b = 2", "", nil, "", "1m", 100)
+	if err == nil {
+		t.Fatalf("expected the renderer error to propagate, got passthrough: %v", out)
+	}
+	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
+		t.Fatalf("expected CodeQueryPlanError, got %v", err)
 	}
 }

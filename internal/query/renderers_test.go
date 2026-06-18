@@ -66,7 +66,10 @@ func TestFamilyOverrideRoutesNewBackendWithoutCode(t *testing.T) {
 
 	// New kind, no family declared -> no renderer -> passthrough echoes the kind.
 	bare := model.UModelElement{Kind: "victoriametrics", Spec: map[string]any{"endpoint": "http://localhost:8428"}}
-	plain := e.buildMetricStorageQuery(metricSet, bare, nil, nil, metrics, []string{"id1"}, "", "", "", nil, "", "", 100)
+	plain, err := e.buildMetricStorageQuery(metricSet, bare, nil, nil, metrics, []string{"id1"}, "", "", "", nil, "", "", 100)
+	if err != nil {
+		t.Fatalf("passthrough should not error: %v", err)
+	}
 	if plain["dialect"] != "victoriametrics" {
 		t.Fatalf("without spec.family: expected passthrough dialect %q, got %v", "victoriametrics", plain["dialect"])
 	}
@@ -76,7 +79,10 @@ func TestFamilyOverrideRoutesNewBackendWithoutCode(t *testing.T) {
 		"family":   "label-timeseries",
 		"endpoint": "http://localhost:8428",
 	}}
-	rendered := e.buildMetricStorageQuery(metricSet, configured, nil, nil, metrics, []string{"id1"}, "", "", "", nil, "", "", 100)
+	rendered, err := e.buildMetricStorageQuery(metricSet, configured, nil, nil, metrics, []string{"id1"}, "", "", "", nil, "", "", 100)
+	if err != nil {
+		t.Fatalf("label-timeseries render should not error: %v", err)
+	}
 	if rendered["dialect"] != "prometheus_promql" {
 		t.Fatalf("with spec.family=label-timeseries: expected %q plan, got %v", "prometheus_promql", rendered["dialect"])
 	}

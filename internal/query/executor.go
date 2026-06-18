@@ -228,7 +228,10 @@ func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string
 		})
 	}
 
-	queryPlan := e.logQueryPlan(plan, dataLink, logSet, bindings[0])
+	queryPlan, err := e.logQueryPlan(plan, dataLink, logSet, bindings[0])
+	if err != nil {
+		return model.QueryResult{}, err
+	}
 	if plan.Format == model.FormatAgent {
 		return agentPlanResult(queryPlan), nil
 	}
@@ -261,7 +264,10 @@ func (e *Executor) executeEntitySetGetMetrics(ctx context.Context, workspace str
 		return model.QueryResult{}, err
 	}
 
-	queryPlan := e.metricQueryPlan(plan, dataLink, metricSet, bindings[0], metrics)
+	queryPlan, err := e.metricQueryPlan(plan, dataLink, metricSet, bindings[0], metrics)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
 	if plan.Format == model.FormatAgent {
 		return agentPlanResult(queryPlan), nil
 	}
@@ -593,7 +599,7 @@ func storageBindingsForDataSet(elements []model.UModelElement, dataSet model.UMo
 	return out
 }
 
-func (e *Executor) logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet model.UModelElement, binding storageBinding) map[string]any {
+func (e *Executor) logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet model.UModelElement, binding storageBinding) (map[string]any, error) {
 	dataLinkMapping := mapValue(dataLink.Spec["fields_mapping"])
 	storageLinkMapping := mapValue(binding.Link.Spec["fields_mapping"])
 	entityIDs := stringSliceValue(plan.Filters["ids"])
@@ -607,6 +613,10 @@ func (e *Executor) logQueryPlan(plan model.QueryPlan, dataLink model.UModelEleme
 		version = "v1.1"
 	}
 
+	query, err := e.buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit)
+	if err != nil {
+		return nil, err
+	}
 	queryPlan := map[string]any{
 		"mode":         "plan",
 		"version":      version,
@@ -621,15 +631,15 @@ func (e *Executor) logQueryPlan(plan model.QueryPlan, dataLink model.UModelEleme
 			"storage_link": agentLinkRef(binding.Link, isAgent, plan.IncludeSpec),
 		},
 		"params_echo": echoParams(plan.EntityCall.Parameters),
-		"query":       e.buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit),
+		"query":       query,
 	}
 	if plan.TimeRange.From != nil || plan.TimeRange.To != nil {
 		queryPlan["time_range"] = plan.TimeRange
 	}
-	return queryPlan
+	return queryPlan, nil
 }
 
-func (e *Executor) metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricSet model.UModelElement, binding storageBinding, metrics []map[string]any) map[string]any {
+func (e *Executor) metricQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, metricSet model.UModelElement, binding storageBinding, metrics []map[string]any) (map[string]any, error) {
 	dataLinkMapping := mapValue(dataLink.Spec["fields_mapping"])
 	storageLinkMapping := mapValue(binding.Link.Spec["fields_mapping"])
 	entityIDs := stringSliceValue(plan.Filters["ids"])
@@ -647,6 +657,10 @@ func (e *Executor) metricQueryPlan(plan model.QueryPlan, dataLink model.UModelEl
 		version = "v1.1"
 	}
 
+	query, err := e.buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit)
+	if err != nil {
+		return nil, err
+	}
 	queryPlan := map[string]any{
 		"mode":         "plan",
 		"version":      version,
@@ -661,12 +675,12 @@ func (e *Executor) metricQueryPlan(plan model.QueryPlan, dataLink model.UModelEl
 			"storage_link": agentLinkRef(binding.Link, isAgent, plan.IncludeSpec),
 		},
 		"params_echo": echoParams(plan.EntityCall.Parameters),
-		"query":       e.buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit),
+		"query":       query,
 	}
 	if plan.TimeRange.From != nil || plan.TimeRange.To != nil {
 		queryPlan["time_range"] = plan.TimeRange
 	}
-	return queryPlan
+	return queryPlan, nil
 }
 
 // nextActionExecuteQuery is the canonical "next_action" hint embedded in every
@@ -767,10 +781,10 @@ func selectedMetricSpecs(metricSet model.UModelElement, metricName string) ([]ma
 	return out, nil
 }
 
-func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int) map[string]any {
+func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int) (map[string]any, error) {
 	family := firstNonEmpty(stringValue(storage.Spec["family"]), defaultFamilyForKind(storage.Kind))
 	if r, ok := e.registry.Find(family, planrender.MethodGetMetrics); ok {
-		if out, err := r.Render(planrender.Request{
+		out, err := r.Render(planrender.Request{
 			Method:             planrender.MethodGetMetrics,
 			DataSet:            metricSet,
 			Storage:            storage,
@@ -785,9 +799,14 @@ func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storag
 			QueryType:          queryType,
 			Step:               step,
 			Limit:              limit,
-		}); err == nil {
-			return out
+		})
+		if err != nil {
+			// A matched renderer that fails must surface the error, not fall back
+			// to an unrendered passthrough — that would hide the failure and drop
+			// the resolved filters, yielding an under-constrained plan.
+			return nil, err
 		}
+		return out, nil
 	}
 	// No renderer for this storage family: pass the inputs through unrendered.
 	return map[string]any{
@@ -801,7 +820,7 @@ func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storag
 		"query_type":   firstNonEmpty(queryType, defaultMetricQueryMode(metrics), stringValue(storage.Spec["default_query_type"])),
 		"step":         firstNonEmpty(step, stringValue(storage.Spec["default_step"])),
 		"limit":        limit,
-	}
+	}, nil
 }
 
 type prometheusLabelMatcher struct {
@@ -1077,10 +1096,10 @@ func escapePromQLStringContent(value string) string {
 	return replacer.Replace(value)
 }
 
-func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) map[string]any {
+func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) (map[string]any, error) {
 	family := firstNonEmpty(stringValue(storage.Spec["family"]), defaultFamilyForKind(storage.Kind))
 	if r, ok := e.registry.Find(family, planrender.MethodGetLogs); ok {
-		if out, err := r.Render(planrender.Request{
+		out, err := r.Render(planrender.Request{
 			Method:             planrender.MethodGetLogs,
 			DataSet:            logSet,
 			Storage:            storage,
@@ -1092,9 +1111,13 @@ func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage mode
 			MethodQuery:        methodQuery,
 			EntityData:         entityData,
 			Limit:              limit,
-		}); err == nil {
-			return out
+		})
+		if err != nil {
+			// A matched renderer that fails must surface the error, not fall back
+			// to an unrendered passthrough.
+			return nil, err
 		}
+		return out, nil
 	}
 	// No renderer for this storage family: pass the inputs through unrendered.
 	return map[string]any{
@@ -1105,7 +1128,7 @@ func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage mode
 		"data_filter":  dataFilter,
 		"query":        methodQuery,
 		"limit":        limit,
-	}
+	}, nil
 }
 
 func elasticsearchLogQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) map[string]any {
