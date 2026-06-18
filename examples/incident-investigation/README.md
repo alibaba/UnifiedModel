@@ -293,8 +293,8 @@ See the [MCP Reference](../../docs/en/reference/mcp.md) for transports (stdio, S
 | Storage | `platform/storage/` | 2 | Prometheus (metrics) and Elasticsearch (logs) endpoints |
 | Data links | `platform/link/data_link/` | 2 | Connect platform.service to its metric/log sets |
 | Storage links | `platform/link/storage_link/` | 2 | Connect metric/log sets to their storage |
-| Sample entities | `sample-data/entities.json` | 65 | Runtime entity payloads |
-| Sample relations | `sample-data/relations.json` | 83 | Runtime topology payloads |
+| Sample entities | `sample-data/entities.json` | 95 | All entity instances (platform/runtime/business) |
+| Sample relations | `sample-data/relations.json` | 126 | All topology relations (platform/runtime/business) |
 | Manifest | `sample-data/manifest.json` | — | Sample metadata, seed entities, scenario description |
 
 ## Extending This Demo

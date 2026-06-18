@@ -103,10 +103,6 @@ func (s *Service) importInternal(ctx context.Context, workspace string, req mode
 	return result, nil
 }
 
-// confineImportPath resolves p and verifies it stays within the import root,
-// returning the cleaned absolute path. The root defaults to the current
-// working directory; "/" effectively disables confinement. This is the
-// barrier that stops an API-provided path from escaping to arbitrary files.
 // resolvedImportRoot returns the absolute, symlink-resolved import root. The root
 // defaults to the current working directory; "/" effectively disables
 // confinement.
@@ -131,6 +127,9 @@ func (s *Service) resolvedImportRoot() (string, error) {
 	return rootAbs, nil
 }
 
+// confineImportPath resolves p and verifies it stays within the import root,
+// returning the cleaned absolute path. This is the barrier that stops an
+// API-provided path from escaping to arbitrary files.
 func (s *Service) confineImportPath(p string) (string, error) {
 	rootAbs, err := s.resolvedImportRoot()
 	if err != nil {

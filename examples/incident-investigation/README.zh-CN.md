@@ -293,8 +293,8 @@ go run ./cmd/umodel-mcp --quickstart \
 | 存储 | `platform/storage/` | 2 | Prometheus（指标）和 Elasticsearch（日志）端点 |
 | 数据链接 | `platform/link/data_link/` | 2 | 将 platform.service 连接到其指标/日志集 |
 | 存储链接 | `platform/link/storage_link/` | 2 | 将指标/日志集连接到对应存储 |
-| 运行时实体 | `sample-data/entities.json` | 65 | 实体数据 |
-| 运行时关系 | `sample-data/relations.json` | 83 | 拓扑数据 |
+| 样例实体 | `sample-data/entities.json` | 95 | 三个域的全部实体实例（platform/runtime/business） |
+| 样例关系 | `sample-data/relations.json` | 126 | 三个域的全部拓扑关系（platform/runtime/business） |
 | 清单 | `sample-data/manifest.json` | — | 样例元数据、种子实体、场景描述 |
 
 ## 扩展此 Demo
