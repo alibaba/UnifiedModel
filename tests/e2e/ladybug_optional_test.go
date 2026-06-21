@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
+	"github.com/alibaba/UnifiedModel/internal/graphstore"
 )
 
 func TestLadybugOptionalBusinessFlowPersistsAcrossRestart(t *testing.T) {
@@ -16,7 +17,10 @@ func TestLadybugOptionalBusinessFlowPersistsAcrossRestart(t *testing.T) {
 	}
 
 	dataRoot := t.TempDir()
-	app := bootstrap.NewApp(dataRoot)
+	app, err := bootstrap.NewAppWithGraphStore(dataRoot, graphstore.ProviderConfig{Type: graphstore.ProviderTypeLadybug, DataRoot: dataRoot})
+	if err != nil {
+		t.Fatalf("new ladybug app: %v", err)
+	}
 	server := httptest.NewServer(app.Handler())
 	defer server.Close()
 
@@ -43,7 +47,10 @@ func TestLadybugOptionalBusinessFlowPersistsAcrossRestart(t *testing.T) {
 	}
 	server.Close()
 
-	reopened := bootstrap.NewApp(dataRoot)
+	reopened, err := bootstrap.NewAppWithGraphStore(dataRoot, graphstore.ProviderConfig{Type: graphstore.ProviderTypeLadybug, DataRoot: dataRoot})
+	if err != nil {
+		t.Fatalf("reopen ladybug app: %v", err)
+	}
 	reopenedServer := httptest.NewServer(reopened.Handler())
 	defer reopenedServer.Close()
 	defer func() {

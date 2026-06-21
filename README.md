@@ -157,12 +157,12 @@ Generated Go and Python model SDKs live under `sdk/`. The Java SDK currently rem
 
 ## GraphStore Providers
 
-Runtime GraphStore providers are selected with `--graphstore`.
+Runtime GraphStore providers are selected with `--graphstore`. When omitted, Go entry binaries default to `file.memory`.
 
 | Provider | Typical use |
 |---|---|
 | `memory` | Ephemeral local tests and quickstart demos. Data is lost after process exit. |
-| `file.memory` | JSON persistence under `--data`. Default for `make dev`, Docker, and Compose. |
+| `file.memory` | JSON persistence under `--data`. Default for Go entry binaries, `make dev`, Docker, and Compose. |
 | `local.ladybug` | Ladybug-backed environments. Requires `-tags ladybug` and a local Ladybug runtime. |
 
 Provider details: [GraphStore Providers](docs/en/graphstore-providers.md).

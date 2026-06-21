@@ -11,7 +11,7 @@ const (
 	ProviderTypeMemory     = "memory"
 	ProviderTypeFileMemory = "file.memory"
 	ProviderTypeLadybug    = "local.ladybug"
-	DefaultProviderType    = ProviderTypeLadybug
+	DefaultProviderType    = ProviderTypeFileMemory
 )
 
 type ProviderConfig struct {

@@ -295,7 +295,7 @@ func (s *MemoryStore) Capabilities(ctx context.Context) (model.GraphStoreCapabil
 		ServerSideFilter:   false,
 		MaxDepth:           2,
 		// Memory backs --quickstart / MCP / demos and has no storage backend, so
-		// it serves a generous row ceiling. Kept >= the default local.ladybug
+		// it serves a generous row ceiling. Kept >= the default file.memory
 		// provider's 1000 so any production-valid `limit` is also valid here.
 		MaxLimit: 10000,
 		Timeout:  "10s",

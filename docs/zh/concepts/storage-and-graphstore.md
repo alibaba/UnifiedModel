@@ -37,7 +37,7 @@ GraphStore provider 是本地 UModel 服务背后的运行时实现。
 | Provider | 角色 |
 |---|---|
 | `memory` | 面向测试和一次性本地工作的内存 provider。 |
-| `file.memory` | JSON-backed 本地 provider，是 `make dev`、Docker、Compose 的默认选择。 |
+| `file.memory` | JSON-backed 本地 provider，是 Go 入口二进制文件、`make dev`、Docker、Compose 的默认选择。 |
 | `local.ladybug` | 使用 `-tags ladybug` 构建时的 Ladybug-backed provider。 |
 
 启动示例：

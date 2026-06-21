@@ -23,6 +23,7 @@ The project follows a simple changelog structure until stable releases are publi
 - **`umodel-query` skill rebuilt around plan→execute** with progressive-disclosure `references/` (#51); the multi-domain quickstart walkthrough was rewritten (#52).
 - Quickstart sample pack reorganized into `umodel/` (schema) and `deploy/` (demo stack); the pack's storage endpoints point at `localhost` so the demo's plans run as returned.
 - Removed CMS 2.0 references from the front-page READMEs.
+- **OSS default GraphStore provider changed to `file.memory`** (was `local.ladybug`) when `umodel-server`, `umodel-mcp`, or `bootstrap.NewApp` are used without an explicit provider. `make dev` and deployment assets were already on `file.memory`; `local.ladybug` remains available as an explicit `--graphstore local.ladybug` option when built with `-tags ladybug`. `make quickstart` still defaults to `memory`.
 
 ### Fixed
 

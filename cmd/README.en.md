@@ -12,12 +12,12 @@ Entry Layer: process entry points.
 
 ## GraphStore Provider Flag
 
-`umodel-server` and `umodel-mcp` both support `--graphstore`:
+`umodel-server` and `umodel-mcp` both support `--graphstore`. The default is `file.memory`.
 
 | Provider | Description |
 |---|---|
+| `file.memory` | Default provider with in-memory querying plus JSON file persistence under `<--data>/graphstore/file-memory/`. |
 | `memory` | In-memory provider for fast local verification; data is lost on process exit. |
-| `file.memory` | In-memory querying plus JSON file persistence under `<--data>/graphstore/file-memory/`. |
 | `local.ladybug` | Ladybug-backed provider; requires `-tags ladybug` and a local Ladybug runtime. |
 
 Examples:

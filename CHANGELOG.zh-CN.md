@@ -25,6 +25,7 @@ English version: [CHANGELOG.md](CHANGELOG.md)
 - **`umodel-query` skill 按 plan→execute 重写**，配渐进式披露 `references/`（#51）；多 domain quickstart 走查重写（#52）。
 - quickstart 样例包重构为 `umodel/`（schema）与 `deploy/`（demo 栈）；pack 的 storage endpoint 指向 `localhost`，demo 的 plan 按返回内容直接执行。
 - 首页 README 移除 CMS 2.0 引用。
+- **OSS 默认 GraphStore provider 改为 `file.memory`**（原 `local.ladybug`）。当 `umodel-server`、`umodel-mcp` 或 `bootstrap.NewApp` 未显式指定 provider 时，默认使用 `file.memory`；`make dev` 和部署资产此前已使用 `file.memory`。`local.ladybug` 仍可通过 `--graphstore local.ladybug` 显式指定（需 `-tags ladybug`）。`make quickstart` 仍默认使用 `memory`。
 
 ### Fixed
 

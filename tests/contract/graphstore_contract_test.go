@@ -27,14 +27,14 @@ func TestFileMemoryGraphStoreConformance(t *testing.T) {
 	exerciseGraphStore(t, store)
 }
 
-func TestDefaultAppUsesLadybugProvider(t *testing.T) {
+func TestDefaultAppUsesFileMemoryProvider(t *testing.T) {
 	app := bootstrap.NewApp(t.TempDir())
 	health, err := app.GraphStore.Health(context.Background())
 	if err != nil {
 		t.Fatalf("default provider health: %v", err)
 	}
-	if health.Provider != graphstore.ProviderTypeLadybug {
-		t.Fatalf("default provider should be local.ladybug, got %+v", health)
+	if health.Provider != graphstore.ProviderTypeFileMemory {
+		t.Fatalf("default provider should be file.memory, got %+v", health)
 	}
 }
 

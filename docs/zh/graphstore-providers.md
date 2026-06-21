@@ -2,7 +2,7 @@
 
 English: [GraphStore Providers](../en/graphstore-providers.md)
 
-UModel 通过 `GraphStore` 接口保存和查询 UModel elements、CMS 2.0 实体以及拓扑关系。运行时通过 `--graphstore` 选择 provider。
+UModel 通过 `GraphStore` 接口保存和查询 UModel elements、CMS 2.0 实体以及拓扑关系。Go 入口二进制文件省略 `--graphstore` 时默认使用 `file.memory`；也可通过 `--graphstore` 在 `umodel-server` 或 `umodel-mcp` 上选择 `memory`（纯进程内存）或 `local.ladybug`（Ladybug-backed）。
 
 
 ## Providers

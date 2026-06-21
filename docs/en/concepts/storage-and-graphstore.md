@@ -39,7 +39,7 @@ GraphStore providers are runtime implementations behind the local UModel service
 | Provider | Role |
 |---|---|
 | `memory` | Fast in-memory provider for tests and disposable local work. |
-| `file.memory` | JSON-backed local provider; default for `make dev`, Docker, and Compose. |
+| `file.memory` | JSON-backed local provider; default for Go entry binaries, `make dev`, Docker, and Compose. |
 | `local.ladybug` | Ladybug-backed provider when built with `-tags ladybug`. |
 
 Start the service with a specific provider:

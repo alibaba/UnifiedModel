@@ -157,12 +157,12 @@ make ci
 
 ## GraphStore Providers
 
-运行时 GraphStore provider 通过 `--graphstore` 选择。
+运行时 GraphStore provider 通过 `--graphstore` 选择。省略时，Go 入口二进制文件默认使用 `file.memory`。
 
 | Provider | 典型用途 |
 |---|---|
 | `memory` | 临时本地测试和 quickstart demo。进程退出后数据丢失。 |
-| `file.memory` | `--data` 下的 JSON 持久化。这是 `make dev`、Docker 和 Compose 的默认值。 |
+| `file.memory` | `--data` 下的 JSON 持久化。这是 Go 入口二进制文件、`make dev`、Docker 和 Compose 的默认值。 |
 | `local.ladybug` | Ladybug-backed 环境。需要 `-tags ladybug` 和本地 Ladybug runtime。 |
 
 Provider 细节：[GraphStore Providers](docs/zh/graphstore-providers.md)。

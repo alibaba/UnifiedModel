@@ -237,7 +237,7 @@ func relationPayload(src, dest, method string, first, last int64, fields map[str
 
 // TestMemoryStoreMaxLimitNotBelowDefaultProvider guards query portability: the
 // memory store backs --quickstart / MCP / the demos, so a `limit` valid on the
-// default local.ladybug provider (MaxLimit 1000) must not be rejected here.
+// default file.memory provider (MaxLimit 1000) must not be rejected here.
 // Memory itself caps higher (10000, in-memory headroom). Regression for
 // "query limit exceeds provider capability" when memory advertised MaxLimit 100.
 func TestMemoryStoreMaxLimitNotBelowDefaultProvider(t *testing.T) {
