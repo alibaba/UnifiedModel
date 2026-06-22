@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject } from 'react'
 import ReactDOM from 'react-dom'
-import Editor, { DiffEditor, useMonaco } from '@monaco-editor/react'
+import Editor, { useMonaco } from '@monaco-editor/react'
+import type { editor as MonacoEditor } from 'monaco-editor'
 import * as YAML from 'js-yaml'
 import {
   Box,
@@ -1708,58 +1709,96 @@ function SafeDiffEditor({
   modified: string
 }) {
   const monaco = useMonaco()
-  const monacoRef = useRef(monaco)
-  const modelPathsRef = useRef<Set<string>>(new Set())
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const editorRef = useRef<MonacoEditor.IStandaloneDiffEditor | null>(null)
+  const originalModelRef = useRef<MonacoEditor.ITextModel | null>(null)
+  const modifiedModelRef = useRef<MonacoEditor.ITextModel | null>(null)
   const safeModelKey = encodeURIComponent(modelKey)
   const originalModelPath = `inmemory://umodel-diff/${safeModelKey}.original.json`
   const modifiedModelPath = `inmemory://umodel-diff/${safeModelKey}.modified.json`
 
   useEffect(() => {
-    monacoRef.current = monaco
+    if (!monaco || !containerRef.current) return undefined
+
+    const diffEditor = monaco.editor.createDiffEditor(containerRef.current, {
+      automaticLayout: true,
+      fontFamily: 'SF Mono, Fira Code, Consolas, monospace',
+      fontSize: 12,
+      minimap: { enabled: false },
+      originalEditable: false,
+      readOnly: true,
+      renderMarginRevertIcon: false,
+      renderSideBySide: true,
+      scrollBeyondLastLine: false,
+      wordWrap: 'on',
+    })
+    editorRef.current = diffEditor
+
+    return () => {
+      editorRef.current = null
+      diffEditor.setModel(null)
+      diffEditor.dispose()
+
+      const originalModel = originalModelRef.current
+      const modifiedModel = modifiedModelRef.current
+      originalModelRef.current = null
+      modifiedModelRef.current = null
+      scheduleDiffModelDispose(originalModel, originalModelRef, modifiedModelRef)
+      scheduleDiffModelDispose(modifiedModel, originalModelRef, modifiedModelRef)
+    }
   }, [monaco])
 
   useEffect(() => {
-    modelPathsRef.current.add(originalModelPath)
-    modelPathsRef.current.add(modifiedModelPath)
-  }, [modifiedModelPath, originalModelPath])
+    if (!monaco || !editorRef.current) return
 
-  useEffect(() => {
-    return () => {
-      const monacoInstance = monacoRef.current
-      const modelPaths = Array.from(modelPathsRef.current)
-      window.setTimeout(() => {
-        for (const path of modelPaths) {
-          const model = monacoInstance?.editor.getModel(monacoInstance.Uri.parse(path))
-          model?.dispose()
-        }
-      }, 0)
+    const originalUri = monaco.Uri.parse(originalModelPath)
+    const modifiedUri = monaco.Uri.parse(modifiedModelPath)
+    const originalModel = upsertMonacoModel(monaco, originalUri, original)
+    const modifiedModel = upsertMonacoModel(monaco, modifiedUri, modified)
+    const previousOriginal = originalModelRef.current
+    const previousModified = modifiedModelRef.current
+
+    editorRef.current.setModel({ original: originalModel, modified: modifiedModel })
+    originalModelRef.current = originalModel
+    modifiedModelRef.current = modifiedModel
+
+    if (previousOriginal !== originalModel) {
+      scheduleDiffModelDispose(previousOriginal, originalModelRef, modifiedModelRef)
     }
-  }, [])
+    if (previousModified !== modifiedModel) {
+      scheduleDiffModelDispose(previousModified, originalModelRef, modifiedModelRef)
+    }
+  }, [modified, modifiedModelPath, monaco, original, originalModelPath])
 
-  return (
-    <DiffEditor
-      original={original}
-      modified={modified}
-      language="json"
-      originalModelPath={originalModelPath}
-      modifiedModelPath={modifiedModelPath}
-      keepCurrentOriginalModel
-      keepCurrentModifiedModel
-      theme="vs"
-      options={{
-        automaticLayout: true,
-        fontFamily: 'SF Mono, Fira Code, Consolas, monospace',
-        fontSize: 12,
-        minimap: { enabled: false },
-        originalEditable: false,
-        readOnly: true,
-        renderMarginRevertIcon: false,
-        renderSideBySide: true,
-        scrollBeyondLastLine: false,
-        wordWrap: 'on',
-      }}
-    />
-  )
+  return <div className="ume-diff-editor-host" ref={containerRef} />
+}
+
+function upsertMonacoModel(
+  monaco: NonNullable<ReturnType<typeof useMonaco>>,
+  uri: ReturnType<NonNullable<ReturnType<typeof useMonaco>>['Uri']['parse']>,
+  value: string,
+) {
+  const model = monaco.editor.getModel(uri)
+  if (model) {
+    if (model.getValue() !== value) model.setValue(value)
+    return model
+  }
+  return monaco.editor.createModel(value, 'json', uri)
+}
+
+function scheduleDiffModelDispose(
+  model: MonacoEditor.ITextModel | null,
+  originalModelRef: MutableRefObject<MonacoEditor.ITextModel | null>,
+  modifiedModelRef: MutableRefObject<MonacoEditor.ITextModel | null>,
+) {
+  if (!model) return
+
+  window.setTimeout(() => {
+    if (model.isDisposed()) return
+    if (originalModelRef.current === model || modifiedModelRef.current === model) return
+    if (model.isAttachedToEditor()) return
+    model.dispose()
+  }, 1_000)
 }
 
 function rowToElement(row: Record<string, unknown>): UModelElement {
