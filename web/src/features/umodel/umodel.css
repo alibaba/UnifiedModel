@@ -3182,6 +3182,12 @@ body.ume-resizing-detail .ume-detail-panel {
   box-shadow: var(--ume-shadow-card);
 }
 
+.ume-diff-editor-host {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 .ume-diff-viewer-title {
   min-width: 0;
   display: grid;
