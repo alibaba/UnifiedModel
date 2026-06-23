@@ -78,6 +78,13 @@ jobs:
       - name: Run CI
         run: make ci
 
+      # Vulnerability scan. Non-blocking for now: most findings are Go std-lib
+      # CVEs that track the toolchain version (cleared by bumping Go), not the
+      # repo's own deps. Drop continue-on-error once findings are triaged.
+      - name: Vulnerability scan (govulncheck)
+        run: make vulncheck
+        continue-on-error: true
+
       - name: Run Playwright UI tests
         run: |
           make quickstart &
