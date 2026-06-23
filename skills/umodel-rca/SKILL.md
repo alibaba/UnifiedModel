@@ -2,120 +2,192 @@
 name: umodel-rca
 description: >-
   Model-guided autonomous root-cause analysis over a UModel object-graph semantic
-  layer. Given a symptom, the agent explores the object graph, fetches the
-  telemetry it needs (the model auto-scopes the query — no hand-written PromQL),
-  traverses relationships across domains, and reasons from evidence to a root
-  cause. Use when asked to diagnose an incident, find a root cause, explain why a
-  service is slow / degraded / erroring, or investigate an alert or SLO breach.
-  Builds on the read toolkit in the `umodel-query` skill (load both). Triggers:
-  root cause, RCA, incident, SLO breach, outage, postmortem, why is X slow /
-  degraded / erroring, 根因分析, 故障排查, 告警定位, 为什么慢.
+  layer. Use with `umodel-query` when diagnosing service degradation, SLO breach,
+  latency/error spikes, incidents, outages, or questions like why a service is
+  slow, degraded, erroring, or timing out. The skill guides evidence collection
+  across object graph, metrics, logs, topology, runbooks, deployments, config
+  changes, business traffic, and runtime capacity; it is especially useful for
+  ruling out red herrings such as recent but unrelated deployments. Triggers:
+  root cause, RCA, incident, SLO breach, outage, postmortem, latency spike, error
+  spike, timeout, 根因分析, 故障排查, 告警定位, 为什么慢, SLO 击穿.
 ---
 
-# UModel RCA — autonomous root-cause analysis
+# UModel RCA
 
-Given a symptom, **investigate autonomously to a root cause** over the UModel
-object graph. You decide the path; this skill gives the method, not a script.
+Investigate to a root cause over the UModel object graph. Use this as a method,
+not a script: let evidence decide the next query, keep competing hypotheses alive,
+and cite every conclusion with an object-graph, metric, or log source.
 
-It builds on the read toolkit in the **`umodel-query`** skill (entity / topology /
-model reads via `umctl query run <ws> "<SPL>" -o json`; rows in `data.data`,
-columns in `data.header`). Load both. The essentials you'll use are recapped
-inline below.
+Load `umodel-query` first. It provides the read surfaces used here:
+`.entity`, `.topo`, `.umodel`, `.entity_set | entity-call get_metrics`, and
+`.entity_set | entity-call get_logs`.
 
 ## Setup
 
-Same server and CLI as `umodel-query` — ensure `umctl` is on PATH, pointed at your
-UModel server, and using the right workspace (`umctl workspace list`; the demo is
-`demo`). See that skill's **Setup** for details. The bundled demo serves sample data
-with `make quickstart QUICKSTART_SAMPLE=examples/incident-investigation`.
+Same CLI as `umodel-query` — load that skill and follow its **Setup**; the essentials:
 
-## Model-guided data fetch (autonomous retrieval)
-
-To get evidence, call `get_metrics` / `get_logs` on the entity. The object graph
-auto-scopes the query — it fills in `service_id` from the `fields_mapping`, so you
-never hand-write PromQL or guess an ID:
+**1. Ensure `umctl` is on PATH** — UModel's read CLI:
 
 ```bash
-umctl query run demo ".entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c']) | entity-call get_metrics('platform','platform.service.metrics','latency_p99_ms', step='30s')" -o json
+command -v umctl || go install github.com/alibaba/UnifiedModel/cmd/umctl@latest   # needs Go 1.22+
 ```
 
-These return an executable **plan**; run it against Prometheus / Elasticsearch to get the
-values — see *"Read metrics & logs — read the plan, then run it"* in the `umodel-query`
-skill for the plan's fields and how to execute. (A PaaS endpoint with `mode='data'`
-returns the rows directly.)
+No Go toolchain? Download a prebuilt `umctl` from the repo's Releases, or build from a clone
+(`make build-cli` → `./bin/umctl`). Verify with `umctl version`.
 
-## The autonomous RCA loop
+**2. Point `umctl` at your UModel server and pick the workspace**:
 
-Run this loop; let evidence — not a fixed script — drive your next query.
-
-1. **ORIENT** — locate the symptomatic entity
-   (`.entity … query='degraded'`). Read its methods, datasets, neighbors, and
-   linked runbook (the `umodel-query` reads).
-2. **CHARACTERIZE (fetch)** — pull its own signals (`get_metrics` / `get_logs`) to
-   confirm and quantify the symptom.
-3. **HYPOTHESIZE** — candidate causes: upstream dependency, recent change
-   (config / deploy), capacity / traffic, downstream resource. Keep several alive.
-4. **GATHER EVIDENCE (multi-hop, cross-domain)** — traverse `.topo` to upstream
-   callers and *their* recent `config_change` / `deployment`; follow links into the
-   **business** domain (promotions / traffic) or **runtime** domain (nodes / pods).
-   Cross-domain reach is where the object graph beats a flat metrics dump.
-5. **CORRELATE & DISCRIMINATE** — line up changes × topology × telemetry × business
-   context on a timeline. Separate root cause from coincidence: a recent deploy is
-   **not guilty just because it's recent** — read its `change_summary` and rule out
-   trivial ones (the *red herring* trap). Prefer a cause with a **stated, ideally
-   quantified, mechanism**.
-6. **CONCLUDE** — root cause + evidence chain (cite the graph path per link) +
-   quantified mechanism + confidence + a **reversible, confirmation-required**
-   recommendation.
-
-## Runbook as scaffold
-
-If the entity links a `runbook_set` (read it with `.umodel with(kind='runbook_set',
-name='…')`), use it as a reasoning frame. Its `spec.knowledge` holds documented
-**failure patterns** — in the demo, a *Retry Storm* pattern with the exact amplification
-formula `base_qps × promotion_multiplier × (new_retries / old_retries)`; `spec.automations`
-are the wired-up context-collection / remediation actions. Cite the matching knowledge
-entry as your mechanism (it's where the worked example's 8.75× comes from); you may still
-form hypotheses it didn't list.
-
-## Output
-
+```bash
+export UMCTL_ADDR=http://<host>:8080     # or pass --addr per call, or `umctl configure`
+umctl workspace list -o json            # the bundled demo workspace is `demo`
+umctl query run <workspace> "<SPL>" -o json
 ```
+
+For the incident-investigation demo with real Prometheus and Elasticsearch plans:
+
+```bash
+sh examples/incident-investigation/deploy/start.sh
+```
+
+If the user gives a different address, workspace, or transport, follow that instead.
+
+## RCA Loop
+
+### 1. Orient
+
+Identify the incident and symptomatic entity:
+
+- Search for an incident ID, service name, or degraded/SLO-critical entity.
+- Read the impacted service fields: name, environment, owner, tier/SLO, status,
+  recent errors, and linked datasets/runbook.
+- Discover neighbors and runbook metadata before narrowing too early.
+
+Useful starting shapes:
+
+```bash
+umctl query run <workspace> ".entity with(domain='platform', name='platform.service', query='<service-or-symptom>') | limit 10" -o json
+umctl query run <workspace> ".entity with(domain='platform', name='platform.incident', query='<incident-or-service>') | limit 10" -o json
+umctl query run <workspace> ".umodel with(kind='runbook_set')" -o json
+```
+
+### 2. Characterize
+
+Confirm the symptom with telemetry, not only entity status or alert text.
+
+- Pull target service metrics such as latency, error rate, timeout rate, QPS,
+  retry rate, saturation, and error budget where available.
+- Pull target service logs for timeout, retry-exhausted, circuit-breaker,
+  dependency, deploy, or config landmarks.
+- Prefer a short current window plus a longer timeline around suspected changes.
+
+Use `get_metrics` / `get_logs` through the entity. The object graph fills the
+storage selectors such as `service_id`; do not guess labels manually. In open
+source these calls return executable Prometheus / Elasticsearch plans. Run the
+returned plans as described in `umodel-query/references/metrics-logs.md`.
+
+### 3. Hypothesize
+
+Build a candidate set before deciding:
+
+- Recent deployments on the degraded service.
+- Config changes on the degraded service and upstream callers, especially retry,
+  timeout, circuit breaker, pool, rate-limit, and feature flag changes.
+- Upstream traffic pressure from callers, promotions, campaigns, batch jobs, or
+  order flows.
+- Downstream dependency saturation or channel/provider failures.
+- Runtime capacity issues such as workload/pod/node pressure.
+
+Do not treat recency as causality. A recent change is only suspicious when it has
+a plausible mechanism, a topological path to the symptom, and telemetry/log
+movement at the right time.
+
+### 4. Gather Cross-Domain Evidence
+
+Traverse both directions around the symptomatic service:
+
+- Upstream callers: `.topo` relations where the caller sends traffic into the
+  degraded service.
+- Downstream dependencies: services, routers, channels, providers, databases,
+  queues, or runtime workloads the degraded service calls or depends on.
+- Change graph: `platform.config_change` and `platform.deployment` linked by
+  target, affected service, or business trigger.
+- Business graph: active promotions, campaigns, order flows, traffic forecasts,
+  and actual traffic.
+- Runtime graph: workloads, pods, namespaces, clusters, and capacity signals.
+
+Use runbooks as a scaffold. Read linked `runbook_set` observations, knowledge,
+and toolkits, but still verify each observation with graph/metric/log evidence.
+
+If the path is ambiguous, read `references/evidence-patterns.md` for generic
+positive and negative evidence patterns. Do not load it when the normal loop is
+enough.
+
+### 5. Correlate And Discriminate
+
+Build a timeline with absolute or relative times from the evidence:
+
+- When did the symptom start or breach?
+- When did candidate changes take effect?
+- Which metric/log series inflected at each candidate time?
+- Does topology explain how the candidate can affect the degraded service?
+- Does the mechanism quantitatively explain the blast radius or load?
+
+Rule out candidates explicitly when evidence contradicts them. Common exclusion
+tests:
+
+- Deployment: trivial `change_summary`, successful rollout, no rollback, no
+  latency/error/timeout inflection near deploy time, or wrong blast radius.
+- Config change: no retry/timeout/pool/circuit behavior, wrong target, no
+  upstream/downstream path, or no metric/log movement after activation.
+- Traffic event: no active event, actual traffic close to forecast, or no path to
+  the impacted service.
+- Capacity issue: saturation appears after the overload rather than before it,
+  or scaling pressure is localized away from the failing path.
+
+Prefer the cause that explains the full timeline with the fewest unsupported
+assumptions. Mark confidence lower if telemetry is missing or only indirect.
+
+### 6. Conclude
+
+Return a concise incident diagnosis:
+
+```markdown
 ## Diagnosis
-Symptom: <what's broken, quantified>
-Evidence chain:
-- <finding>  ← <SPL / graph path traversed>
-Root cause: <cause>, mechanism: <stated / quantified>
-Ruled out: <red herrings and why>
-Confidence: <high|medium|low>
-Recommended action: <tool> — <input> (risk, requires confirmation, ETA)
+Symptom: <quantified service impact>
+
+Timeline:
+| Time | Evidence | Source |
+|---|---|---|
+| <T> | <event or inflection> | <object graph / metric / log reference> |
+
+Root cause:
+<one sentence with the triggering change/event and mechanism>
+
+Causal chain:
+1. <trigger>
+2. <amplifier/mechanism>
+3. <saturation/failure mode>
+4. <user-visible impact>
+
+Ruled out:
+- <candidate>: <why excluded, with source>
+
+Recommended action:
+<read-only recommendation, tool if present, risk, confirmation requirement, and
+verification metrics>
+
+Confidence: <high|medium|low> because <evidence strength and gaps>
 ```
 
-## Worked example — incident-investigation demo (a TEST of the method, not a script)
+Every row in the timeline and every ruled-out item must cite its evidence type:
+object graph, metric, log, or runbook knowledge.
 
-Symptom: `payment-gateway` (platinum SLO) is `degraded`. A good agent reaches the
-root cause **without** being told the steps:
+## Evaluation Discipline
 
-- ORIENT: `.entity … query='degraded'` → payment-gateway (`63718b78…`), links
-  runbook `platform.service.ops` + datasets `platform.service.metrics`/`.logs`.
-- CHARACTERIZE: `get_metrics(… 'latency_p99_ms' …)` → P99 breaching;
-  `get_logs(… level="ERROR")` → upstream-timeout signatures.
-- GATHER: `.topo getNeighborNodes … | where __relation_type__='calls'` → upstream
-  caller `checkout-service` (`149632df…`); `.entity … platform.config_change query='checkout'`
-  → `checkout-retry-policy-v2`: `max_retries 2→5`, `timeout 500→2000ms` (targets svc-checkout).
-- DISCRIMINATE: `.entity … platform.deployment query='payment'` → `payment-gw
-  v3.2.1`, trivial logging change → **ruled out** (red herring).
-- CROSS-DOMAIN: `.entity … business.promotion query='active'` → `618 Flash Sale`,
-  actual 38000 vs expected 12000 QPS (3.5×).
-- CONCLUDE: retry amplification (×2.5) × promotion traffic (×3.5) = **8.75×** load
-  → recommend `rollback_config_change` (medium risk, confirm first).
+When validating this skill on a known scenario, keep the ground truth out of the
+agent prompt. Use a fresh SubAgent or fresh thread, pass only the alert, UModel
+endpoint, workspace, and skill paths, and score whether the agent independently
+collects graph, metric, and log evidence before concluding.
 
-## Notes
-
-- Reuse the `umodel-query` reads for everything except telemetry fetch; this skill
-  adds the fetch + the reasoning loop.
-- `get_metrics` / `get_logs`: *plan* in open source — execute it against Prometheus /
-  Elasticsearch to get evidence (see `umodel-query`); *data* directly via a PaaS endpoint.
-- Stay **read-only** — recommend remediation, do not execute it.
-- **MCP alternative**: call `query_spl_execute` with `{ "workspace", "query" }`
-  instead of the CLI; same SPL.
+Stay read-only. Recommend remediation, but do not execute rollback, rate-limit,
+scale, or restart actions unless the user separately confirms the exact action.
