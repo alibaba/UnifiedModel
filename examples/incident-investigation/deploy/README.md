@@ -83,12 +83,17 @@ sh examples/incident-investigation/deploy/stop.sh --all    # also remove the bui
 ## Notes
 
 - Telemetry is synthetic, shaped to match the modeled incident — a demo, not production data.
-- Everything is relative to "now", so the demo never expires. Metric history is generated relative
-  to now and loaded with `promtool tsdb create-blocks-from openmetrics` before Prometheus starts; the
-  exporter then continues the same series live. Logs are generated relative to now. The entity
-  timeline (deployment / config-change / incident / promotion timestamps) is re-anchored to now at
-  startup by the demo image's entrypoint — config ~now-24h, deploy ~now-12h, promo active ~now-4h,
-  incident ~now — matching the telemetry.
+- The incident is anchored to a **fixed date (2026-06-18) by default**, so the dataset is
+  reproducible — entities, logs, and the metric history all carry the same timestamps every run
+  (`config ~anchor-24h`, `deploy ~anchor-12h`, `promotion active ~anchor-4h`, `incident ~anchor`).
+  The metric history is loaded with `promtool tsdb create-blocks-from openmetrics` before Prometheus
+  starts; the entity timeline is re-anchored by the demo image's entrypoint; the live exporter still
+  serves the current breach so an instant `get_metrics` works on any day. Set `DEMO_ANCHOR=now` to
+  anchor everything to wall-clock instead (a never-expiring live demo):
+
+  ```bash
+  DEMO_ANCHOR=now sh examples/incident-investigation/deploy/start.sh
+  ```
 - The logs include correlated request traces: a failed checkout shares one `trace_id` across
   `checkout-service → payment-gateway → payment-router → channel → provider`, so you can follow a
   single request down the stack and see the timeout originate downstream and surface up as retry

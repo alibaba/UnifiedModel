@@ -14,7 +14,11 @@ PROM="${PROM_URL:-http://localhost:${PROM_PORT:-9090}}"
 ES="${ES_URL:-http://localhost:${ES_PORT:-9200}}"
 PG="63718b78868895d2590551b27ec6f51c"   # payment-gateway
 CK="149632df43354373835df2717cb8fb19"   # checkout-service
-NOW=$(date +%s)
+# Anchor for the section-5 arc queries: the fixed incident instant by default (must match the
+# seeded data), or wall-clock when DEMO_ANCHOR=now. Python keeps the ISO->epoch parse portable.
+NOW=$(python3 -c 'import os,time,datetime as d
+a=os.environ.get("DEMO_ANCHOR") or "2026-06-18T02:17:00Z"
+print(int(time.time()) if a=="now" else int(d.datetime.strptime(a,"%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=d.timezone.utc).timestamp()))' 2>/dev/null || date +%s)
 
 uctl() {
   if command -v umctl >/dev/null 2>&1; then umctl "$@"; else

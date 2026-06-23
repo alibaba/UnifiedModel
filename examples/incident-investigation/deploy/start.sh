@@ -61,7 +61,12 @@ echo "==> Bringing up the incident-investigation demo stack with: $COMPOSE"
 $COMPOSE -f "$COMPOSE_FILE" up -d --build
 
 echo "==> Waiting for the 72h metric backfill + Elasticsearch seed + Prometheus scrapes (up to ~5 min)..."
-hist_ts=$(( $(date +%s) - 216000 ))   # 60h ago: confirms the history was backfilled
+# Probe the backfill 60h before the incident anchor (fixed date by default, or wall-clock when
+# DEMO_ANCHOR=now), so the check lands inside the seeded window regardless of the current date.
+anchor_ts=$(python3 -c 'import os,time,datetime as d
+a=os.environ.get("DEMO_ANCHOR") or "2026-06-18T02:17:00Z"
+print(int(time.time()) if a=="now" else int(d.datetime.strptime(a,"%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=d.timezone.utc).timestamp()))' 2>/dev/null || date +%s)
+hist_ts=$(( anchor_ts - 216000 ))   # 60h before the anchor: confirms the history was backfilled
 # Sentinel query: confirms localhost:$UMODEL_PORT is THIS demo (returns the degraded payment
 # path), not some other umodel. A quoted heredoc keeps the SPL single quotes literal, no escaping.
 um_body() { cat <<'JSON'

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate ~72h of service logs for the incident-investigation demo and bulk-load them
 into the demo Elasticsearch, so the pack's get_logs plans return rows that span the whole
-incident (not a single burst). Timestamps are relative to wall-clock now, so the demo
-always shows "the last three days". Standard library only.
+incident (not a single burst). Timestamps are relative to the demo anchor (a fixed date by
+default; set DEMO_ANCHOR=now for wall-clock). Standard library only.
 
 The log volume and severity follow the modeled timeline (README "Timeline"):
 
@@ -18,6 +18,7 @@ Fields match the log_set's Elasticsearch storage mapping (timestamp / svc_id / e
 severity / log_message / trace_id / span_id / http_status / upstream_service /
 latency_ms / error_code / pod).
 """
+import datetime as _dt
 import json
 import os
 import random
@@ -28,6 +29,17 @@ ES = os.environ.get("ES_URL", "http://elasticsearch:9200")
 INDEX = "platform-service-logs-demo"   # matches the plan's index pattern platform-service-logs-*
 HOUR = 3600
 RNG = random.Random(0xC0FFEE)          # deterministic output run to run
+
+# The incident is anchored to a fixed instant by default (reproducible dataset). Set
+# DEMO_ANCHOR=now to anchor to wall-clock instead (a never-expiring live demo).
+DEFAULT_ANCHOR = "2026-06-18T02:17:00Z"
+
+
+def resolve_now():
+    a = os.environ.get("DEMO_ANCHOR") or DEFAULT_ANCHOR
+    if a == "now":
+        return int(time.time())
+    return int(_dt.datetime.strptime(a, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=_dt.timezone.utc).timestamp())
 
 # service_id -> short name, mirroring exporter.py / the entity ids the plans substitute.
 SVC = {
@@ -98,7 +110,7 @@ def chain(ts):
 
 
 def main():
-    now = int(time.time())
+    now = resolve_now()
     docs = []
 
     # --- P0 healthy: sparse INFO across the platform, one every ~25 min ---
