@@ -66,7 +66,7 @@ public class VictoriametricsV100 implements UModelCoreObject {
      */
     public static class VictoriametricsV100Spec {
         /**
-         * 该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现。
+         * 该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现；不设则该存储仅透传...
          */
         @JSONField(name = "family")
         private String family;

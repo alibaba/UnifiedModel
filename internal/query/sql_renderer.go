@@ -42,6 +42,7 @@ func (sqlTableRenderer) Render(req planrender.Request) (map[string]any, error) {
 			map[string]string{"unsupported_filters": strings.Join(raw, " ; ")})
 	}
 
+	database := firstNonEmpty(stringValue(req.Storage.Spec["database"]), stringValue(req.DataSet.Spec["database"]))
 	table := firstNonEmpty(stringValue(req.Storage.Spec["table"]), stringValue(req.DataSet.Spec["table"]), req.DataSet.Name)
 	timeCol := firstNonEmpty(stringValue(req.Storage.Spec["time_column"]), "timestamp")
 	valueCol := firstNonEmpty(stringValue(req.Storage.Spec["value_column"]), "value")
@@ -67,12 +68,32 @@ func (sqlTableRenderer) Render(req planrender.Request) (map[string]any, error) {
 		return nil, sqlIdentError("metric_column", metricCol, err)
 	}
 
+	// Qualify the table with its database when present, so the plan targets
+	// `db`.`table` rather than whichever default database the executing connection
+	// happens to use.
+	qFrom := qTable
+	if database != "" {
+		qDatabase, err := quoteSQLIdent(database)
+		if err != nil {
+			return nil, sqlIdentError("database", database, err)
+		}
+		qFrom = qDatabase + "." + qTable
+	}
+
 	where, err := constraintsToSQLWhere(constraints)
 	if err != nil {
 		return nil, err
 	}
 
 	queryType := firstNonEmpty(req.QueryType, defaultMetricQueryMode(req.Metrics), stringValue(req.Storage.Spec["default_query_type"]), "range")
+	// Normalize/validate: only instant and range produce well-defined SQL. Anything
+	// else (a bad query param, mapping, or metric query_mode) must fail closed rather
+	// than silently fall into the range branch while the plan echoes the bogus value.
+	if queryType != "instant" && queryType != "range" {
+		return nil, apperrors.WithDetails(apperrors.CodeQueryParseError,
+			"sql-table renderer rejected the query_type",
+			map[string]string{"query_type": queryType, "reason": "must be 'instant' or 'range'"})
+	}
 	step := firstNonEmpty(req.Step, stringValue(req.Storage.Spec["default_step"]), "1m")
 	interval, err := sqlInterval(step)
 	if err != nil {
@@ -84,12 +105,13 @@ func (sqlTableRenderer) Render(req planrender.Request) (map[string]any, error) {
 	for _, metric := range req.Metrics {
 		name := stringValue(metric["name"])
 		item := metricQueryItem(metric)
-		item["sql"] = buildSQLMetricQuery(name, qTable, qTimeCol, qValueCol, qMetricCol, where, queryType, interval, req.Limit)
+		item["sql"] = buildSQLMetricQuery(name, qFrom, qTimeCol, qValueCol, qMetricCol, where, queryType, interval, req.Limit)
 		queries = append(queries, item)
 	}
 
 	out := map[string]any{
 		"dialect":       "clickhouse_sql",
+		"database":      database,
 		"table":         table,
 		"time_column":   timeCol,
 		"value_column":  valueCol,
@@ -109,7 +131,7 @@ func (sqlTableRenderer) Render(req planrender.Request) (map[string]any, error) {
 // identifiers and a validated INTERVAL operand. A range query downsamples with
 // toStartOfInterval + avg (ClickHouse idiom); an instant query takes the latest
 // point. {from} / {to} are filled by the caller from the plan's time_range.
-func buildSQLMetricQuery(metric, qTable, qTimeCol, qValueCol, qMetricCol, where, queryType, interval string, limit int) string {
+func buildSQLMetricQuery(metric, qFrom, qTimeCol, qValueCol, qMetricCol, where, queryType, interval string, limit int) string {
 	predicates := []string{}
 	if where != "" {
 		predicates = append(predicates, where)
@@ -121,11 +143,11 @@ func buildSQLMetricQuery(metric, qTable, qTimeCol, qValueCol, qMetricCol, where,
 	whereClause := strings.Join(predicates, " AND ")
 
 	if queryType == "instant" {
-		return fmt.Sprintf("SELECT %s AS value FROM %s WHERE %s ORDER BY %s DESC LIMIT 1", qValueCol, qTable, whereClause, qTimeCol)
+		return fmt.Sprintf("SELECT %s AS value FROM %s WHERE %s ORDER BY %s DESC LIMIT 1", qValueCol, qFrom, whereClause, qTimeCol)
 	}
 	sql := fmt.Sprintf(
 		"SELECT toStartOfInterval(%s, INTERVAL %s) AS bucket, avg(%s) AS value FROM %s WHERE %s GROUP BY bucket ORDER BY bucket",
-		qTimeCol, interval, qValueCol, qTable, whereClause,
+		qTimeCol, interval, qValueCol, qFrom, whereClause,
 	)
 	if limit > 0 {
 		sql += fmt.Sprintf(" LIMIT %d", limit)

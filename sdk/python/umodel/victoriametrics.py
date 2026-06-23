@@ -41,7 +41,7 @@ class VictoriametricsV100(UModelCoreObject):
 @dataclass
 class VictoriametricsV100Spec:
     """VictoriaMetrics 的核心配置部分。UModel 只使用这些字段生成 PromQL 查询计划，不直接执行查询，也不保存明文凭据。"""
-    # 该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现。
+    # 该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现；不设则该存储仅透传...
     family: Optional[str] = None
     # VictoriaMetrics 或 PromQL 兼容服务的访问地址，例如 http://victoriametrics:8428。
     endpoint: Optional[str] = None

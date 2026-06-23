@@ -10,7 +10,7 @@ ClickHouse 存储，用于描述 ClickHouse 或其他 SQL 表后端的配置和�
 
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |---|---|---|---|---|
-| `family` | `string` |  | `sql-table` | 该存储渲染所用的查询家族。SQL 表后端设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；该家族此后的每个后端都只是配置。 |
+| `family` | `string` |  |  | 该存储渲染所用的查询家族。设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；不设则该存储仅透传、不渲染。该家族此后的每个后端都只是配置。 |
 | `endpoint` | `string` | 是 |  | ClickHouse 的访问地址，例如 http://clickhouse:8123。 |
 | `database` | `string` |  |  | 查询所用的数据库名。 |
 | `table` | `string` | 是 |  | 指标所在的表名。sql-table 渲染器从该表 SELECT 数据。 |

@@ -10,7 +10,7 @@ VictoriaMetrics storage, used to define VictoriaMetrics or other PromQL-compatib
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `family` | `string` |  | `label-timeseries` | The query family this storage renders through. VictoriaMetrics is PromQL-compatible, so setting label-timeseries reuses the Prometheus query-plan renderer with no Go code — this is exactly how a new same-family backen… |
+| `family` | `string` |  |  | The query family this storage renders through. VictoriaMetrics is PromQL-compatible, so setting label-timeseries reuses the Prometheus query-plan renderer with no Go code — exactly how a new same-family backend is add… |
 | `endpoint` | `string` | yes |  | The endpoint URL of VictoriaMetrics or a PromQL-compatible service, for example http://victoriametrics:8428. |
 | `api_prefix` | `string` |  | `/api/v1` | PromQL HTTP API prefix. Defaults to /api/v1. |
 | `default_query_type` | enum: `instant`, `range` |  | `instant` | Default PromQL query type. instant means instant query and range means range query. |

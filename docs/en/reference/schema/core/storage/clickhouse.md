@@ -10,7 +10,7 @@ ClickHouse storage, used to define ClickHouse or other SQL-table backend metadat
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `family` | `string` |  | `sql-table` | The query family this storage renders through. A SQL-table backend sets sql-table to render get_metrics as SQL via the sql-table renderer; every backend in the family after the first is configuration only. |
+| `family` | `string` |  |  | The query family this storage renders through. Set sql-table to render get_metrics as SQL via the sql-table renderer; omit it and the storage stays passthrough-only. Every backend in the family after the first is conf… |
 | `endpoint` | `string` | yes |  | The endpoint URL of ClickHouse, for example http://clickhouse:8123. |
 | `database` | `string` |  |  | The database name used for queries. |
 | `table` | `string` | yes |  | The table holding the metrics. The sql-table renderer SELECTs from this table. |

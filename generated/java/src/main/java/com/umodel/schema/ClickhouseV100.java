@@ -66,7 +66,7 @@ public class ClickhouseV100 implements UModelCoreObject {
      */
     public static class ClickhouseV100Spec {
         /**
-         * 该存储渲染所用的查询家族。SQL 表后端设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；该家族此后的每个后端都只是配置。
+         * 该存储渲染所用的查询家族。设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；不设则该存储仅透传、不渲染。该家族此后的每个后端都只是配置。
          */
         @JSONField(name = "family")
         private String family;

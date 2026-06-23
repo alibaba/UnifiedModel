@@ -45,7 +45,7 @@ func (s *ClickhouseV100) GetMetadata() *MetadataV1 {
 
 // ClickhouseV100Spec ClickHouse 的核心配置部分。UModel 只使用这些字段生成 SQL 查询计划，不直接执行查询，也不保存明文凭据。
 type ClickhouseV100Spec struct {
-	// Family 该存储渲染所用的查询家族。SQL 表后端设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；该家族此后的每个后端都只是配置。
+	// Family 该存储渲染所用的查询家族。设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；不设则该存储仅透传、不渲染。该家族此后的每个后端都只是配置。
 	Family string `json:"family,omitempty" yaml:"family,omitempty"`
 	// Endpoint ClickHouse 的访问地址，例如 http://clickhouse:8123。
 	Endpoint string `json:"endpoint" yaml:"endpoint"`

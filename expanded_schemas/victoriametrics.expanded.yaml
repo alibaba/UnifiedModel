@@ -201,14 +201,12 @@ versions:
           family:
             description:
               zh_cn: >-
-                该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现。
+                该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现；不设则该存储仅透传、不渲染。
               en_us: >-
                 The query family this storage renders through. VictoriaMetrics is PromQL-compatible, so setting label-timeseries
-                reuses the Prometheus query-plan renderer with no Go code — this is exactly how a new same-family backend
-                is added with configuration only.
+                reuses the Prometheus query-plan renderer with no Go code — exactly how a new same-family backend is added
+                with configuration only; omit it and the storage stays passthrough-only.
             type: string
-            constraint:
-              default_value: label-timeseries
           endpoint:
             description:
               zh_cn: VictoriaMetrics 或 PromQL 兼容服务的访问地址，例如 http://victoriametrics:8428。

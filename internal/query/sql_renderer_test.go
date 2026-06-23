@@ -195,6 +195,65 @@ func TestSQLTableRendererRejectsInjection(t *testing.T) {
 	}
 }
 
+// TestSQLTableRendererQualifiesDatabase proves spec.database is honored: the FROM
+// targets `database`.`table` and the plan echoes the database, so the query never
+// runs against whichever default database the executing connection happens to use.
+func TestSQLTableRendererQualifiesDatabase(t *testing.T) {
+	req := planrender.Request{
+		Method:    planrender.MethodGetMetrics,
+		DataSet:   model.UModelElement{Kind: "metric_set", Name: "svc.metrics"},
+		Storage:   model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"database": "observability", "table": "service_metrics"}},
+		Metrics:   []map[string]any{{"name": "m"}},
+		QueryType: "range",
+		Step:      "1m",
+	}
+	out, err := sqlTableRenderer{}.Render(req)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if out["database"] != "observability" {
+		t.Errorf("database = %v, want observability", out["database"])
+	}
+	queries, _ := out["queries"].([]map[string]any)
+	sql, _ := queries[0]["sql"].(string)
+	if !strings.Contains(sql, "FROM `observability`.`service_metrics`") {
+		t.Errorf("SQL should qualify the table with the database:\n%s", sql)
+	}
+	// An injectable database is rejected like any other identifier.
+	bad := req
+	bad.Storage = model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"database": "obs; DROP TABLE x", "table": "service_metrics"}}
+	if _, err := (sqlTableRenderer{}).Render(bad); err == nil {
+		t.Errorf("an injectable database should be rejected")
+	}
+}
+
+// TestSQLTableRendererRejectsInvalidQueryType proves the renderer fails closed on a
+// query_type other than instant/range, instead of silently emitting range SQL that
+// the plan then labels with the bogus value.
+func TestSQLTableRendererRejectsInvalidQueryType(t *testing.T) {
+	render := func(qt string) error {
+		_, err := sqlTableRenderer{}.Render(planrender.Request{
+			Method:    planrender.MethodGetMetrics,
+			DataSet:   model.UModelElement{Kind: "metric_set", Name: "svc.metrics"},
+			Storage:   model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"table": "metrics"}},
+			Metrics:   []map[string]any{{"name": "m"}},
+			QueryType: qt,
+			Step:      "1m",
+		})
+		return err
+	}
+	for _, qt := range []string{"instant", "range"} {
+		if err := render(qt); err != nil {
+			t.Errorf("query_type %q should be accepted: %v", qt, err)
+		}
+	}
+	for _, qt := range []string{"foo", "INSTANT", "both", "1; DROP TABLE t"} {
+		if err := render(qt); err == nil {
+			t.Errorf("query_type %q should be rejected", qt)
+		}
+	}
+}
+
 func TestQuoteSQLIdent(t *testing.T) {
 	ok := map[string]string{"svc": "`svc`", "service_id": "`service_id`", "db.metrics": "`db`.`metrics`"}
 	for in, want := range ok {

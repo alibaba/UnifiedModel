@@ -10,7 +10,7 @@ VictoriaMetrics 存储，用于描述 VictoriaMetrics 或其他 PromQL 兼容时
 
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |---|---|---|---|---|
-| `family` | `string` |  | `label-timeseries` | 该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现。 |
+| `family` | `string` |  |  | 该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现；不设则该存储仅透传、不渲染。 |
 | `endpoint` | `string` | 是 |  | VictoriaMetrics 或 PromQL 兼容服务的访问地址，例如 http://victoriametrics:8428。 |
 | `api_prefix` | `string` |  | `/api/v1` | PromQL HTTP API 前缀。默认值为 /api/v1。 |
 | `default_query_type` | enum: `instant`, `range` |  | `instant` | 默认 PromQL 查询类型。instant 表示即时查询，range 表示区间查询。 |

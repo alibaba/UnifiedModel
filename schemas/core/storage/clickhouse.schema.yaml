@@ -36,11 +36,9 @@ versions:
           properties:
             family:
               description:
-                zh_cn: 该存储渲染所用的查询家族。SQL 表后端设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；该家族此后的每个后端都只是配置。
-                en_us: The query family this storage renders through. A SQL-table backend sets sql-table to render get_metrics as SQL via the sql-table renderer; every backend in the family after the first is configuration only.
+                zh_cn: 该存储渲染所用的查询家族。设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；不设则该存储仅透传、不渲染。该家族此后的每个后端都只是配置。
+                en_us: The query family this storage renders through. Set sql-table to render get_metrics as SQL via the sql-table renderer; omit it and the storage stays passthrough-only. Every backend in the family after the first is configuration only.
               type: string
-              constraint:
-                default_value: sql-table
             endpoint:
               description:
                 zh_cn: ClickHouse 的访问地址，例如 http://clickhouse:8123。
