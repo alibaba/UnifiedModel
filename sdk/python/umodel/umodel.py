@@ -32,6 +32,13 @@ def _register_types():
     except (ImportError, AttributeError) as e:
         pass  # 模块 aliyun_prometheus 导入失败: {e}
 
+    # 注册 clickhouse 相关类型
+    try:
+        from . import clickhouse
+        TYPE_REGISTRY["clickhouse:v1.0.0"] = getattr(clickhouse, "ClickhouseV100", None)
+    except (ImportError, AttributeError) as e:
+        pass  # 模块 clickhouse 导入失败: {e}
+
     # 注册 data_link 相关类型
     try:
         from . import data_link
@@ -185,6 +192,13 @@ def _register_types():
         TYPE_REGISTRY["trace_set:v1.0.0"] = getattr(trace_set, "TraceSetV100", None)
     except (ImportError, AttributeError) as e:
         pass  # 模块 trace_set 导入失败: {e}
+
+    # 注册 victoriametrics 相关类型
+    try:
+        from . import victoriametrics
+        TYPE_REGISTRY["victoriametrics:v1.0.0"] = getattr(victoriametrics, "VictoriametricsV100", None)
+    except (ImportError, AttributeError) as e:
+        pass  # 模块 victoriametrics 导入失败: {e}
 
 
 # 延迟注册所有类型，避免循环导入

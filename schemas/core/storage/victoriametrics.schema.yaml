@@ -1,0 +1,142 @@
+description:
+  zh_cn: VictoriaMetrics 存储，用于描述 VictoriaMetrics 或其他 PromQL 兼容时序后端的配置和查询规划信息。它通过 spec.family 复用 label-timeseries 查询家族，UModel 无需为其编写任何代码。
+  en_us: VictoriaMetrics storage, used to define VictoriaMetrics or other PromQL-compatible time-series backend metadata for query planning. It reuses the label-timeseries query family via spec.family, requiring no UModel code.
+name: victoriametrics
+versions:
+  - name: v1.0.0
+    spec:
+      type: object
+      properties:
+        kind:
+          type: string
+          constraint:
+            required: true
+            enum:
+              values:
+                - victoriametrics
+        schema:
+          type: object
+          extends:
+            - schema:v1
+          constraint:
+            required: true
+        metadata:
+          type: object
+          extends:
+            - metadata:v1
+          constraint:
+            required: true
+        spec:
+          type: object
+          constraint:
+            required: true
+          description:
+            zh_cn: VictoriaMetrics 的核心配置部分。UModel 只使用这些字段生成 PromQL 查询计划，不直接执行查询，也不保存明文凭据。
+            en_us: The specification section for VictoriaMetrics. UModel uses these fields to generate PromQL query plans only; it does not execute queries or store plaintext credentials.
+          properties:
+            family:
+              description:
+                zh_cn: 该存储渲染所用的查询家族。VictoriaMetrics 兼容 PromQL，设为 label-timeseries 即可复用 Prometheus 查询计划渲染器，无需编写任何 Go 代码——这正是“新增同族后端只写配置”的体现；不设则该存储仅透传、不渲染。
+                en_us: The query family this storage renders through. VictoriaMetrics is PromQL-compatible, so setting label-timeseries reuses the Prometheus query-plan renderer with no Go code — exactly how a new same-family backend is added with configuration only; omit it and the storage stays passthrough-only.
+              type: string
+            endpoint:
+              description:
+                zh_cn: VictoriaMetrics 或 PromQL 兼容服务的访问地址，例如 http://victoriametrics:8428。
+                en_us: The endpoint URL of VictoriaMetrics or a PromQL-compatible service, for example http://victoriametrics:8428.
+              type: string
+              constraint:
+                required: true
+            api_prefix:
+              description:
+                zh_cn: PromQL HTTP API 前缀。默认值为 /api/v1。
+                en_us: PromQL HTTP API prefix. Defaults to /api/v1.
+              type: string
+              constraint:
+                default_value: /api/v1
+            default_query_type:
+              description:
+                zh_cn: 默认 PromQL 查询类型。instant 表示即时查询，range 表示区间查询。
+                en_us: Default PromQL query type. instant means instant query and range means range query.
+              type: string
+              constraint:
+                enum:
+                  values:
+                    - instant
+                    - range
+                default_value: instant
+            default_step:
+              description:
+                zh_cn: 区间查询的默认 step，例如 60s、1m。
+                en_us: Default step for range queries, for example 60s or 1m.
+              type: string
+            lookback_delta:
+              description:
+                zh_cn: PromQL 查询规划使用的默认回看窗口，例如 5m。
+                en_us: Default PromQL lookback window used by query planning, for example 5m.
+              type: string
+            tenant:
+              description:
+                zh_cn: 可选租户标识，用于多租户 VictoriaMetrics 集群版。
+                en_us: Optional tenant identifier for multi-tenant VictoriaMetrics cluster deployments.
+              type: string
+            tenant_header:
+              description:
+                zh_cn: 多租户系统使用的租户 HTTP 头名称，例如 X-Scope-OrgID。
+                en_us: Tenant HTTP header name used by multi-tenant systems, for example X-Scope-OrgID.
+              type: string
+            credential_ref:
+              description:
+                zh_cn: 凭据引用标识，例如 secret://victoriametrics-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+                en_us: Credential reference, for example secret://victoriametrics-prod-readonly. Plaintext usernames, passwords, or tokens must not be stored in UModel.
+              type: string
+            tls_verify:
+              description:
+                zh_cn: 是否校验 TLS 证书。默认值为 true。
+                en_us: Whether TLS certificates should be verified. Defaults to true.
+              type: boolean
+              constraint:
+                default_value: true
+            external_labels:
+              description:
+                zh_cn: 外部标签，用于 query planning 时补充查询上下文或结果来源说明。
+                en_us: External labels used to enrich query-planning context or describe result origin.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
+            headers:
+              description:
+                zh_cn: 非敏感 HTTP 头，用于租户、路由等查询上下文。不得存放认证密钥。
+                en_us: Non-sensitive HTTP headers for tenant or routing context. Authentication secrets must not be stored here.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
+            properties:
+              description:
+                zh_cn: VictoriaMetrics 的额外非敏感配置，以键值对形式存储。
+                en_us: Additional non-sensitive VictoriaMetrics configuration, stored as key-value pairs.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
+            tags:
+              description:
+                zh_cn: 用于标注该 VictoriaMetrics 存储的标签。
+                en_us: Tags used to describe this VictoriaMetrics storage.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string

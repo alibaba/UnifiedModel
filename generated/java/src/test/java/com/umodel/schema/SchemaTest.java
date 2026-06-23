@@ -38,6 +38,30 @@ public class SchemaTest {
     }
 
     @Test
+    public void testClickhouseV100() {
+        ClickhouseV100 obj = new ClickhouseV100();
+
+        assertEquals("clickhouse", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+        assertTrue(obj instanceof UModelCoreObject);
+        assertFalse(obj instanceof UModelLinkObject);
+
+        MetadataV1 metadata = new MetadataV1();
+        metadata.setName("test_clickhouse");
+        obj.setMetadata(metadata);
+        assertEquals(metadata, obj.getMetadata());
+        assertEquals("test_clickhouse", obj.getMetadata().getName());
+
+        SchemaV1 schema = new SchemaV1();
+        schema.setVersion("v1.0.0");
+        obj.setSchema(schema);
+        assertEquals(schema, obj.getSchema());
+        assertEquals("v1.0.0", obj.getSchema().getVersion());
+
+        assertNull(obj.validate());
+    }
+
+    @Test
     public void testDataLinkV100() {
         DataLinkV100 obj = new DataLinkV100();
 
@@ -573,6 +597,30 @@ public class SchemaTest {
         obj.setMetadata(metadata);
         assertEquals(metadata, obj.getMetadata());
         assertEquals("test_trace_set", obj.getMetadata().getName());
+
+        SchemaV1 schema = new SchemaV1();
+        schema.setVersion("v1.0.0");
+        obj.setSchema(schema);
+        assertEquals(schema, obj.getSchema());
+        assertEquals("v1.0.0", obj.getSchema().getVersion());
+
+        assertNull(obj.validate());
+    }
+
+    @Test
+    public void testVictoriametricsV100() {
+        VictoriametricsV100 obj = new VictoriametricsV100();
+
+        assertEquals("victoriametrics", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+        assertTrue(obj instanceof UModelCoreObject);
+        assertFalse(obj instanceof UModelLinkObject);
+
+        MetadataV1 metadata = new MetadataV1();
+        metadata.setName("test_victoriametrics");
+        obj.setMetadata(metadata);
+        assertEquals(metadata, obj.getMetadata());
+        assertEquals("test_victoriametrics", obj.getMetadata().getName());
 
         SchemaV1 schema = new SchemaV1();
         schema.setVersion("v1.0.0");

@@ -41,9 +41,9 @@ public class PerformanceTest {
         List<Object> testObjects = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             testObjects.add(new AliyunPrometheusV100());
+            testObjects.add(new ClickhouseV100());
             testObjects.add(new DataLinkV100());
             testObjects.add(new ElasticsearchV100());
-            testObjects.add(new EntitySetV100());
             testObjects.add("普通字符串");
             testObjects.add(Integer.valueOf(42));
         }
@@ -78,11 +78,11 @@ public class PerformanceTest {
             AliyunPrometheusV100 o0 = new AliyunPrometheusV100();
             o0.setKind("aliyun_prometheus");
             createdObjects.add(o0);
-            DataLinkV100 o1 = new DataLinkV100();
-            o1.setKind("data_link");
+            ClickhouseV100 o1 = new ClickhouseV100();
+            o1.setKind("clickhouse");
             createdObjects.add(o1);
-            ElasticsearchV100 o2 = new ElasticsearchV100();
-            o2.setKind("elasticsearch");
+            DataLinkV100 o2 = new DataLinkV100();
+            o2.setKind("data_link");
             createdObjects.add(o2);
             createdObjects.add(new SemanticString("中文" + i, "English" + i));
             createdObjects.add(new LinkEndpoint("domain" + i, "kind" + i, "name" + i, "filter" + i));

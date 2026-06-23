@@ -17,6 +17,7 @@ from .event_set import *
 from .entity_source import *
 from .profile_set import *
 from .log_set import *
+from .clickhouse import *
 from .aliyun_prometheus import *
 from .mysql import *
 from .sls_entitystore import *
@@ -24,6 +25,7 @@ from .elasticsearch import *
 from .sls_logstore import *
 from .external_storage import *
 from .prometheus import *
+from .victoriametrics import *
 from .sls_metricstore import *
 from .explorer_link import *
 from .runbook_link import *

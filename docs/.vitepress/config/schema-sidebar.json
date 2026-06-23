@@ -87,6 +87,10 @@
           "link": "/en/reference/schema/core/storage/aliyun-prometheus"
         },
         {
+          "text": "clickhouse",
+          "link": "/en/reference/schema/core/storage/clickhouse"
+        },
+        {
           "text": "elasticsearch",
           "link": "/en/reference/schema/core/storage/elasticsearch"
         },
@@ -113,6 +117,10 @@
         {
           "text": "sls_metricstore",
           "link": "/en/reference/schema/core/storage/sls-metricstore"
+        },
+        {
+          "text": "victoriametrics",
+          "link": "/en/reference/schema/core/storage/victoriametrics"
         }
       ]
     },
@@ -209,6 +217,10 @@
           "link": "/zh/reference/schema/core/storage/aliyun-prometheus"
         },
         {
+          "text": "clickhouse",
+          "link": "/zh/reference/schema/core/storage/clickhouse"
+        },
+        {
           "text": "elasticsearch",
           "link": "/zh/reference/schema/core/storage/elasticsearch"
         },
@@ -235,6 +247,10 @@
         {
           "text": "sls_metricstore",
           "link": "/zh/reference/schema/core/storage/sls-metricstore"
+        },
+        {
+          "text": "victoriametrics",
+          "link": "/zh/reference/schema/core/storage/victoriametrics"
         }
       ]
     },

@@ -42,6 +42,7 @@ L1–L3 的贡献方式见贡献指南。
 ### Storage（存储）
 
 - [aliyun_prometheus](./core/storage/aliyun-prometheus)
+- [clickhouse](./core/storage/clickhouse)
 - [elasticsearch](./core/storage/elasticsearch)
 - [external_storage](./core/storage/external-storage)
 - [mysql](./core/storage/mysql)
@@ -49,6 +50,7 @@ L1–L3 的贡献方式见贡献指南。
 - [sls_entitystore](./core/storage/sls-entitystore)
 - [sls_logstore](./core/storage/sls-logstore)
 - [sls_metricstore](./core/storage/sls-metricstore)
+- [victoriametrics](./core/storage/victoriametrics)
 
 ### 构建块
 

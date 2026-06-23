@@ -31,6 +31,15 @@ public class TestUModel2 {
     }
 
     @Test
+    public void testParseUModelJsonClickhouse() {
+        String json = "{\"kind\":\"clickhouse\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_clickhouse\"}}";
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertEquals("clickhouse", obj.getKind());
+        assertTrue(obj instanceof ClickhouseV100);
+    }
+
+    @Test
     public void testParseUModelJsonDataLink() {
         String json = "{\"kind\":\"data_link\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_data_link\"}}";
         UModelCoreObject obj = UModel.parseUModelJson(json);
@@ -229,6 +238,15 @@ public class TestUModel2 {
     }
 
     @Test
+    public void testParseUModelJsonVictoriametrics() {
+        String json = "{\"kind\":\"victoriametrics\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_victoriametrics\"}}";
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertEquals("victoriametrics", obj.getKind());
+        assertTrue(obj instanceof VictoriametricsV100);
+    }
+
+    @Test
     public void testParseUModelJsonWithCompatibleVersion() {
         String json = "{\"kind\":\"aliyun_prometheus\",\"schema\":{\"version\":\"v0.1.0\"},\"metadata\":{\"name\":\"test\"}}";
         UModelCoreObject obj = UModel.parseUModelJson(json);
@@ -263,6 +281,7 @@ public class TestUModel2 {
     @Test
     public void testIsCoreObject() {
         assertTrue(UModel.isCoreObject(new AliyunPrometheusV100()));
+        assertTrue(UModel.isCoreObject(new ClickhouseV100()));
         assertTrue(UModel.isCoreObject(new DataLinkV100()));
         assertTrue(UModel.isCoreObject(new ElasticsearchV100()));
         assertTrue(UModel.isCoreObject(new EntitySetV100()));
@@ -285,6 +304,7 @@ public class TestUModel2 {
         assertTrue(UModel.isCoreObject(new SlsMetricstoreV100()));
         assertTrue(UModel.isCoreObject(new StorageLinkV100()));
         assertTrue(UModel.isCoreObject(new TraceSetV100()));
+        assertTrue(UModel.isCoreObject(new VictoriametricsV100()));
         assertFalse(UModel.isCoreObject("test"));
         assertFalse(UModel.isCoreObject(null));
     }
@@ -292,6 +312,7 @@ public class TestUModel2 {
     @Test
     public void testIsLinkObject() {
         assertFalse(UModel.isLinkObject(new AliyunPrometheusV100()));
+        assertFalse(UModel.isLinkObject(new ClickhouseV100()));
         assertTrue(UModel.isLinkObject(new DataLinkV100()));
         assertFalse(UModel.isLinkObject(new ElasticsearchV100()));
         assertFalse(UModel.isLinkObject(new EntitySetV100()));
@@ -314,6 +335,7 @@ public class TestUModel2 {
         assertFalse(UModel.isLinkObject(new SlsMetricstoreV100()));
         assertTrue(UModel.isLinkObject(new StorageLinkV100()));
         assertFalse(UModel.isLinkObject(new TraceSetV100()));
+        assertFalse(UModel.isLinkObject(new VictoriametricsV100()));
         assertFalse(UModel.isLinkObject("test"));
         assertFalse(UModel.isLinkObject(null));
     }

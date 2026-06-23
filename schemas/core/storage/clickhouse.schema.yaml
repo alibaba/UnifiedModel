@@ -1,0 +1,131 @@
+description:
+  zh_cn: ClickHouse 存储，用于描述 ClickHouse 或其他 SQL 表后端的配置和查询规划信息。它通过 spec.family 路由到 sql-table 查询家族，把 get_metrics 渲染为 SQL。
+  en_us: ClickHouse storage, used to define ClickHouse or other SQL-table backend metadata for query planning. It routes to the sql-table query family via spec.family, rendering get_metrics as SQL.
+name: clickhouse
+versions:
+  - name: v1.0.0
+    spec:
+      type: object
+      properties:
+        kind:
+          type: string
+          constraint:
+            required: true
+            enum:
+              values:
+                - clickhouse
+        schema:
+          type: object
+          extends:
+            - schema:v1
+          constraint:
+            required: true
+        metadata:
+          type: object
+          extends:
+            - metadata:v1
+          constraint:
+            required: true
+        spec:
+          type: object
+          constraint:
+            required: true
+          description:
+            zh_cn: ClickHouse 的核心配置部分。UModel 只使用这些字段生成 SQL 查询计划，不直接执行查询，也不保存明文凭据。
+            en_us: The specification section for ClickHouse. UModel uses these fields to generate SQL query plans only; it does not execute queries or store plaintext credentials.
+          properties:
+            family:
+              description:
+                zh_cn: 该存储渲染所用的查询家族。设为 sql-table 即可经由 sql-table 渲染器把 get_metrics 渲染为 SQL；不设则该存储仅透传、不渲染。该家族此后的每个后端都只是配置。
+                en_us: The query family this storage renders through. Set sql-table to render get_metrics as SQL via the sql-table renderer; omit it and the storage stays passthrough-only. Every backend in the family after the first is configuration only.
+              type: string
+            endpoint:
+              description:
+                zh_cn: ClickHouse 的访问地址，例如 http://clickhouse:8123。
+                en_us: The endpoint URL of ClickHouse, for example http://clickhouse:8123.
+              type: string
+              constraint:
+                required: true
+            database:
+              description:
+                zh_cn: 查询所用的数据库名。
+                en_us: The database name used for queries.
+              type: string
+            table:
+              description:
+                zh_cn: 指标所在的表名。sql-table 渲染器从该表 SELECT 数据。
+                en_us: The table holding the metrics. The sql-table renderer SELECTs from this table.
+              type: string
+              constraint:
+                required: true
+            time_column:
+              description:
+                zh_cn: 时间列名，用于时间范围过滤与降采样。默认值为 timestamp。
+                en_us: The time column used for time-range filtering and downsampling. Defaults to timestamp.
+              type: string
+              constraint:
+                default_value: timestamp
+            value_column:
+              description:
+                zh_cn: 指标数值列名。默认值为 value。
+                en_us: The metric value column. Defaults to value.
+              type: string
+              constraint:
+                default_value: value
+            metric_column:
+              description:
+                zh_cn: 指标名所在的列名，用于按指标过滤。默认值为 metric_name。
+                en_us: The column holding the metric name, used to filter by metric. Defaults to metric_name.
+              type: string
+              constraint:
+                default_value: metric_name
+            default_query_type:
+              description:
+                zh_cn: 默认查询类型。instant 表示取最新值，range 表示区间降采样。
+                en_us: Default query type. instant returns the latest value, range downsamples over an interval.
+              type: string
+              constraint:
+                enum:
+                  values:
+                    - instant
+                    - range
+                default_value: range
+            default_step:
+              description:
+                zh_cn: 区间查询的默认降采样步长，例如 60s、1m。
+                en_us: Default downsampling step for range queries, for example 60s or 1m.
+              type: string
+            credential_ref:
+              description:
+                zh_cn: 凭据引用标识，例如 secret://clickhouse-prod-readonly。不得在 UModel 中保存明文用户名、密码或 Token。
+                en_us: Credential reference, for example secret://clickhouse-prod-readonly. Plaintext usernames, passwords, or tokens must not be stored in UModel.
+              type: string
+            tls_verify:
+              description:
+                zh_cn: 是否校验 TLS 证书。默认值为 true。
+                en_us: Whether TLS certificates should be verified. Defaults to true.
+              type: boolean
+              constraint:
+                default_value: true
+            properties:
+              description:
+                zh_cn: ClickHouse 的额外非敏感配置，以键值对形式存储。
+                en_us: Additional non-sensitive ClickHouse configuration, stored as key-value pairs.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
+            tags:
+              description:
+                zh_cn: 用于标注该 ClickHouse 存储的标签。
+                en_us: Tags used to describe this ClickHouse storage.
+              type: map
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string

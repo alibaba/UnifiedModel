@@ -1,0 +1,26 @@
+kind: clickhouse
+schema:
+  url: "umodel.aliyun.com"
+  version: "v1.0.0"
+metadata:
+  name: "devops.clickhouse.metrics"
+  domain: devops
+  display_name:
+    en_us: "DevOps ClickHouse"
+    zh_cn: "DevOps ClickHouse"
+  description:
+    en_us: "SQL metrics backend. Declaring spec.family routes get_metrics through the sql-table family, rendered as SQL — a query model entirely different from PromQL."
+    zh_cn: "SQL 指标后端。声明 spec.family 即可让 get_metrics 经由 sql-table 家族渲染为 SQL——与 PromQL 截然不同的查询模型。"
+spec:
+  family: sql-table
+  endpoint: "http://localhost:8123"
+  database: observability
+  table: service_metrics
+  time_column: ts
+  value_column: value
+  metric_column: metric_name
+  default_query_type: range
+  default_step: 1m
+  tags:
+    sample: extensible-storage
+    role: metrics

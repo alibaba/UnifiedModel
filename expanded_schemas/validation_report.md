@@ -3,8 +3,8 @@
 基于 `schemas/base.yaml` 中定义的元数据规范进行验证
 
 ## 📊 验证统计
-- 总文件数: 23
-- 验证通过: 23
+- 总文件数: 25
+- 验证通过: 25
 - 有错误: 0
 - 有警告: 0
 
@@ -66,7 +66,13 @@
 ### entity_set_link.expanded.yaml
 ✅ **状态**: 验证通过
 
+### clickhouse.expanded.yaml
+✅ **状态**: 验证通过
+
 ### aliyun_prometheus.expanded.yaml
+✅ **状态**: 验证通过
+
+### victoriametrics.expanded.yaml
 ✅ **状态**: 验证通过
 
 ### sls_entitystore.expanded.yaml
