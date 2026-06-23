@@ -22,6 +22,8 @@ type docQueryExample struct {
 func TestDocsQueryExamplesExecute(t *testing.T) {
 	ctx := context.Background()
 	app := bootstrap.NewMemoryApp(t.TempDir())
+	// Public docs that use workspace "demo" are expected to run against the
+	// bundled multi-domain quickstart sample loaded here.
 	if _, err := app.LoadQuickStart(ctx, bootstrap.QuickStartOptions{}); err != nil {
 		t.Fatalf("load quickstart: %v", err)
 	}
