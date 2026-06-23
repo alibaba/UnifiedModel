@@ -13,6 +13,13 @@
     "build": "vitepress build",
     "preview": "vitepress preview --host 0.0.0.0"
   },
+  "pnpm": {
+    "overrides": {
+      "dompurify": "3.4.11",
+      "esbuild": "0.25.12",
+      "vite": "6.4.3"
+    }
+  },
   "devDependencies": {
     "mermaid": "^11.4.1",
     "vitepress": "^1.6.3",
