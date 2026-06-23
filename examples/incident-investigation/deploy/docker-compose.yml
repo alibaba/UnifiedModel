@@ -21,6 +21,9 @@ services:
       dockerfile: examples/incident-investigation/deploy/umodel.Dockerfile
     ports:
       - "${UMODEL_PORT:-8080}:8080"   # UModel API (umctl --addr / MCP target); override host port with UMODEL_PORT
+    environment:
+      # Fixed incident date by default (reproducible); set DEMO_ANCHOR=now for a live demo.
+      - DEMO_ANCHOR=${DEMO_ANCHOR:-}
 
   exporter:
     image: python:3.12-slim
@@ -40,6 +43,7 @@ services:
       - backfill:/backfill
     environment:
       - BACKFILL_OUT=/backfill/openmetrics.txt
+      - DEMO_ANCHOR=${DEMO_ANCHOR:-}
     command: ["python", "gen_backfill.py"]
     restart: "no"
 
@@ -88,6 +92,8 @@ services:
   es-seed:
     image: python:3.12-slim
     working_dir: /app
+    environment:
+      - DEMO_ANCHOR=${DEMO_ANCHOR:-}
     volumes:
       - .:/app:ro
     command: ["python", "gen_logs.py"]

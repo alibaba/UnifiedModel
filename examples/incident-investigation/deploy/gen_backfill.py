@@ -5,7 +5,8 @@ into Prometheus before it starts (see docker-compose.yml). The live exporter.py 
 continues the series from "now", so instant queries stay fresh while range queries see
 the full incident arc.
 
-The history follows the modeled timeline (README "Timeline"), anchored to wall-clock now:
+The history follows the modeled timeline (README "Timeline"), anchored to the demo anchor
+(a fixed date by default; DEMO_ANCHOR=now for wall-clock):
 
     P0  healthy           [now-72h, now-24h)   baseline; everything nominal
     P1  retries-up        [now-24h, now-4h)    T-24h config change -> checkout
@@ -20,6 +21,7 @@ inflecting at promo-active, and the T-12h deployment leaving no trace (the red h
 Reuses exporter.py's SERVICES / PROFILES / BUCKETS as the P2 peak, so the history and the
 live tail share one source of truth. Standard library only.
 """
+import datetime as _dt
 import math
 import os
 import time
@@ -28,8 +30,19 @@ from exporter import BUCKETS, PROFILES, SERVICES
 
 WINDOW_S = 72 * 3600     # history depth
 STEP_S = 300             # one sample per 5 min (range queries use [15m]/[30m] windows)
-END_OFFSET_S = 120       # stop just before now so the live exporter owns the present
+END_OFFSET_S = 120       # stop just before the anchor so the live exporter owns the present
 OUT = os.environ.get("BACKFILL_OUT", "/backfill/openmetrics.txt")
+
+# The incident is anchored to a fixed instant by default (reproducible dataset). Set
+# DEMO_ANCHOR=now to anchor to wall-clock instead (a never-expiring live demo).
+DEFAULT_ANCHOR = "2026-06-18T02:17:00Z"
+
+
+def resolve_now():
+    a = os.environ.get("DEMO_ANCHOR") or DEFAULT_ANCHOR
+    if a == "now":
+        return int(time.time())
+    return int(_dt.datetime.strptime(a, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=_dt.timezone.utc).timestamp())
 
 # Timeline boundaries, as age (seconds before now).
 T_CONFIG = 24 * 3600     # checkout retry config change
@@ -117,7 +130,7 @@ def instant(sid, ts, now):
 
 
 def main():
-    now = int(time.time())
+    now = resolve_now()
     end = now - END_OFFSET_S
     start = end - WINDOW_S
     times = list(range(start, end + 1, STEP_S))
