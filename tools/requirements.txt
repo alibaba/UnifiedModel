@@ -1,7 +1,7 @@
 # UModel 开发依赖
 # 运行 schema 展开、代码生成、验证器所需
 
-PyYAML>=6.0
+PyYAML>=6.0.3
 
 # 可选：测试
 # pytest>=7.0
