@@ -12,6 +12,8 @@ Entry Layer — 二进制入口点。
 
 `umodel-server` 和 `umodel-mcp` 都支持 `--graphstore`：
 
+未显式传入 `--graphstore` 时，Go 入口默认使用 `local.ladybug`。如果构建时没有 `-tags ladybug`，启动错误会提示两条路径：使用 Ladybug tag 构建，或在本地开发时传入 `--graphstore file.memory`。
+
 | Provider | 说明 |
 |---|---|
 | `memory` | 纯内存，适合本地快速验证，进程退出后数据丢失；通过纯 Go 引擎支持 Ladybug 兼容只读 Cypher。 |

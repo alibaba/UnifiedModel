@@ -13,6 +13,8 @@ import (
 
 type Provider struct{}
 
+const noLadybugBuildGuidance = "build with -tags ladybug to enable local.ladybug, or run with --graphstore file.memory for local development"
+
 func NewProvider(config graphstore.ProviderConfig) (*Provider, error) {
 	return &Provider{}, nil
 }
@@ -64,11 +66,11 @@ func (p *Provider) Capabilities(ctx context.Context) (model.GraphStoreCapabiliti
 }
 
 func (p *Provider) Health(ctx context.Context) (model.GraphStoreHealth, error) {
-	return model.GraphStoreHealth{Provider: graphstore.ProviderTypeLadybug, Status: "unavailable", Message: "build with -tags ladybug to enable local.ladybug"}, nil
+	return model.GraphStoreHealth{Provider: graphstore.ProviderTypeLadybug, Status: "unavailable", Message: noLadybugBuildGuidance}, nil
 }
 
 func unavailable() error {
-	return apperrors.New(apperrors.CodeProviderUnavailable, "local.ladybug provider is disabled in this build")
+	return apperrors.New(apperrors.CodeProviderUnavailable, "local.ladybug provider is disabled in this build; "+noLadybugBuildGuidance)
 }
 
 func ladybugCapabilities() model.GraphStoreCapabilities {

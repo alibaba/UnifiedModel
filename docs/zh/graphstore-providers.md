@@ -5,6 +5,8 @@ English: [GraphStore Providers](../en/graphstore-providers.md)
 UModel 通过 `GraphStore` 接口保存和查询 UModel elements、CMS 2.0 实体以及拓扑关系。运行时通过 `--graphstore` 选择 provider。
 
 
+未显式传入 `--graphstore` 时，Go 入口默认使用 `local.ladybug`。如果构建时没有 `-tags ladybug`，该 provider 会报告不可用状态。使用 `-tags ladybug` 构建即可启用真实的 `local.ladybug` provider；本地开发且不使用 Ladybug 时请显式传入 `--graphstore file.memory`。
+
 ## Providers
 
 | Provider | 持久化 | 典型用途 |
