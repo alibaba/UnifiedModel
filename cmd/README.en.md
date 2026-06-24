@@ -14,6 +14,8 @@ Entry Layer: process entry points.
 
 `umodel-server` and `umodel-mcp` both support `--graphstore`:
 
+When `--graphstore` is omitted, Go entrypoints use `local.ladybug`. Builds without `-tags ladybug` report clear startup guidance: build with the Ladybug tag, or pass `--graphstore file.memory` for local development.
+
 | Provider | Description |
 |---|---|
 | `memory` | In-memory provider for fast local verification; data is lost on process exit. |

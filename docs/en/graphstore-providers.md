@@ -4,6 +4,8 @@
 
 UModel stores UModel elements, CMS 2.0 entities, and topology relations behind the `GraphStore` interface. Go entry binaries default to `local.ladybug` when `--graphstore` is omitted; select another provider with `--graphstore` on `umodel-server` or `umodel-mcp`.
 
+If a build omits the `ladybug` tag, the default `local.ladybug` provider reports an unavailable health status. Build with `-tags ladybug` to enable the real `local.ladybug` provider, or pass `--graphstore file.memory` for local development without Ladybug.
+
 ```bash
 go run ./cmd/umodel-server --addr :8080 --data data --graphstore file.memory
 ```
