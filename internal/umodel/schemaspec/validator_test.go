@@ -49,6 +49,23 @@ func TestValidateAcceptsCompatibleManifestVersion(t *testing.T) {
 	}
 }
 
+func TestValidateAcceptsLoadedSchemaVersion(t *testing.T) {
+	v := schemaspec.DefaultValidator()
+	res, err := v.Validate(model.UModelElement{
+		Kind:    "metric_set",
+		Domain:  "demo",
+		Name:    "demo.metrics",
+		Version: "v1.0.0",
+		Spec:    map[string]any{},
+	})
+	if err != nil {
+		t.Fatalf("validate loaded schema version: %v", err)
+	}
+	if hasErrorAt(res, "version", "unsupported model envelope version") {
+		t.Fatalf("loaded schema version should not report unsupported version, got %+v", res.Errors)
+	}
+}
+
 func TestNoopValidatorAcceptsEverything(t *testing.T) {
 	v := schemaspec.NewNoopValidator()
 	res, err := v.Validate(model.UModelElement{Kind: "anything_goes", Spec: map[string]any{"garbage": true}})

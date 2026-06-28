@@ -41,7 +41,7 @@ func NewRegistry(efs embed.FS, dir string) (*Registry, error) {
 		if _, ok := reg.schemas[s.Name]; ok {
 			return nil, fmt.Errorf("duplicate schema name %q (in %s and earlier source)", s.Name, path)
 		}
-		reg.schemas[s.Name] = s
+		reg.registerSchema(s)
 	}
 	return reg, nil
 }
@@ -65,7 +65,7 @@ func newRegistryFromFS(efs fs.ReadDirFS, dir string) (*Registry, error) {
 			return nil, fmt.Errorf("parse %s: %w", entry.Name(), err)
 		}
 		if s != nil {
-			reg.schemas[s.Name] = s
+			reg.registerSchema(s)
 		}
 	}
 	return reg, nil
@@ -75,12 +75,19 @@ func newEmptyRegistry() *Registry {
 	return &Registry{
 		schemas: make(map[string]*Schema),
 		acceptedEnvelopeVersions: map[string]struct{}{
-			// schemas/manifest.yaml declares system schema v0.1.0 while mapping
-			// core model kinds to their v1.0.0 schemas. Existing examples use
-			// that manifest-level version in element envelopes.
+			// v0.1.0 is the manifest-level envelope version. Kind schema
+			// versions are added as schemas load.
 			"v0.1.0": {},
 		},
 	}
+}
+
+func (r *Registry) registerSchema(s *Schema) {
+	r.schemas[s.Name] = s
+	if s.Version == "" {
+		return
+	}
+	r.acceptedEnvelopeVersions[s.Version] = struct{}{}
 }
 
 func (r *Registry) Lookup(kind string) *Schema {
