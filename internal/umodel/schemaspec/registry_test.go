@@ -32,6 +32,16 @@ func TestRegistryLookupReturnsNilForUnknownKind(t *testing.T) {
 	}
 }
 
+func TestRegistryAcceptsManifestEnvelopeVersion(t *testing.T) {
+	reg := Default()
+	if !reg.AcceptsVersion("v0.1.0") {
+		t.Fatal("manifest envelope version v0.1.0 should be accepted")
+	}
+	if reg.AcceptsVersion("v9.9.9") {
+		t.Fatal("unknown envelope version should not be accepted")
+	}
+}
+
 func TestEntitySetLinkSchemaCarriesRequiredEntityLinkType(t *testing.T) {
 	s := Default().Lookup("entity_set_link")
 	if s == nil {

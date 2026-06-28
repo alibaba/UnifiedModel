@@ -12,7 +12,8 @@ import (
 )
 
 type Registry struct {
-	schemas map[string]*Schema
+	schemas                  map[string]*Schema
+	acceptedEnvelopeVersions map[string]struct{}
 }
 
 func NewRegistry(efs embed.FS, dir string) (*Registry, error) {
@@ -20,7 +21,7 @@ func NewRegistry(efs embed.FS, dir string) (*Registry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read embedded dir %q: %w", dir, err)
 	}
-	reg := &Registry{schemas: make(map[string]*Schema)}
+	reg := newEmptyRegistry()
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -37,10 +38,8 @@ func NewRegistry(efs embed.FS, dir string) (*Registry, error) {
 		if s == nil {
 			continue
 		}
-		if existing, ok := reg.schemas[s.Name]; ok {
+		if _, ok := reg.schemas[s.Name]; ok {
 			return nil, fmt.Errorf("duplicate schema name %q (in %s and earlier source)", s.Name, path)
-		} else {
-			_ = existing
 		}
 		reg.schemas[s.Name] = s
 	}
@@ -52,7 +51,7 @@ func newRegistryFromFS(efs fs.ReadDirFS, dir string) (*Registry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read dir %q: %w", dir, err)
 	}
-	reg := &Registry{schemas: make(map[string]*Schema)}
+	reg := newEmptyRegistry()
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -72,11 +71,31 @@ func newRegistryFromFS(efs fs.ReadDirFS, dir string) (*Registry, error) {
 	return reg, nil
 }
 
+func newEmptyRegistry() *Registry {
+	return &Registry{
+		schemas: make(map[string]*Schema),
+		acceptedEnvelopeVersions: map[string]struct{}{
+			// schemas/manifest.yaml declares system schema v0.1.0 while mapping
+			// core model kinds to their v1.0.0 schemas. Existing examples use
+			// that manifest-level version in element envelopes.
+			"v0.1.0": {},
+		},
+	}
+}
+
 func (r *Registry) Lookup(kind string) *Schema {
 	if r == nil {
 		return nil
 	}
 	return r.schemas[kind]
+}
+
+func (r *Registry) AcceptsVersion(version string) bool {
+	if r == nil {
+		return false
+	}
+	_, ok := r.acceptedEnvelopeVersions[version]
+	return ok
 }
 
 func (r *Registry) Kinds() []string {

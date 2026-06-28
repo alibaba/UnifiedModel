@@ -29,7 +29,6 @@ func NewNoopValidator() *Validator {
 // element.Kind. The returned error is non-nil only when the kind itself is
 // unknown to the registry; field-level problems are reported in Result.
 //
-// TODO(v2): respect element.Version; today we always use versions[0].
 // TODO(v2): also validate the kind/schema/metadata envelope (currently
 // elementFromPayload validates the minimum imperatively before the element
 // reaches this layer).
@@ -40,6 +39,12 @@ func (v *Validator) Validate(element model.UModelElement) (Result, error) {
 	s := v.registry.Lookup(element.Kind)
 	if s == nil {
 		return Result{}, fmt.Errorf("unknown kind %q", element.Kind)
+	}
+	if element.Version != "" && !v.registry.AcceptsVersion(element.Version) {
+		return Result{Errors: []Issue{{
+			Path:   "version",
+			Reason: fmt.Sprintf("unsupported model envelope version %q", element.Version),
+		}}}, nil
 	}
 	var res Result
 	walk(element.Spec, s.Spec, "spec", &res)
