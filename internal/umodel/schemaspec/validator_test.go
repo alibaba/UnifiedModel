@@ -19,6 +19,53 @@ func TestValidateReturnsErrorForUnknownKind(t *testing.T) {
 	}
 }
 
+func TestValidateReportsUnsupportedEnvelopeVersionIssue(t *testing.T) {
+	v := schemaspec.DefaultValidator()
+	res, err := v.Validate(model.UModelElement{Kind: "entity_set", Domain: "d", Name: "n", Version: "v9.9.9"})
+	if err != nil {
+		t.Fatalf("unknown version should be reported as a validation issue, got error: %v", err)
+	}
+	if !hasErrorAt(res, "version", "unsupported model envelope version") {
+		t.Fatalf("expected unsupported envelope version issue on version, got %+v", res.Errors)
+	}
+}
+
+func TestValidateAcceptsCompatibleManifestVersion(t *testing.T) {
+	v := schemaspec.DefaultValidator()
+	res, err := v.Validate(model.UModelElement{
+		Kind:    "entity_set",
+		Domain:  "demo",
+		Name:    "demo.service",
+		Version: "v0.1.0",
+		Spec: map[string]any{
+			"fields": []any{map[string]any{"name": "service_id", "type": "string"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("validate compatible manifest version: %v", err)
+	}
+	if len(res.Errors) != 0 {
+		t.Fatalf("compatible manifest version should validate against default kind schema, got %+v", res.Errors)
+	}
+}
+
+func TestValidateAcceptsLoadedSchemaVersion(t *testing.T) {
+	v := schemaspec.DefaultValidator()
+	res, err := v.Validate(model.UModelElement{
+		Kind:    "metric_set",
+		Domain:  "demo",
+		Name:    "demo.metrics",
+		Version: "v1.0.0",
+		Spec:    map[string]any{},
+	})
+	if err != nil {
+		t.Fatalf("validate loaded schema version: %v", err)
+	}
+	if hasErrorAt(res, "version", "unsupported model envelope version") {
+		t.Fatalf("loaded schema version should not report unsupported version, got %+v", res.Errors)
+	}
+}
+
 func TestNoopValidatorAcceptsEverything(t *testing.T) {
 	v := schemaspec.NewNoopValidator()
 	res, err := v.Validate(model.UModelElement{Kind: "anything_goes", Spec: map[string]any{"garbage": true}})

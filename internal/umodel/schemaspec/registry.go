@@ -12,7 +12,8 @@ import (
 )
 
 type Registry struct {
-	schemas map[string]*Schema
+	schemas                  map[string]*Schema
+	acceptedEnvelopeVersions map[string]struct{}
 }
 
 func NewRegistry(efs embed.FS, dir string) (*Registry, error) {
@@ -20,7 +21,7 @@ func NewRegistry(efs embed.FS, dir string) (*Registry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read embedded dir %q: %w", dir, err)
 	}
-	reg := &Registry{schemas: make(map[string]*Schema)}
+	reg := newEmptyRegistry()
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -37,12 +38,10 @@ func NewRegistry(efs embed.FS, dir string) (*Registry, error) {
 		if s == nil {
 			continue
 		}
-		if existing, ok := reg.schemas[s.Name]; ok {
+		if _, ok := reg.schemas[s.Name]; ok {
 			return nil, fmt.Errorf("duplicate schema name %q (in %s and earlier source)", s.Name, path)
-		} else {
-			_ = existing
 		}
-		reg.schemas[s.Name] = s
+		reg.registerSchema(s)
 	}
 	return reg, nil
 }
@@ -52,7 +51,7 @@ func newRegistryFromFS(efs fs.ReadDirFS, dir string) (*Registry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read dir %q: %w", dir, err)
 	}
-	reg := &Registry{schemas: make(map[string]*Schema)}
+	reg := newEmptyRegistry()
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -66,10 +65,29 @@ func newRegistryFromFS(efs fs.ReadDirFS, dir string) (*Registry, error) {
 			return nil, fmt.Errorf("parse %s: %w", entry.Name(), err)
 		}
 		if s != nil {
-			reg.schemas[s.Name] = s
+			reg.registerSchema(s)
 		}
 	}
 	return reg, nil
+}
+
+func newEmptyRegistry() *Registry {
+	return &Registry{
+		schemas: make(map[string]*Schema),
+		acceptedEnvelopeVersions: map[string]struct{}{
+			// v0.1.0 is the manifest-level envelope version. Kind schema
+			// versions are added as schemas load.
+			"v0.1.0": {},
+		},
+	}
+}
+
+func (r *Registry) registerSchema(s *Schema) {
+	r.schemas[s.Name] = s
+	if s.Version == "" {
+		return
+	}
+	r.acceptedEnvelopeVersions[s.Version] = struct{}{}
 }
 
 func (r *Registry) Lookup(kind string) *Schema {
@@ -77,6 +95,14 @@ func (r *Registry) Lookup(kind string) *Schema {
 		return nil
 	}
 	return r.schemas[kind]
+}
+
+func (r *Registry) AcceptsVersion(version string) bool {
+	if r == nil {
+		return false
+	}
+	_, ok := r.acceptedEnvelopeVersions[version]
+	return ok
 }
 
 func (r *Registry) Kinds() []string {

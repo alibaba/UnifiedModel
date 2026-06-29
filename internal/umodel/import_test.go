@@ -38,6 +38,29 @@ func TestValidateAcceptsValidUModelElements(t *testing.T) {
 	}
 }
 
+func TestValidateReportsUnsupportedEnvelopeVersionOnVersionField(t *testing.T) {
+	svc := NewService(graphstore.NewMemoryStore(), WithImportRoot("/"))
+	result, err := svc.Validate(context.Background(), "demo", []model.UModelElement{{
+		Kind:    "entity_set",
+		Domain:  "devops",
+		Name:    "devops.service",
+		Version: "v9.9.9",
+		Spec:    map[string]any{},
+	}})
+	if err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+	if result.Valid {
+		t.Fatalf("expected invalid result")
+	}
+	if len(result.Errors) != 1 {
+		t.Fatalf("expected one validation error, got %+v", result.Errors)
+	}
+	if result.Errors[0].Field != "elements[0].version" {
+		t.Fatalf("expected unsupported envelope version on version field, got %+v", result.Errors[0])
+	}
+}
+
 func TestImportFileBuildsIndexAndRebuildsFromSnapshot(t *testing.T) {
 	ctx := context.Background()
 	store := graphstore.NewMemoryStore()
