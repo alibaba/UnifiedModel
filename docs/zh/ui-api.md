@@ -12,7 +12,7 @@ Web UI 的每个界面只对应公开 REST 契约。
 | Workspace 工作台 | 加载当前 Workspace | `GET /api/v1/workspaces/{workspace}` | 无 |
 | Settings | 更新 Workspace | `PUT /api/v1/workspaces/{workspace}` | `UpdateWorkspaceRequest` |
 | Settings | 删除 Workspace | `DELETE /api/v1/workspaces/{workspace}` | 无 |
-| Explorer | 加载模型图/表 | `POST /api/v1/query/{workspace}/execute` | `{"query": ".umodel | sort id | limit 100", "limit": 100}` |
+| Explorer | 加载模型图/表 | `POST /api/v1/query/{workspace}/execute` | `{"query": ".umodel | sort name | limit 2000"}` |
 | Explorer 详情 | 校验元素 JSON | `POST /api/v1/umodel/{workspace}/validate` | `{"elements": [UModelElement]}` |
 | Explorer 详情 | 保存元素 JSON | `POST /api/v1/umodel/{workspace}/elements` | `{"elements": [UModelElement]}` |
 | Explorer 详情 | 删除元素 | `DELETE /api/v1/umodel/{workspace}/elements` | `{"ids": ["element-id"]}` |
