@@ -160,7 +160,7 @@ export function UModelPage({
     setLoading(true)
     setError('')
     try {
-      const result = await api.listUModel(workspaceId, 100)
+      const result = await api.listUModel(workspaceId, 2000)
       const elements = result.rows.map(rowToElement).filter((element) => elementKey(element))
       setQueryResult(result)
       setServerElements(elements)

@@ -12,7 +12,7 @@ The web UI maps each screen to the public REST contract below.
 | Workspace shell | Load selected workspace | `GET /api/v1/workspaces/{workspace}` | none |
 | Settings | Update workspace | `PUT /api/v1/workspaces/{workspace}` | `UpdateWorkspaceRequest` |
 | Settings | Delete workspace | `DELETE /api/v1/workspaces/{workspace}` | none |
-| Explorer | Load model graph/table | `POST /api/v1/query/{workspace}/execute` | `{"query": ".umodel | sort id | limit 100", "limit": 100}` |
+| Explorer | Load model graph/table | `POST /api/v1/query/{workspace}/execute` | `{"query": ".umodel | sort name | limit 2000"}` |
 | Explorer detail | Validate element JSON | `POST /api/v1/umodel/{workspace}/validate` | `{"elements": [UModelElement]}` |
 | Explorer detail | Save element JSON | `POST /api/v1/umodel/{workspace}/elements` | `{"elements": [UModelElement]}` |
 | Explorer detail | Delete element | `DELETE /api/v1/umodel/{workspace}/elements` | `{"ids": ["element-id"]}` |
