@@ -124,6 +124,11 @@ Graph-call：`getNeighborNodes(direction, hops, nodes)`、`getDirectRelations(no
 .entity_set with(domain='platform', name='platform.service', ids=['...'])
   | entity-call list_skills(['platform@runbook_set@platform.service.ops@skills@incident-investigation'], true)
 
+# 列出关联 Knowledge，并精确加载一个条目的策略与内容详情
+.entity_set with(domain='platform', name='platform.service', ids=['...']) | entity-call list_knowledge()
+.entity_set with(domain='platform', name='platform.service', ids=['...'])
+  | entity-call list_knowledge(['platform@runbook_set@platform.service.ops@knowledge@retry_storm_pattern'], true)
+
 # 拉取可观测信号——返回可执行的查询计划
 .entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c'])
   | entity-call get_metrics('platform', 'platform.service.metrics', 'latency_p99_ms', step='30s')
@@ -134,7 +139,7 @@ Graph-call：`getNeighborNodes(direction, hops, nodes)`、`getDirectRelations(no
 
 `get_metrics` / `get_logs` 返回的是 **查询计划**——UModel 开源版只产出计划，因此会渲染下游 PromQL / Elasticsearch 查询（`service_id` 直接从对象图取值），但不执行。由下游 executor 针对真实存储执行。完整管道词汇见 [Query Service 指南](query-service.md)。
 
-`list_skills` 是渐进式披露读取。只有直接且当前可见的 RunbookLink 指向包含 Skill 的 RunbookSet 时，`__list_method__()` 才会公开它。UModel 返回 Skill 定义，由支持 Skill 的 Agent Runtime 选择并遵循 `SKILL.md`；`allowed_tools` 本身不授予权限，工具可用性、授权与确认仍由调用方 Runtime 执行。
+`list_skills` 与 `list_knowledge` 是基于直接且当前可见 RunbookLink 的独立渐进式披露读取，并应用 `filter_by_entity`。UModel 返回定义；支持 Skill 的 Runtime 选择一个 Skill，并可按 `apply_policy` 使用同一 RunbookSet 的内联 Markdown Knowledge。Knowledge 只是参考上下文，不是授权：Runtime 不获取 `content_url`，`allowed_tools` 与 `runbook_set_detail` 也不能授予工具能力。本阶段不加入 `list_tools`；当前 Runtime 的工具 Schema、授权和确认策略仍是权威来源。
 
 ## 4. `?format=agent`——给 Agent 的紧凑信封
 
