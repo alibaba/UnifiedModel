@@ -195,13 +195,15 @@ func (e *Executor) executeEntitySetListMethods(ctx context.Context, workspace st
 	if err != nil {
 		return model.QueryResult{}, err
 	}
-	hasSkills := len(relatedSkillsForEntitySet(
+	relatedRunbookSets := relatedRunbookSetsForEntitySet(
 		snapshot.Elements,
 		stringFilter(plan.Filters["domain"]),
 		stringFilter(plan.Filters["name"]),
 		plan.EntityData,
-	)) > 0
-	return entitySetAssistantRawResponse(entityCallListMethodHeader(), entityCallListMethodRows(hasSkills)), nil
+	)
+	hasSkills := relatedRunbookSetsHaveNamedItems(relatedRunbookSets, "skills")
+	hasKnowledge := relatedRunbookSetsHaveNamedItems(relatedRunbookSets, "knowledge")
+	return entitySetAssistantRawResponse(entityCallListMethodHeader(), entityCallListMethodRows(hasSkills, hasKnowledge)), nil
 }
 
 func entitySetAssistantRawResponse(header []string, data []map[string]any) model.QueryResult {
@@ -478,7 +480,7 @@ func entityCallListMethodHeader() []string {
 	return []string{"name", "display_name", "description", "params", "returns"}
 }
 
-func entityCallListMethodRows(hasSkills bool) []map[string]any {
+func entityCallListMethodRows(hasSkills, hasKnowledge bool) []map[string]any {
 	rows := []map[string]any{}
 	methods := []entityCallMethodInfo{
 		methodInfoListMethods(),
@@ -488,6 +490,9 @@ func entityCallListMethodRows(hasSkills bool) []map[string]any {
 	}
 	if hasSkills {
 		methods = append(methods, methodInfoListSkills())
+	}
+	if hasKnowledge {
+		methods = append(methods, methodInfoListKnowledge())
 	}
 	for _, method := range methods {
 		rows = append(rows, entityCallRowValues([]string{
@@ -689,6 +694,23 @@ func methodInfoListSkills() entityCallMethodInfo {
 	}
 }
 
+func methodInfoListKnowledge() entityCallMethodInfo {
+	return entityCallMethodInfo{
+		Name:        "list_knowledge",
+		DisplayName: "List Knowledge",
+		Description: "Get Knowledge from RunbookSets related to EntitySet",
+		Params: []assistantParamInfo{
+			{
+				Key:         "knowledge_ids",
+				Type:        "array<varchar>",
+				DisplayName: "Knowledge IDs to filter, format: <runbook_domain>@runbook_set@<runbook_name>@knowledge@<knowledge_name>",
+			},
+			{Key: "detail", Type: "boolean", DisplayName: "Detail Info, if true, return all fields of Knowledge", Default: false},
+		},
+		Returns: returnsFromHeader(listKnowledgeHeader(true)),
+	}
+}
+
 func listSkillsReturns() []assistantReturnInfo {
 	returns := returnsFromHeader(listSkillsHeader(true))
 	returns[8].Type = "integer"
@@ -813,6 +835,18 @@ func relatedRunbookSetsForEntitySet(elements []model.UModelElement, entityDomain
 		out = append(out, relatedRunbookSet{RunbookSet: runbookSet, Links: []model.UModelElement{link}})
 	}
 	return out
+}
+
+func relatedRunbookSetsHaveNamedItems(runbookSets []relatedRunbookSet, key string) bool {
+	for _, related := range runbookSets {
+		for _, rawItem := range sliceValue(related.RunbookSet.Spec[key]) {
+			item, ok := rawItem.(map[string]any)
+			if ok && stringValue(item["name"]) != "" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func relatedSkillsForEntitySet(elements []model.UModelElement, entityDomain, entityName string, entityData *model.EntityData) []relatedSkill {

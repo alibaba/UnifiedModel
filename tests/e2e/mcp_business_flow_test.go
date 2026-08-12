@@ -76,6 +76,7 @@ func TestMCPQueryToolDiscoversAndLoadsEntityLinkedSkill(t *testing.T) {
 	requests := []string{
 		`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"workspace":"demo","name":"query_spl_execute","arguments":{"query":".entity_set with(domain='platform', name='platform.service') | entity-call __list_method__()"}}}`,
 		`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"workspace":"demo","name":"query_spl_execute","arguments":{"query":".entity_set with(domain='platform', name='platform.service') | entity-call list_skills(['platform@runbook_set@platform.service.ops@skills@incident-investigation'], true)"}}}`,
+		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"workspace":"demo","name":"query_spl_execute","arguments":{"query":".entity_set with(domain='platform', name='platform.service') | entity-call list_knowledge(['platform@runbook_set@platform.service.ops@knowledge@retry_storm_pattern'], true)"}}}`,
 	}
 	cmd := exec.Command("go", "run", "./cmd/umodel-mcp", "--quickstart", "--quickstart-sample", "examples/incident-investigation", "--graphstore", "memory", "--data", t.TempDir())
 	cmd.Dir = root
@@ -92,13 +93,18 @@ func TestMCPQueryToolDiscoversAndLoadsEntityLinkedSkill(t *testing.T) {
 		t.Fatalf("expected %d responses, got %d: %s", len(requests), len(responses), out)
 	}
 	discovery := responseByID(t, responses, 1)
-	if discovery["error"] != nil || !bytes.Contains(mustJSON(t, discovery["result"]), []byte("list_skills")) {
-		t.Fatalf("EntitySet method discovery should include list_skills, got %+v", discovery)
+	if discovery["error"] != nil || !bytes.Contains(mustJSON(t, discovery["result"]), []byte("list_skills")) || !bytes.Contains(mustJSON(t, discovery["result"]), []byte("list_knowledge")) {
+		t.Fatalf("EntitySet method discovery should include list_skills and list_knowledge, got %+v", discovery)
 	}
 	loaded := responseByID(t, responses, 2)
 	loadedBody := mustJSON(t, loaded["result"])
 	if loaded["error"] != nil || !bytes.Contains(loadedBody, []byte("incident-investigation")) || !bytes.Contains(loadedBody, []byte("SKILL.md")) {
 		t.Fatalf("exact Skill load should return inline SKILL.md, got %+v", loaded)
+	}
+	knowledge := responseByID(t, responses, 3)
+	knowledgeBody := mustJSON(t, knowledge["result"])
+	if knowledge["error"] != nil || !bytes.Contains(knowledgeBody, []byte("retry_storm_pattern")) || !bytes.Contains(knowledgeBody, []byte("apply_policy")) || !bytes.Contains(knowledgeBody, []byte("# Retry Storm Pattern")) {
+		t.Fatalf("exact Knowledge load should return policy and inline Markdown, got %+v", knowledge)
 	}
 }
 

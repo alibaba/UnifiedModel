@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
@@ -174,6 +175,111 @@ func TestListKnowledgeExecuteAppliesFilterByEntity(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestListKnowledgeDiscoveryAdvertisesCapabilitiesIndependently(t *testing.T) {
+	knowledgeOnly := listKnowledgeElements(false, false)
+	for i := range knowledgeOnly {
+		if knowledgeOnly[i].Kind == "runbook_set" {
+			delete(knowledgeOnly[i].Spec, "skills")
+		}
+	}
+
+	for _, tc := range []struct {
+		name          string
+		elements      []model.UModelElement
+		wantSkills    bool
+		wantKnowledge bool
+	}{
+		{name: "skills and Knowledge", elements: listKnowledgeElements(false, false), wantSkills: true, wantKnowledge: true},
+		{name: "skills only", elements: listSkillsElements(false, false), wantSkills: true, wantKnowledge: false},
+		{name: "Knowledge only", elements: knowledgeOnly, wantSkills: false, wantKnowledge: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			svc := listSkillsTestService(t, tc.elements)
+			result, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
+				Query: ".entity_set with(domain='platform', name='platform.service') | entity-call __list_method__()",
+			})
+			if err != nil {
+				t.Fatalf("discover methods: %v", err)
+			}
+			methods := listMethodRowsByName(t, result)
+			_, hasSkills := methods["list_skills"]
+			knowledgeMethod, hasKnowledge := methods["list_knowledge"]
+			if hasSkills != tc.wantSkills || hasKnowledge != tc.wantKnowledge {
+				t.Fatalf("methods = %#v, want skills=%t Knowledge=%t", methods, tc.wantSkills, tc.wantKnowledge)
+			}
+			if !hasKnowledge {
+				return
+			}
+
+			var params []map[string]any
+			if err := json.Unmarshal([]byte(knowledgeMethod[3]), &params); err != nil {
+				t.Fatalf("decode list_knowledge params: %v", err)
+			}
+			if len(params) != 2 || params[0]["key"] != "knowledge_ids" || params[1]["key"] != "detail" {
+				t.Fatalf("list_knowledge params = %#v", params)
+			}
+			var returns []map[string]any
+			if err := json.Unmarshal([]byte(knowledgeMethod[4]), &returns); err != nil {
+				t.Fatalf("decode list_knowledge returns: %v", err)
+			}
+			if len(returns) != 11 || returns[5]["key"] != "apply_policy" || returns[9]["key"] != "runbook_link_detail" {
+				t.Fatalf("list_knowledge returns = %#v", returns)
+			}
+		})
+	}
+}
+
+func TestListKnowledgeDiscoveryAppliesFilterByEntity(t *testing.T) {
+	elements := listKnowledgeElements(false, false)
+	for i := range elements {
+		if elements[i].Kind == "runbook_link" {
+			elements[i].Spec["filter_by_entity"] = "environment = 'prod'"
+		}
+	}
+	svc := listSkillsTestService(t, elements)
+
+	for _, tc := range []struct {
+		name        string
+		env         string
+		wantMethods bool
+	}{
+		{name: "hidden", env: "staging", wantMethods: false},
+		{name: "visible", env: "prod", wantMethods: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
+				Query: ".entity_set with(domain='platform', name='platform.service') | entity-call __list_method__()",
+				FilterByEntities: &model.EntityData{
+					Header: []string{"environment"},
+					Data:   [][]string{{tc.env}},
+				},
+			})
+			if err != nil {
+				t.Fatalf("discover %s methods: %v", tc.env, err)
+			}
+			methods := listMethodRowsByName(t, result)
+			_, hasSkills := methods["list_skills"]
+			_, hasKnowledge := methods["list_knowledge"]
+			if hasSkills != tc.wantMethods || hasKnowledge != tc.wantMethods {
+				t.Fatalf("%s methods = %#v, want both=%t", tc.env, methods, tc.wantMethods)
+			}
+		})
+	}
+}
+
+func TestQueryExamplesIncludeListKnowledge(t *testing.T) {
+	examples, err := (&Service{}).Examples(context.Background())
+	if err != nil {
+		t.Fatalf("list Query Service examples: %v", err)
+	}
+	for _, example := range examples {
+		if strings.Contains(example, "entity-call list_knowledge(") {
+			return
+		}
+	}
+	t.Fatalf("Query Service examples = %#v, want list_knowledge", examples)
 }
 
 func listKnowledgeElements(duplicateLink, missingDestination bool) []model.UModelElement {
