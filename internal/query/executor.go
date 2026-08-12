@@ -179,6 +179,8 @@ func (e *Executor) executeEntitySetCall(ctx context.Context, workspace string, p
 		return e.executeEntitySetListDataSet(ctx, workspace, plan)
 	case "list_skills":
 		return e.executeEntitySetListSkills(ctx, workspace, plan)
+	case "list_knowledge":
+		return e.executeEntitySetListKnowledge(ctx, workspace, plan)
 	case "get_logs":
 		return e.executeEntitySetGetLogs(ctx, workspace, plan)
 	case "get_metrics":
@@ -341,6 +343,30 @@ func (e *Executor) executeEntitySetListSkills(ctx context.Context, workspace str
 	return entitySetAssistantRawResponse(listSkillsHeader(detail), rows), nil
 }
 
+func (e *Executor) executeEntitySetListKnowledge(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
+	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	detail := boolValue(plan.EntityCall.Parameters["detail"])
+	knowledgeIDs := stringSet(stringSliceValue(plan.EntityCall.Parameters["knowledge_ids"]))
+	rows := make([]map[string]any, 0)
+	for _, related := range relatedKnowledgeForEntitySet(
+		snapshot.Elements,
+		stringFilter(plan.Filters["domain"]),
+		stringFilter(plan.Filters["name"]),
+		plan.EntityData,
+	) {
+		if len(knowledgeIDs) > 0 {
+			if _, ok := knowledgeIDs[related.ID]; !ok {
+				continue
+			}
+		}
+		rows = append(rows, entityCallRowValues(listKnowledgeValues(related, detail)))
+	}
+	return entitySetAssistantRawResponse(listKnowledgeHeader(detail), rows), nil
+}
+
 func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
 	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
 	if err != nil {
@@ -432,6 +458,18 @@ type relatedSkill struct {
 	Skill map[string]any
 }
 
+type relatedRunbookSet struct {
+	RunbookSet model.UModelElement
+	Links      []model.UModelElement
+}
+
+type relatedKnowledge struct {
+	ID         string
+	Knowledge  map[string]any
+	RunbookSet model.UModelElement
+	Links      []model.UModelElement
+}
+
 func entityCallRowValues(values []string) map[string]any {
 	return map[string]any{"values": values}
 }
@@ -492,6 +530,39 @@ func listSkillValues(related relatedSkill, detail bool) []string {
 	}
 	if detail {
 		values = append(values, mustJSON(skill))
+	}
+	return values
+}
+
+func listKnowledgeHeader(detail bool) []string {
+	header := []string{"knowledge_id", "knowledge_name", "display_name", "description", "content_type"}
+	if detail {
+		header = append(header,
+			"apply_policy", "content", "content_url", "knowledge_detail",
+			"runbook_link_detail", "runbook_set_detail",
+		)
+	}
+	return header
+}
+
+func listKnowledgeValues(related relatedKnowledge, detail bool) []string {
+	knowledge := related.Knowledge
+	values := []string{
+		related.ID,
+		stringValue(knowledge["name"]),
+		semanticString(knowledge["display_name"]),
+		semanticString(knowledge["description"]),
+		stringValue(knowledge["content_type"]),
+	}
+	if detail {
+		values = append(values,
+			mustJSON(knowledge["apply_policy"]),
+			stringValue(knowledge["content"]),
+			stringValue(knowledge["content_url"]),
+			mustJSON(knowledge),
+			mustJSON(related.Links),
+			mustJSON(related.RunbookSet),
+		)
 	}
 	return values
 }
@@ -711,9 +782,9 @@ func relatedDataSetsForEntitySet(elements []model.UModelElement, entityDomain, e
 	return out
 }
 
-func relatedSkillsForEntitySet(elements []model.UModelElement, entityDomain, entityName string, entityData *model.EntityData) []relatedSkill {
-	out := []relatedSkill{}
-	seen := map[string]struct{}{}
+func relatedRunbookSetsForEntitySet(elements []model.UModelElement, entityDomain, entityName string, entityData *model.EntityData) []relatedRunbookSet {
+	out := []relatedRunbookSet{}
+	indexes := map[string]int{}
 	for _, link := range elements {
 		if link.Kind != "runbook_link" {
 			continue
@@ -733,6 +804,22 @@ func relatedSkillsForEntitySet(elements []model.UModelElement, entityDomain, ent
 		if !ok {
 			continue
 		}
+		id := uniqueID(runbookSet.Domain, runbookSet.Kind, runbookSet.Name)
+		if index, exists := indexes[id]; exists {
+			out[index].Links = append(out[index].Links, link)
+			continue
+		}
+		indexes[id] = len(out)
+		out = append(out, relatedRunbookSet{RunbookSet: runbookSet, Links: []model.UModelElement{link}})
+	}
+	return out
+}
+
+func relatedSkillsForEntitySet(elements []model.UModelElement, entityDomain, entityName string, entityData *model.EntityData) []relatedSkill {
+	out := []relatedSkill{}
+	seen := map[string]struct{}{}
+	for _, related := range relatedRunbookSetsForEntitySet(elements, entityDomain, entityName, entityData) {
+		runbookSet := related.RunbookSet
 		for _, rawSkill := range sliceValue(runbookSet.Spec["skills"]) {
 			skill, ok := rawSkill.(map[string]any)
 			if !ok {
@@ -748,6 +835,36 @@ func relatedSkillsForEntitySet(elements []model.UModelElement, entityDomain, ent
 			}
 			seen[id] = struct{}{}
 			out = append(out, relatedSkill{ID: id, Skill: skill})
+		}
+	}
+	return out
+}
+
+func relatedKnowledgeForEntitySet(elements []model.UModelElement, entityDomain, entityName string, entityData *model.EntityData) []relatedKnowledge {
+	out := []relatedKnowledge{}
+	seen := map[string]struct{}{}
+	for _, related := range relatedRunbookSetsForEntitySet(elements, entityDomain, entityName, entityData) {
+		runbookSet := related.RunbookSet
+		for _, rawKnowledge := range sliceValue(runbookSet.Spec["knowledge"]) {
+			knowledge, ok := rawKnowledge.(map[string]any)
+			if !ok {
+				continue
+			}
+			name := stringValue(knowledge["name"])
+			if name == "" {
+				continue
+			}
+			id := fmt.Sprintf("%s@runbook_set@%s@knowledge@%s", runbookSet.Domain, runbookSet.Name, name)
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			out = append(out, relatedKnowledge{
+				ID:         id,
+				Knowledge:  knowledge,
+				RunbookSet: runbookSet,
+				Links:      related.Links,
+			})
 		}
 	}
 	return out

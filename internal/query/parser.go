@@ -877,7 +877,11 @@ func parseValue(value string) any {
 		return tuple
 	}
 	if strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]") {
-		rawItems := splitTopLevel(strings.TrimSpace(value[1:len(value)-1]), ',')
+		inner := strings.TrimSpace(value[1 : len(value)-1])
+		if inner == "" {
+			return []string{}
+		}
+		rawItems := splitTopLevel(inner, ',')
 		items := make([]any, 0, len(rawItems))
 		for _, item := range rawItems {
 			items = append(items, parseValue(strings.TrimSpace(item)))
