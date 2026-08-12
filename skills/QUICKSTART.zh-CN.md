@@ -130,6 +130,10 @@ args = ["run", "./cmd/umodel-mcp", "--quickstart",
 
 - "发现并执行 payment-gateway 关联的 RunbookSet Skill。"
 
+Runner 会从同一 RunbookSet 发现可选的 `list_knowledge` 上下文并应用其策略，
+且只使用内联 Markdown。它不会获取 Knowledge URL，也不会把 RunbookSet 工具定义
+当作 Runtime 执行依据。
+
 Agent 随后自主工作：定位 degraded 服务 → 拉它的指标/日志 → 顺拓扑找到上游调用方 →
 发现重试配置变更 → 排除红鲱鱼部署 → 找到促销流量 → 得出根因（重试 ×2.5 × 促销 ×3.5
 = **8.75×** 过载）并建议回滚。

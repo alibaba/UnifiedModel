@@ -15,7 +15,7 @@
 |---|---|---|
 | `umodel-query` | [`umodel-query/SKILL.md`](umodel-query/SKILL.md) | 读取实体 / 关系 / 拓扑数据**以及** UModel 模型（实体集、数据集、链接、Runbook）。CLI 优先（`umctl`），并提供 MCP 替代方案。 |
 | `umodel-rca` | [`umodel-rca/SKILL.md`](umodel-rca/SKILL.md) | 在对象图上做模型引导的**自主根因分析**：取对的遥测、跨域遍历关系、推理到根因。构建于 `umodel-query` 之上。 |
-| `umodel-skill-runner` | [`umodel-skill-runner/SKILL.md`](umodel-skill-runner/SKILL.md) | 从 EntitySet 发现 `list_skills`，精确加载一个 RunbookSet 内联 `SKILL.md`，并在运行时工具和用户授权边界内执行。构建于 `umodel-query` 之上。 |
+| `umodel-skill-runner` | [`umodel-skill-runner/SKILL.md`](umodel-skill-runner/SKILL.md) | 当 EntitySet 提供 `list_skills` 时执行关联的 RunbookSet Skill，可按策略加载 `list_knowledge` 上下文，并由 Runtime 执行工具边界。构建于 `umodel-query` 之上。 |
 
 ## 前置要求
 
@@ -80,8 +80,8 @@ mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca skills/um
 - **`umodel-rca`** 增加 (3) 模型引导取数（`get_metrics` / `get_logs`，开源*计划* /
   PaaS *数据*）和自主根因循环。它复用 `umodel-query` 的读取，调查时两个一起加载。
 - **`umodel-skill-runner`** 增加 (4) 动态执行指引：从 EntitySet 发现
-  `list_skills`，选择一个 RunbookSet Skill，加载其内联 `SKILL.md`，且不把
-  `allowed_tools` 当作授权。
+  `list_skills`，选择一个 RunbookSet Skill，加载其内联 `SKILL.md` 与同一
+  RunbookSet 中适用的内联 Knowledge，且不把 Knowledge 或 `allowed_tools` 当作授权。
 
 ## 编写新技能
 

@@ -140,6 +140,10 @@ With the data loaded and the agent connected, just ask in natural language.
 
 - "Discover and run the RunbookSet Skill attached to payment-gateway."
 
+The runner discovers optional `list_knowledge` context from the same RunbookSet,
+applies its policy, and uses inline Markdown only. It does not fetch Knowledge URLs
+or treat RunbookSet Tool definitions as runtime authority.
+
 The agent then works autonomously: locate the degraded service → pull its
 metrics/logs → traverse to the upstream caller → find the retry config change →
 rule out the red-herring deployment → find the promotion traffic → conclude the

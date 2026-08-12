@@ -18,7 +18,7 @@ runtimes such as Claude Code, Cursor, Qoder, and Codex.
 |---|---|---|
 | `umodel-query` | [`umodel-query/SKILL.md`](umodel-query/SKILL.md) | Read entity / relationship / topology data **and** the UModel model (entity sets, datasets, links, runbooks). CLI-first (`umctl`), MCP alternative. |
 | `umodel-rca` | [`umodel-rca/SKILL.md`](umodel-rca/SKILL.md) | Model-guided **autonomous root-cause analysis** over the object graph: fetch the right telemetry, traverse cross-domain relationships, reason to a root cause. Builds on `umodel-query`. |
-| `umodel-skill-runner` | [`umodel-skill-runner/SKILL.md`](umodel-skill-runner/SKILL.md) | Discover `list_skills` from an EntitySet, load one exact inline RunbookSet `SKILL.md`, and follow it within runtime tool and user-authorization boundaries. Builds on `umodel-query`. |
+| `umodel-skill-runner` | [`umodel-skill-runner/SKILL.md`](umodel-skill-runner/SKILL.md) | Run an entity-linked RunbookSet Skill when `list_skills` is available, with optional policy-controlled `list_knowledge` context and runtime-enforced Tool boundaries. Builds on `umodel-query`. |
 
 ## Prerequisites
 
@@ -89,7 +89,8 @@ They map to four things an agent does with UModel:
   reuses `umodel-query`'s reads, so load both for an investigation.
 - **`umodel-skill-runner`** adds (4) dynamic execution guidance: discover
   `list_skills` on an EntitySet, select one RunbookSet Skill, load its inline
-  `SKILL.md`, and follow it without treating `allowed_tools` as authorization.
+  `SKILL.md`, load applicable inline Knowledge from the same RunbookSet, and follow
+  it without treating Knowledge or `allowed_tools` as authorization.
 
 ## Authoring a new skill
 
