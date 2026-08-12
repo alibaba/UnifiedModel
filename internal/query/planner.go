@@ -190,6 +190,14 @@ func entityCallMethodSpecFor(name string) (entityCallMethodSpec, bool) {
 				{Key: "detail", Type: "boolean", DisplayName: "Detail Info", Default: false},
 			},
 		}, true
+	case "list_knowledge":
+		return entityCallMethodSpec{
+			Name: "list_knowledge",
+			Params: []model.EntityCallParam{
+				{Key: "knowledge_ids", Type: "array<varchar>", DisplayName: "Knowledge IDs to filter", Default: []string(nil)},
+				{Key: "detail", Type: "boolean", DisplayName: "Detail Info", Default: false},
+			},
+		}, true
 	case "get_log", "get_logs":
 		return entityCallMethodSpec{
 			Name: "get_logs",

@@ -234,7 +234,7 @@ func validateAST(ast AST) error {
 			return nil
 		}
 	}
-	return apperrors.New(apperrors.CodeQueryParseError, ".entity_set requires entity-call __list_method__(), list_data_set(...), list_skills(...), get_logs(...), or get_metrics(...)")
+	return apperrors.New(apperrors.CodeQueryParseError, ".entity_set requires entity-call __list_method__(), list_data_set(...), list_skills(...), list_knowledge(...), get_logs(...), or get_metrics(...)")
 }
 
 func hasSourceBoundary(queryText string, pos int) bool {
