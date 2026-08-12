@@ -4,7 +4,7 @@
 **安装技能**、**初始化一个 demo 对象图**（实体 + 关系）、**接入你的 Agent**、**提问**。
 
 demo 数据集是内置的 **incident-investigation** 包——3 个域（business / platform /
-runtime）、约 65 个实体、约 83 条关系、1 个 Runbook，以及指标/日志集——也就是两个
+runtime）、约 65 个实体、约 83 条关系、1 个 Runbook，以及指标/日志集——也就是三个
 技能验证所用的数据。全部本地、内存运行，**无需任何密钥、无需网络**。
 
 ## 前置要求
@@ -17,21 +17,21 @@ runtime）、约 65 个实体、约 83 条关系、1 个 Runbook，以及指标/
 
 技能就是 [`skills/`](README.zh-CN.md) 下的 `SKILL.md` 目录。三个 Agent 都原生加载，按你的客户端选：
 
-- **Claude Code** —— 一条命令把两个技能作为插件装上：
+- **Claude Code** —— 一条命令把三个技能作为插件装上：
   ```
   /plugin marketplace add alibaba/UnifiedModel
   /plugin install umodel@unifiedmodel
   ```
-  `umodel` 插件含两个技能，按提问自动激活。（或拷贝到 `.claude/skills/`。）
-- **Qoder** —— 把两个技能拷进工作区 skills 目录：
+  `umodel` 插件含三个技能，按提问自动激活。（或拷贝到 `.claude/skills/`。）
+- **Qoder** —— 把三个技能拷进工作区 skills 目录：
   ```bash
-  mkdir -p .qoder/skills && cp -R skills/umodel-query skills/umodel-rca .qoder/skills/
+  mkdir -p .qoder/skills && cp -R skills/umodel-query skills/umodel-rca skills/umodel-skill-runner .qoder/skills/
   ```
   按提问自动激活，或用 `/umodel-query` 手动触发。（Qoder 另有 Skills Marketplace
   和内置 `create-skill` 助手。）
-- **Codex** —— 拷进中立的 `.agents/skills/` 目录（用 `~/.agents/skills/` 做用户级全局）：
+- **Codex** —— 把三个技能拷进中立的 `.agents/skills/` 目录（用 `~/.agents/skills/` 做用户级全局）：
   ```bash
-  mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca .agents/skills/
+  mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca skills/umodel-skill-runner .agents/skills/
   ```
   按 description 自动激活，或用 `$umodel-query` 提及（打 `$`，或跑 `/skills`，浏览）。
   新技能没出现就重启 Codex。
@@ -125,6 +125,10 @@ args = ["run", "./cmd/umodel-mcp", "--quickstart",
 **根因分析 —— 激活 `umodel-rca`：**
 
 - "payment-gateway 的 SLO 告警了，帮我排查。" / "Investigate why payment-gateway is degraded."
+
+**执行实体关联技能 —— 激活 `umodel-skill-runner`：**
+
+- "发现并执行 payment-gateway 关联的 RunbookSet Skill。"
 
 Agent 随后自主工作：定位 degraded 服务 → 拉它的指标/日志 → 顺拓扑找到上游调用方 →
 发现重试配置变更 → 排除红鲱鱼部署 → 找到促销流量 → 得出根因（重试 ×2.5 × 促销 ×3.5

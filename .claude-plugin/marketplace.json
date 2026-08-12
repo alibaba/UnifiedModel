@@ -11,7 +11,7 @@
     {
       "name": "umodel",
       "displayName": "UModel",
-      "description": "Use UModel from your agent: read entities, relationships, topology, and the model itself through the umctl CLI, and run model-guided autonomous root-cause analysis over the object graph. Bundles the umodel-query and umodel-rca skills.",
+      "description": "Use UModel from your agent: read entities, relationships, topology, and the model itself; discover and follow entity-linked RunbookSet Skills; and run model-guided root-cause analysis. Bundles three UModel skills.",
       "source": "./",
       "strict": false,
       "version": "0.1.0",
@@ -36,7 +36,8 @@
       "category": "observability",
       "skills": [
         "./skills/umodel-query",
-        "./skills/umodel-rca"
+        "./skills/umodel-rca",
+        "./skills/umodel-skill-runner"
       ]
     }
   ]

@@ -182,6 +182,14 @@ func entityCallMethodSpecFor(name string) (entityCallMethodSpec, bool) {
 				{Key: "detail", Type: "boolean", DisplayName: "Detail Info, if true, return all fields of DataSet", Default: false},
 			},
 		}, true
+	case "list_skill", "list_skills":
+		return entityCallMethodSpec{
+			Name: "list_skills",
+			Params: []model.EntityCallParam{
+				{Key: "skill_ids", Type: "array<varchar>", DisplayName: "Skill IDs to filter", Default: []string(nil)},
+				{Key: "detail", Type: "boolean", DisplayName: "Detail Info", Default: false},
+			},
+		}, true
 	case "get_log", "get_logs":
 		return entityCallMethodSpec{
 			Name: "get_logs",

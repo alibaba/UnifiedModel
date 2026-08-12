@@ -117,6 +117,13 @@ Graph-calls: `getNeighborNodes(direction, hops, nodes)`, `getDirectRelations(nod
 # Which datasets are attached?
 .entity_set with(domain='platform', name='platform.service', ids=['...']) | entity-call list_data_set(['metric_set','log_set'], true)
 
+# Which Agent Skills are attached through RunbookLink?
+.entity_set with(domain='platform', name='platform.service', ids=['...']) | entity-call list_skills()
+
+# Load one exact Skill definition and its files
+.entity_set with(domain='platform', name='platform.service', ids=['...'])
+  | entity-call list_skills(['platform@runbook_set@platform.service.ops@skills@incident-investigation'], true)
+
 # Pull telemetry — returns an executable query plan
 .entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c'])
   | entity-call get_metrics('platform', 'platform.service.metrics', 'latency_p99_ms', step='30s')
@@ -126,6 +133,8 @@ Graph-calls: `getNeighborNodes(direction, hops, nodes)`, `getDirectRelations(nod
 ```
 
 `get_metrics` / `get_logs` return a **query plan** — UModel open source is plan-only, so it renders the downstream PromQL / Elasticsearch query (with the entity's `service_id` substituted from the object graph) but does not execute it. A downstream executor runs the plan against real storage. See the [Query Service Guide](query-service.md) for the full pipe vocabulary.
+
+`list_skills` is a progressive-disclosure read. `__list_method__()` exposes it only when a direct, visible RunbookLink reaches a RunbookSet containing Skills. UModel returns the Skill definition; a Skill-aware agent runtime selects and follows `SKILL.md`. Tool availability, authorization, and confirmation are still enforced by the caller's runtime and are not granted by `allowed_tools` alone.
 
 ## 4. `?format=agent` — the compact envelope for agents
 

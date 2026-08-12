@@ -445,6 +445,7 @@ func defaultExamples() []string {
 		".umodel with(kind='entity_set') | limit 20",
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()",
 		".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)",
+		".entity_set with(domain='platform', name='platform.service') | entity-call list_skills()",
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')",
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
 		".entity with(domain='devops', name='devops.service', query='checkout') | limit 20",

@@ -76,11 +76,14 @@ Agent and REST callers can bind named parameters into `with(...)` filters and `w
 ```bash
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)"
+go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='platform', name='platform.service') | entity-call list_skills()"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')"
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')"
 ```
 
-The required filters are `domain` and `name`; `ids` is accepted as EntitySet call context. The currently supported methods are `__list_method__`, `list_data_set` (`list_dataset` alias), `get_logs` (`get_log` alias), and `get_metrics` (`get_metric` alias); method parameters are validated against the UModel Assistant signatures. `get_logs` and `get_metrics` parse basic SPL where syntax, map EntitySet fields through `data_link.fields_mapping`, map DataSet fields through `storage_link.fields_mapping`, and return translated storage query plans without querying the storage itself.
+The required filters are `domain` and `name`; `ids` is accepted as EntitySet call context. The currently supported methods are `__list_method__`, `list_data_set` (`list_dataset` alias), `list_skills` (`list_skill` alias), `get_logs` (`get_log` alias), and `get_metrics` (`get_metric` alias); method parameters are validated against the UModel Assistant signatures. `get_logs` and `get_metrics` parse basic SPL where syntax, map EntitySet fields through `data_link.fields_mapping`, map DataSet fields through `storage_link.fields_mapping`, and return translated storage query plans without querying the storage itself.
+
+`__list_method__()` advertises `list_skills` only when a direct, visible `runbook_link` connects the EntitySet to a RunbookSet containing Skills. List summaries with `list_skills()` and load one exact Skill with `list_skills(['<skill_id>'], true)`. The canonical ID is `<runbook_domain>@runbook_set@<runbook_name>@skills@<skill_name>`. Entity data supplied in the request is applied to `runbook_link.filter_by_entity`; no related Skill produces an empty table. Query Service returns Skill definitions and files but does not interpret `SKILL.md`, fetch `skill_url`, or execute the Skill's tools.
 
 ## `.topo`
 

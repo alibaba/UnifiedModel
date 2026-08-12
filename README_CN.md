@@ -80,14 +80,14 @@ make stop-all
 
 ## Agent 技能
 
-可加载的技能让支持技能的 Agent 直接驱动 UModel——读取实体、关系、拓扑和模型本身，并在对象图上做模型引导的根因分析。在 Claude Code 里，一条命令装上两个技能：
+可加载的技能让支持技能的 Agent 直接驱动 UModel——读取实体、关系、拓扑和模型本身，发现并执行实体关联的 RunbookSet Skill，并在对象图上做模型引导的根因分析。在 Claude Code 里，一条命令装上三个技能：
 
 ```
 /plugin marketplace add alibaba/UnifiedModel
 /plugin install umodel@unifiedmodel
 ```
 
-Qoder、Codex、Cursor 等 Agent 加载同样的两个 `SKILL.md` 文件——把它们拷进对应 Agent 的技能目录（Qoder 用 `.qoder/skills/`，Codex 用 `.agents/skills/`，Claude Code 用 `.claude/skills/`）。技能目录见 [UModel Agent 技能](skills/README.zh-CN.md)，分平台安装见 [技能快速上手](skills/QUICKSTART.zh-CN.md)。
+Qoder、Codex、Cursor 等 Agent 加载同样的三个 `SKILL.md` 文件——把它们拷进对应 Agent 的技能目录（Qoder 用 `.qoder/skills/`，Codex 用 `.agents/skills/`，Claude Code 用 `.claude/skills/`）。技能目录见 [UModel Agent 技能](skills/README.zh-CN.md)，分平台安装见 [技能快速上手](skills/QUICKSTART.zh-CN.md)。
 
 ## 架构
 
@@ -119,7 +119,7 @@ UModel 围绕 workspace-scoped object graph 运行本地服务：
 | 架构 | [架构总览](docs/zh/architecture/overview.md)、[运行时流程](docs/zh/architecture/runtime-flow.md)、[Query 与 Agent 架构](docs/zh/architecture/query-and-agent.md) |
 | 参考 | [CLI](docs/zh/reference/cli.md)、[MCP](docs/zh/reference/mcp.md)、[REST OpenAPI](api/openapi/openapi.yaml)、[MCP Tool 和 Resource Schema](api/mcp/tools.schema.json) |
 | 示例 | [多域 Quickstart 示例包](examples/quickstart-multidomain/README.zh-CN.md)、[故障排查 Demo（AI Agent）](examples/incident-investigation/README.zh-CN.md)、[服务定位 Demo（AI Agent）](examples/service-localization/README.zh-CN.md) |
-| Agent 技能 | [UModel Agent 技能](skills/README.zh-CN.md) —— 可加载给 MCP/CLI Agent 的技能：读实体/关系/模型数据，做模型引导的根因分析 |
+| Agent 技能 | [UModel Agent 技能](skills/README.zh-CN.md) —— 可加载给 MCP/CLI Agent 的技能：读实体/关系/模型数据、执行实体关联的 RunbookSet Skill，并做模型引导的根因分析 |
 | 部署 | [Docker 与 Compose](deployments/README.zh-CN.md) |
 
 英文文档：[docs/en/README.md](docs/en/README.md)。

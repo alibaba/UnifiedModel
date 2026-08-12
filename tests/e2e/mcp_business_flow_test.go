@@ -71,6 +71,37 @@ func TestMCPBusinessFlowCoversDiscoveryResourcesAndToolPolicy(t *testing.T) {
 	}
 }
 
+func TestMCPQueryToolDiscoversAndLoadsEntityLinkedSkill(t *testing.T) {
+	root := filepath.Join("..", "..")
+	requests := []string{
+		`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"workspace":"demo","name":"query_spl_execute","arguments":{"query":".entity_set with(domain='platform', name='platform.service') | entity-call __list_method__()"}}}`,
+		`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"workspace":"demo","name":"query_spl_execute","arguments":{"query":".entity_set with(domain='platform', name='platform.service') | entity-call list_skills(['platform@runbook_set@platform.service.ops@skills@incident-investigation'], true)"}}}`,
+	}
+	cmd := exec.Command("go", "run", "./cmd/umodel-mcp", "--quickstart", "--quickstart-sample", "examples/incident-investigation", "--graphstore", "memory", "--data", t.TempDir())
+	cmd.Dir = root
+	cmd.Stdin = strings.NewReader(strings.Join(requests, "\n"))
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("umodel-mcp list_skills flow failed: %v\nstdout=%s\nstderr=%s", err, out, stderr.String())
+	}
+
+	responses := decodeMCPResponses(t, out)
+	if len(responses) != len(requests) {
+		t.Fatalf("expected %d responses, got %d: %s", len(requests), len(responses), out)
+	}
+	discovery := responseByID(t, responses, 1)
+	if discovery["error"] != nil || !bytes.Contains(mustJSON(t, discovery["result"]), []byte("list_skills")) {
+		t.Fatalf("EntitySet method discovery should include list_skills, got %+v", discovery)
+	}
+	loaded := responseByID(t, responses, 2)
+	loadedBody := mustJSON(t, loaded["result"])
+	if loaded["error"] != nil || !bytes.Contains(loadedBody, []byte("incident-investigation")) || !bytes.Contains(loadedBody, []byte("SKILL.md")) {
+		t.Fatalf("exact Skill load should return inline SKILL.md, got %+v", loaded)
+	}
+}
+
 func decodeMCPResponses(t *testing.T, out []byte) []map[string]any {
 	t.Helper()
 	lines := bytes.Split(bytes.TrimSpace(out), []byte("\n"))
