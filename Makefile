@@ -1,5 +1,5 @@
 .PHONY: help check-env install-env setup setup-ui expand doc docs-schema docs-schema-check example-validate check-manifest
-.PHONY: build build-service build-cli install-cli build-ui build-sdk-go dev quickstart dev-api dev-web deploy serve-ui status stop-all stop-dev stop-deploy test test-service test-ui test-ui-e2e test-capability test-quickstart-health test-ladybug vulncheck verify verify-go verify-python verify-java guard ci clean
+.PHONY: build build-service build-cli install-cli build-ui build-sdk-go dev quickstart dev-api dev-web deploy serve-ui status stop-all stop-dev stop-deploy test test-service test-ui test-ui-e2e test-capability test-quickstart-health docs-query-check test-ladybug vulncheck verify verify-go verify-python verify-java guard ci clean
 
 VENV_PYTHON := .venv/bin/python
 CONDA_PYTHON := $(if $(CONDA_PREFIX),$(CONDA_PREFIX)/bin/python)
@@ -47,6 +47,7 @@ help:
 	@echo "  stop-all               Stop local API, web dev, and deploy servers"
 	@echo "  serve-ui               Build UI and serve it from umodel-server in the foreground"
 	@echo "  test-ladybug           Run local.ladybug provider and E2E tests when UMODEL_TEST_LADYBUG=1"
+	@echo "  docs-query-check       Execute core documented SPL examples against quickstart data"
 	@echo "  guard                  Run architecture guard"
 	@echo ""
 	@echo "Schema and SDK assets:"
@@ -152,6 +153,9 @@ test-capability:
 test-quickstart-health:
 	go test -v -run TestQuickstartHealth ./tests/integration/
 
+docs-query-check:
+	go test -v -run TestDocsQueryExamplesExecute ./tests/integration/
+
 test-ladybug:
 	@if [ "$$UMODEL_TEST_LADYBUG" != "1" ]; then \
 		echo "Skipping local.ladybug provider and E2E tests; set UMODEL_TEST_LADYBUG=1 and provide liblbug to run them."; \
@@ -217,7 +221,7 @@ test: guard test-service verify
 check-manifest:
 	@$(PYTHON) ./tools/verify/check_manifest.py
 
-ci: guard schemas-embed-check build-service test-service test-capability test-quickstart-health verify check-manifest example-validate docs-schema-check
+ci: guard schemas-embed-check build-service test-service test-capability test-quickstart-health docs-query-check verify check-manifest example-validate docs-schema-check
 	@echo "Local CI passed."
 
 check-env:
