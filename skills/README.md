@@ -18,6 +18,7 @@ runtimes such as Claude Code, Cursor, Qoder, and Codex.
 |---|---|---|
 | `umodel-query` | [`umodel-query/SKILL.md`](umodel-query/SKILL.md) | Read entity / relationship / topology data **and** the UModel model (entity sets, datasets, links, runbooks). CLI-first (`umctl`), MCP alternative. |
 | `umodel-rca` | [`umodel-rca/SKILL.md`](umodel-rca/SKILL.md) | Model-guided **autonomous root-cause analysis** over the object graph: fetch the right telemetry, traverse cross-domain relationships, reason to a root cause. Builds on `umodel-query`. |
+| `umodel-skill-runner` | [`umodel-skill-runner/SKILL.md`](umodel-skill-runner/SKILL.md) | Run an entity-linked RunbookSet Skill when `list_skills` is available, with optional policy-controlled `list_knowledge` context and runtime-enforced Tool boundaries. Builds on `umodel-query`. |
 
 ## Prerequisites
 
@@ -39,20 +40,20 @@ No API key or network is required for the demo.
 
 ### Option A — Claude Code plugin marketplace (one command)
 
-In Claude Code, install both skills as a plugin straight from this repo:
+In Claude Code, install all three skills as a plugin straight from this repo:
 
 ```
 /plugin marketplace add alibaba/UnifiedModel
 /plugin install umodel@unifiedmodel
 ```
 
-This installs the `umodel` plugin — both `umodel-query` and `umodel-rca` — which
-then activate automatically based on your prompt. Update later with
+This installs the `umodel` plugin — `umodel-query`, `umodel-rca`, and
+`umodel-skill-runner` — which then activate automatically based on your prompt. Update later with
 `/plugin marketplace update unifiedmodel`.
 
 ### Option B — copy into your agent's skills directory
 
-Most skill-aware agents discover skills from a directory — drop both skill folders
+Most skill-aware agents discover skills from a directory — drop all three skill folders
 into the one your agent scans:
 
 | Agent | Skills directory |
@@ -64,9 +65,9 @@ into the one your agent scans:
 
 ```bash
 # Qoder
-mkdir -p .qoder/skills  && cp -R skills/umodel-query skills/umodel-rca .qoder/skills/
+mkdir -p .qoder/skills  && cp -R skills/umodel-query skills/umodel-rca skills/umodel-skill-runner .qoder/skills/
 # Codex — the vendor-neutral .agents/skills/ is also read by Qoder
-mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca .agents/skills/
+mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca skills/umodel-skill-runner .agents/skills/
 ```
 
 Then prompt the agent normally — e.g. *"query the degraded services in this
@@ -77,7 +78,7 @@ activates it; trigger one manually with `/umodel-query` (Claude Code / Qoder) or
 
 ## How the skills relate
 
-They map to the three things an agent does with UModel:
+They map to four things an agent does with UModel:
 
 - **`umodel-query`** covers reads — (1) entity & relationship/topology data
   (`.entity` / `.topo`) and (2) the model itself (`.umodel` + `__list_method__` /
@@ -86,6 +87,10 @@ They map to the three things an agent does with UModel:
 - **`umodel-rca`** adds (3) model-guided fetch (`get_metrics` / `get_logs`, a
   *plan* in open source / *data* via PaaS) and an autonomous root-cause loop. It
   reuses `umodel-query`'s reads, so load both for an investigation.
+- **`umodel-skill-runner`** adds (4) dynamic execution guidance: discover
+  `list_skills` on an EntitySet, select one RunbookSet Skill, load its inline
+  `SKILL.md`, load applicable inline Knowledge from the same RunbookSet, and follow
+  it without treating Knowledge or `allowed_tools` as authorization.
 
 ## Authoring a new skill
 

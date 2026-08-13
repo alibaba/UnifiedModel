@@ -174,9 +174,13 @@ func (e *Executor) executeEntitySetCall(ctx context.Context, workspace string, p
 	}
 	switch plan.EntityCall.Name {
 	case "__list_method__":
-		return entitySetAssistantRawResponse(entityCallListMethodHeader(), entityCallListMethodRows()), nil
+		return e.executeEntitySetListMethods(ctx, workspace, plan)
 	case "list_data_set":
 		return e.executeEntitySetListDataSet(ctx, workspace, plan)
+	case "list_skills":
+		return e.executeEntitySetListSkills(ctx, workspace, plan)
+	case "list_knowledge":
+		return e.executeEntitySetListKnowledge(ctx, workspace, plan)
 	case "get_logs":
 		return e.executeEntitySetGetLogs(ctx, workspace, plan)
 	case "get_metrics":
@@ -184,6 +188,22 @@ func (e *Executor) executeEntitySetCall(ctx context.Context, workspace string, p
 	default:
 		return model.QueryResult{}, apperrors.WithDetails(apperrors.CodeQueryPlanError, "unsupported entity-call method", map[string]string{"name": plan.EntityCall.Name})
 	}
+}
+
+func (e *Executor) executeEntitySetListMethods(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
+	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	relatedRunbookSets := relatedRunbookSetsForEntitySet(
+		snapshot.Elements,
+		stringFilter(plan.Filters["domain"]),
+		stringFilter(plan.Filters["name"]),
+		plan.EntityData,
+	)
+	hasSkills := relatedRunbookSetsHaveNamedItems(relatedRunbookSets, "skills")
+	hasKnowledge := relatedRunbookSetsHaveNamedItems(relatedRunbookSets, "knowledge")
+	return entitySetAssistantRawResponse(entityCallListMethodHeader(), entityCallListMethodRows(hasSkills, hasKnowledge)), nil
 }
 
 func entitySetAssistantRawResponse(header []string, data []map[string]any) model.QueryResult {
@@ -301,6 +321,54 @@ func (e *Executor) executeEntitySetListDataSet(ctx context.Context, workspace st
 	return entitySetAssistantRawResponse(listDataSetHeader(), rows), nil
 }
 
+func (e *Executor) executeEntitySetListSkills(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
+	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	detail := boolValue(plan.EntityCall.Parameters["detail"])
+	skillIDs := stringSet(stringSliceValue(plan.EntityCall.Parameters["skill_ids"]))
+	rows := make([]map[string]any, 0)
+	for _, related := range relatedSkillsForEntitySet(
+		snapshot.Elements,
+		stringFilter(plan.Filters["domain"]),
+		stringFilter(plan.Filters["name"]),
+		plan.EntityData,
+	) {
+		if len(skillIDs) > 0 {
+			if _, ok := skillIDs[related.ID]; !ok {
+				continue
+			}
+		}
+		rows = append(rows, entityCallRowValues(listSkillValues(related, detail)))
+	}
+	return entitySetAssistantRawResponse(listSkillsHeader(detail), rows), nil
+}
+
+func (e *Executor) executeEntitySetListKnowledge(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
+	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	detail := boolValue(plan.EntityCall.Parameters["detail"])
+	knowledgeIDs := stringSet(stringSliceValue(plan.EntityCall.Parameters["knowledge_ids"]))
+	rows := make([]map[string]any, 0)
+	for _, related := range relatedKnowledgeForEntitySet(
+		snapshot.Elements,
+		stringFilter(plan.Filters["domain"]),
+		stringFilter(plan.Filters["name"]),
+		plan.EntityData,
+	) {
+		if len(knowledgeIDs) > 0 {
+			if _, ok := knowledgeIDs[related.ID]; !ok {
+				continue
+			}
+		}
+		rows = append(rows, entityCallRowValues(listKnowledgeValues(related, detail)))
+	}
+	return entitySetAssistantRawResponse(listKnowledgeHeader(detail), rows), nil
+}
+
 func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string, plan model.QueryPlan) (model.QueryResult, error) {
 	snapshot, err := e.graph.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
 	if err != nil {
@@ -387,6 +455,23 @@ type relatedDataSet struct {
 	FilterStorageByEntity bool
 }
 
+type relatedSkill struct {
+	ID    string
+	Skill map[string]any
+}
+
+type relatedRunbookSet struct {
+	RunbookSet model.UModelElement
+	Links      []model.UModelElement
+}
+
+type relatedKnowledge struct {
+	ID         string
+	Knowledge  map[string]any
+	RunbookSet model.UModelElement
+	Links      []model.UModelElement
+}
+
 func entityCallRowValues(values []string) map[string]any {
 	return map[string]any{"values": values}
 }
@@ -395,14 +480,21 @@ func entityCallListMethodHeader() []string {
 	return []string{"name", "display_name", "description", "params", "returns"}
 }
 
-func entityCallListMethodRows() []map[string]any {
+func entityCallListMethodRows(hasSkills, hasKnowledge bool) []map[string]any {
 	rows := []map[string]any{}
-	for _, method := range []entityCallMethodInfo{
+	methods := []entityCallMethodInfo{
 		methodInfoListMethods(),
 		methodInfoListDataSet(),
 		methodInfoGetLogs(),
 		methodInfoGetMetrics(),
-	} {
+	}
+	if hasSkills {
+		methods = append(methods, methodInfoListSkills())
+	}
+	if hasKnowledge {
+		methods = append(methods, methodInfoListKnowledge())
+	}
+	for _, method := range methods {
 		rows = append(rows, entityCallRowValues([]string{
 			method.Name,
 			method.DisplayName,
@@ -412,6 +504,72 @@ func entityCallListMethodRows() []map[string]any {
 		}))
 	}
 	return rows
+}
+
+func listSkillsHeader(detail bool) []string {
+	header := []string{
+		"skill_id", "skill_name", "display_name", "description", "license", "compatibility",
+		"allowed_tools", "skill_url", "priority", "metadata", "tags", "files",
+	}
+	if detail {
+		header = append(header, "skill_detail")
+	}
+	return header
+}
+
+func listSkillValues(related relatedSkill, detail bool) []string {
+	skill := related.Skill
+	values := []string{
+		related.ID,
+		stringValue(skill["name"]),
+		semanticString(skill["display_name"]),
+		semanticString(skill["description"]),
+		stringValue(skill["license"]),
+		stringValue(skill["compatibility"]),
+		stringValue(skill["allowed_tools"]),
+		stringValue(skill["skill_url"]),
+		fmt.Sprint(intFilter(skill["priority"])),
+		mustJSON(skill["metadata"]),
+		mustJSON(skill["tags"]),
+		mustJSON(skill["files"]),
+	}
+	if detail {
+		values = append(values, mustJSON(skill))
+	}
+	return values
+}
+
+func listKnowledgeHeader(detail bool) []string {
+	header := []string{"knowledge_id", "knowledge_name", "display_name", "description", "content_type"}
+	if detail {
+		header = append(header,
+			"apply_policy", "content", "content_url", "knowledge_detail",
+			"runbook_link_detail", "runbook_set_detail",
+		)
+	}
+	return header
+}
+
+func listKnowledgeValues(related relatedKnowledge, detail bool) []string {
+	knowledge := related.Knowledge
+	values := []string{
+		related.ID,
+		stringValue(knowledge["name"]),
+		semanticString(knowledge["display_name"]),
+		semanticString(knowledge["description"]),
+		stringValue(knowledge["content_type"]),
+	}
+	if detail {
+		values = append(values,
+			mustJSON(knowledge["apply_policy"]),
+			stringValue(knowledge["content"]),
+			stringValue(knowledge["content_url"]),
+			mustJSON(knowledge),
+			mustJSON(related.Links),
+			mustJSON(related.RunbookSet),
+		)
+	}
+	return values
 }
 
 type entityCallMethodInfo struct {
@@ -523,6 +681,42 @@ func methodInfoListDataSet() entityCallMethodInfo {
 	}
 }
 
+func methodInfoListSkills() entityCallMethodInfo {
+	return entityCallMethodInfo{
+		Name:        "list_skills",
+		DisplayName: "List Skills",
+		Description: "Get Skills from RunbookSets related to EntitySet",
+		Params: []assistantParamInfo{
+			{Key: "skill_ids", Type: "array<varchar>", DisplayName: "Skill IDs to filter"},
+			{Key: "detail", Type: "boolean", DisplayName: "Detail Info, if true, return skill_detail", Default: false},
+		},
+		Returns: listSkillsReturns(),
+	}
+}
+
+func methodInfoListKnowledge() entityCallMethodInfo {
+	return entityCallMethodInfo{
+		Name:        "list_knowledge",
+		DisplayName: "List Knowledge",
+		Description: "Get Knowledge from RunbookSets related to EntitySet",
+		Params: []assistantParamInfo{
+			{
+				Key:         "knowledge_ids",
+				Type:        "array<varchar>",
+				DisplayName: "Knowledge IDs to filter, format: <runbook_domain>@runbook_set@<runbook_name>@knowledge@<knowledge_name>",
+			},
+			{Key: "detail", Type: "boolean", DisplayName: "Detail Info, if true, return all fields of Knowledge", Default: false},
+		},
+		Returns: returnsFromHeader(listKnowledgeHeader(true)),
+	}
+}
+
+func listSkillsReturns() []assistantReturnInfo {
+	returns := returnsFromHeader(listSkillsHeader(true))
+	returns[8].Type = "integer"
+	return returns
+}
+
 func returnsFromHeader(header []string) []assistantReturnInfo {
 	out := make([]assistantReturnInfo, 0, len(header))
 	for _, key := range header {
@@ -606,6 +800,106 @@ func relatedDataSetsForEntitySet(elements []model.UModelElement, entityDomain, e
 		}
 		out = append(out, relatedDataSet{DataSet: dataSet})
 		seen[id] = struct{}{}
+	}
+	return out
+}
+
+func relatedRunbookSetsForEntitySet(elements []model.UModelElement, entityDomain, entityName string, entityData *model.EntityData) []relatedRunbookSet {
+	out := []relatedRunbookSet{}
+	indexes := map[string]int{}
+	for _, link := range elements {
+		if link.Kind != "runbook_link" {
+			continue
+		}
+		src := refFromSpec(link.Spec, "src")
+		if src.Kind != "entity_set" || src.Domain != entityDomain || src.Name != entityName {
+			continue
+		}
+		if !filterByEntityAllows(filterByEntityExpression(link.Spec), entityData) {
+			continue
+		}
+		dest := refFromSpec(link.Spec, "dest")
+		if dest.Kind != "runbook_set" {
+			continue
+		}
+		runbookSet, ok := findUModelElement(elements, dest.Kind, dest.Domain, dest.Name)
+		if !ok {
+			continue
+		}
+		id := uniqueID(runbookSet.Domain, runbookSet.Kind, runbookSet.Name)
+		if index, exists := indexes[id]; exists {
+			out[index].Links = append(out[index].Links, link)
+			continue
+		}
+		indexes[id] = len(out)
+		out = append(out, relatedRunbookSet{RunbookSet: runbookSet, Links: []model.UModelElement{link}})
+	}
+	return out
+}
+
+func relatedRunbookSetsHaveNamedItems(runbookSets []relatedRunbookSet, key string) bool {
+	for _, related := range runbookSets {
+		for _, rawItem := range sliceValue(related.RunbookSet.Spec[key]) {
+			item, ok := rawItem.(map[string]any)
+			if ok && stringValue(item["name"]) != "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func relatedSkillsForEntitySet(elements []model.UModelElement, entityDomain, entityName string, entityData *model.EntityData) []relatedSkill {
+	out := []relatedSkill{}
+	seen := map[string]struct{}{}
+	for _, related := range relatedRunbookSetsForEntitySet(elements, entityDomain, entityName, entityData) {
+		runbookSet := related.RunbookSet
+		for _, rawSkill := range sliceValue(runbookSet.Spec["skills"]) {
+			skill, ok := rawSkill.(map[string]any)
+			if !ok {
+				continue
+			}
+			name := stringValue(skill["name"])
+			if name == "" {
+				continue
+			}
+			id := fmt.Sprintf("%s@runbook_set@%s@skills@%s", runbookSet.Domain, runbookSet.Name, name)
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			out = append(out, relatedSkill{ID: id, Skill: skill})
+		}
+	}
+	return out
+}
+
+func relatedKnowledgeForEntitySet(elements []model.UModelElement, entityDomain, entityName string, entityData *model.EntityData) []relatedKnowledge {
+	out := []relatedKnowledge{}
+	seen := map[string]struct{}{}
+	for _, related := range relatedRunbookSetsForEntitySet(elements, entityDomain, entityName, entityData) {
+		runbookSet := related.RunbookSet
+		for _, rawKnowledge := range sliceValue(runbookSet.Spec["knowledge"]) {
+			knowledge, ok := rawKnowledge.(map[string]any)
+			if !ok {
+				continue
+			}
+			name := stringValue(knowledge["name"])
+			if name == "" {
+				continue
+			}
+			id := fmt.Sprintf("%s@runbook_set@%s@knowledge@%s", runbookSet.Domain, runbookSet.Name, name)
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			out = append(out, relatedKnowledge{
+				ID:         id,
+				Knowledge:  knowledge,
+				RunbookSet: runbookSet,
+				Links:      related.Links,
+			})
+		}
 	}
 	return out
 }
@@ -1632,6 +1926,26 @@ func mapValue(value any) map[string]any {
 		return typed
 	}
 	return map[string]any{}
+}
+
+func sliceValue(value any) []any {
+	if typed, ok := value.([]any); ok {
+		return typed
+	}
+	return []any{}
+}
+
+func semanticString(value any) string {
+	if text, ok := value.(string); ok {
+		return text
+	}
+	localized := mapValue(value)
+	for _, key := range []string{"zh_cn", "en_us"} {
+		if text := stringValue(localized[key]); text != "" {
+			return text
+		}
+	}
+	return ""
 }
 
 func stringSet(values []string) map[string]struct{} {

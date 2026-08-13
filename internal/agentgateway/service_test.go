@@ -36,6 +36,15 @@ func TestToolsKeepWriteToolsDisabledByDefault(t *testing.T) {
 	}
 }
 
+func TestDefaultExamplesIncludeListKnowledge(t *testing.T) {
+	for _, example := range defaultExamples() {
+		if strings.Contains(example, "entity-call list_knowledge(") {
+			return
+		}
+	}
+	t.Fatalf("AgentGateway examples = %#v, want list_knowledge", defaultExamples())
+}
+
 func TestExecuteQueryTool(t *testing.T) {
 	svc := NewService(fakeQuery{})
 	result, err := svc.ExecuteTool(context.Background(), "demo", model.AgentToolCallRequest{

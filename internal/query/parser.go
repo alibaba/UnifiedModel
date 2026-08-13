@@ -234,7 +234,7 @@ func validateAST(ast AST) error {
 			return nil
 		}
 	}
-	return apperrors.New(apperrors.CodeQueryParseError, ".entity_set requires entity-call __list_method__(), list_data_set(...), get_logs(...), or get_metrics(...)")
+	return apperrors.New(apperrors.CodeQueryParseError, ".entity_set requires entity-call __list_method__(), list_data_set(...), list_skills(...), list_knowledge(...), get_logs(...), or get_metrics(...)")
 }
 
 func hasSourceBoundary(queryText string, pos int) bool {
@@ -877,7 +877,11 @@ func parseValue(value string) any {
 		return tuple
 	}
 	if strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]") {
-		rawItems := splitTopLevel(strings.TrimSpace(value[1:len(value)-1]), ',')
+		inner := strings.TrimSpace(value[1 : len(value)-1])
+		if inner == "" {
+			return []string{}
+		}
+		rawItems := splitTopLevel(inner, ',')
 		items := make([]any, 0, len(rawItems))
 		for _, item := range rawItems {
 			items = append(items, parseValue(strings.TrimSpace(item)))

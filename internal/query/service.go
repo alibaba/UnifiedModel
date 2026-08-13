@@ -200,6 +200,8 @@ func (s *Service) Examples(ctx context.Context) ([]string, error) {
 		".entity with(domain='apm', name='apm.service', query='checkout failure', mode='hyper', topk=20, hybrid_k=60)",
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call __list_method__()",
 		".entity_set with(domain='devops', name='devops.service') | entity-call list_data_set(['metric_set', 'log_set', 'event_set'], true)",
+		".entity_set with(domain='platform', name='platform.service') | entity-call list_skills()",
+		".entity_set with(domain='platform', name='platform.service') | entity-call list_knowledge()",
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"')",
 		".entity_set with(domain='devops', name='devops.service', ids=['10000000000000000000000000000101']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s')",
 		".runbook_set with(domain='apm', type='knowledge', query='how to mitigate slow request', mode='hyper', topk=5)",

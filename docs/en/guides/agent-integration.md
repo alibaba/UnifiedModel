@@ -117,6 +117,18 @@ Graph-calls: `getNeighborNodes(direction, hops, nodes)`, `getDirectRelations(nod
 # Which datasets are attached?
 .entity_set with(domain='platform', name='platform.service', ids=['...']) | entity-call list_data_set(['metric_set','log_set'], true)
 
+# Which Agent Skills are attached through RunbookLink?
+.entity_set with(domain='platform', name='platform.service', ids=['...']) | entity-call list_skills()
+
+# Load one exact Skill definition and its files
+.entity_set with(domain='platform', name='platform.service', ids=['...'])
+  | entity-call list_skills(['platform@runbook_set@platform.service.ops@skills@incident-investigation'], true)
+
+# List related Knowledge and load one exact item with policy/content detail
+.entity_set with(domain='platform', name='platform.service', ids=['...']) | entity-call list_knowledge()
+.entity_set with(domain='platform', name='platform.service', ids=['...'])
+  | entity-call list_knowledge(['platform@runbook_set@platform.service.ops@knowledge@retry_storm_pattern'], true)
+
 # Pull telemetry — returns an executable query plan
 .entity_set with(domain='platform', name='platform.service', ids=['63718b78868895d2590551b27ec6f51c'])
   | entity-call get_metrics('platform', 'platform.service.metrics', 'latency_p99_ms', step='30s')
@@ -126,6 +138,8 @@ Graph-calls: `getNeighborNodes(direction, hops, nodes)`, `getDirectRelations(nod
 ```
 
 `get_metrics` / `get_logs` return a **query plan** — UModel open source is plan-only, so it renders the downstream PromQL / Elasticsearch query (with the entity's `service_id` substituted from the object graph) but does not execute it. A downstream executor runs the plan against real storage. See the [Query Service Guide](query-service.md) for the full pipe vocabulary.
+
+`list_skills` and `list_knowledge` are independent progressive-disclosure reads over direct, visible RunbookLinks, including `filter_by_entity`. UModel returns definitions; a Skill-aware runtime selects one Skill and may apply inline Markdown Knowledge from that same RunbookSet according to `apply_policy`. Knowledge is reference context, not authority: the runtime does not fetch `content_url`, and `allowed_tools` or `runbook_set_detail` cannot grant Tool capability. This phase adds no `list_tools`; current Runtime Tool schemas, authorization, and confirmation remain authoritative.
 
 ## 4. `?format=agent` — the compact envelope for agents
 

@@ -80,14 +80,14 @@ make stop-all
 
 ## Agent Skills
 
-Loadable skills let a skill-aware agent drive UModel directly — read entities, relations, topology, and the model itself, then run model-guided root-cause analysis over the object graph. In Claude Code, install both skills in one command:
+Loadable skills let a skill-aware agent drive UModel directly — read entities, relations, topology, and the model itself; discover and follow entity-linked RunbookSet Skills; then run model-guided root-cause analysis over the object graph. In Claude Code, install all three skills in one command:
 
 ```
 /plugin marketplace add alibaba/UnifiedModel
 /plugin install umodel@unifiedmodel
 ```
 
-Qoder, Codex, Cursor, and other agents load the same two `SKILL.md` files — copy them into the agent's skills directory (`.qoder/skills/` for Qoder, `.agents/skills/` for Codex, `.claude/skills/` for Claude Code). See [Agent Skills](skills/README.md) for the catalog and [the skills quickstart](skills/QUICKSTART.md) for per-agent install.
+Qoder, Codex, Cursor, and other agents load the same three `SKILL.md` files — copy them into the agent's skills directory (`.qoder/skills/` for Qoder, `.agents/skills/` for Codex, `.claude/skills/` for Claude Code). See [Agent Skills](skills/README.md) for the catalog and [the skills quickstart](skills/QUICKSTART.md) for per-agent install.
 
 ## Architecture
 
@@ -119,7 +119,7 @@ Start with the bilingual documentation index: [docs/README.md](docs/README.md).
 | Architecture | [Architecture Overview](docs/en/architecture/overview.md), [Runtime Flow](docs/en/architecture/runtime-flow.md), [Query And Agent Architecture](docs/en/architecture/query-and-agent.md) |
 | Reference | [CLI](docs/en/reference/cli.md), [MCP](docs/en/reference/mcp.md), [REST OpenAPI](api/openapi/openapi.yaml), [MCP Tool And Resource Schema](api/mcp/tools.schema.json) |
 | Examples | [Multi-Domain Quickstart Example Pack](examples/quickstart-multidomain/README.md), [Incident Investigation Demo (AI agent)](examples/incident-investigation/README.md), [Service Localization Demo (AI agent)](examples/service-localization/README.md) |
-| Agent Skills | [UModel Agent Skills](skills/README.md) — loadable skills for MCP/CLI agents: read entity/relation/model data and run model-guided root-cause analysis |
+| Agent Skills | [UModel Agent Skills](skills/README.md) — loadable skills for MCP/CLI agents: read entity/relation/model data, execute entity-linked RunbookSet Skills, and run model-guided root-cause analysis |
 | Deployment | [Docker And Compose](deployments/README.md) |
 
 Chinese documentation: [docs/zh/README.md](docs/zh/README.md).

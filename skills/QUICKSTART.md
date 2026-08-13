@@ -20,23 +20,23 @@ locally, in memory, with **no API key and no network**.
 The skills are plain `SKILL.md` folders under [`skills/`](README.md). All three
 agents load them natively — pick your client:
 
-- **Claude Code** — install both skills as a plugin in one command:
+- **Claude Code** — install all three skills as a plugin in one command:
   ```
   /plugin marketplace add alibaba/UnifiedModel
   /plugin install umodel@unifiedmodel
   ```
-  The `umodel` plugin bundles both skills; they auto-activate by prompt. (Or copy
+  The `umodel` plugin bundles all three skills; they auto-activate by prompt. (Or copy
   them into `.claude/skills/`.)
-- **Qoder** — copy both skills into the workspace skills directory:
+- **Qoder** — copy all three skills into the workspace skills directory:
   ```bash
-  mkdir -p .qoder/skills && cp -R skills/umodel-query skills/umodel-rca .qoder/skills/
+  mkdir -p .qoder/skills && cp -R skills/umodel-query skills/umodel-rca skills/umodel-skill-runner .qoder/skills/
   ```
   They auto-activate by prompt, or trigger one manually with `/umodel-query`.
   (Qoder also has a Skills Marketplace and a built-in `create-skill` helper.)
-- **Codex** — copy both into the vendor-neutral `.agents/skills/` directory (use
+- **Codex** — copy all three into the vendor-neutral `.agents/skills/` directory (use
   `~/.agents/skills/` to make them user-global):
   ```bash
-  mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca .agents/skills/
+  mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca skills/umodel-skill-runner .agents/skills/
   ```
   They auto-activate by description, or mention one with `$umodel-query` (type `$`,
   or run `/skills`, to browse). Restart Codex if a new skill doesn't appear.
@@ -135,6 +135,14 @@ With the data loaded and the agent connected, just ask in natural language.
 **Root-cause analysis — activates `umodel-rca`:**
 
 - "Investigate why payment-gateway is degraded." / "payment-gateway 的 SLO 告警了，帮我排查。"
+
+**Run an entity-linked Skill — activates `umodel-skill-runner`:**
+
+- "Discover and run the RunbookSet Skill attached to payment-gateway."
+
+The runner discovers optional `list_knowledge` context from the same RunbookSet,
+applies its policy, and uses inline Markdown only. It does not fetch Knowledge URLs
+or treat RunbookSet Tool definitions as runtime authority.
 
 The agent then works autonomously: locate the degraded service → pull its
 metrics/logs → traverse to the upstream caller → find the retry config change →

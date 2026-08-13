@@ -15,6 +15,7 @@
 |---|---|---|
 | `umodel-query` | [`umodel-query/SKILL.md`](umodel-query/SKILL.md) | 读取实体 / 关系 / 拓扑数据**以及** UModel 模型（实体集、数据集、链接、Runbook）。CLI 优先（`umctl`），并提供 MCP 替代方案。 |
 | `umodel-rca` | [`umodel-rca/SKILL.md`](umodel-rca/SKILL.md) | 在对象图上做模型引导的**自主根因分析**：取对的遥测、跨域遍历关系、推理到根因。构建于 `umodel-query` 之上。 |
+| `umodel-skill-runner` | [`umodel-skill-runner/SKILL.md`](umodel-skill-runner/SKILL.md) | 当 EntitySet 提供 `list_skills` 时执行关联的 RunbookSet Skill，可按策略加载 `list_knowledge` 上下文，并由 Runtime 执行工具边界。构建于 `umodel-query` 之上。 |
 
 ## 前置要求
 
@@ -35,19 +36,20 @@ demo 无需任何密钥或网络。
 
 ### 方式 A —— Claude Code 插件市场（一条命令）
 
-在 Claude Code 里，直接从本仓库把两个技能作为插件装上：
+在 Claude Code 里，直接从本仓库把三个技能作为插件装上：
 
 ```
 /plugin marketplace add alibaba/UnifiedModel
 /plugin install umodel@unifiedmodel
 ```
 
-这会装上 `umodel` 插件——含 `umodel-query` 与 `umodel-rca`——随后按你的提问自动激活。
+这会装上 `umodel` 插件——含 `umodel-query`、`umodel-rca` 与
+`umodel-skill-runner`——随后按你的提问自动激活。
 之后用 `/plugin marketplace update unifiedmodel` 更新。
 
 ### 方式 B —— 拷贝到 Agent 的技能目录
 
-多数支持技能的 Agent 从一个目录发现技能——把两个技能目录拷进你的 Agent 扫描的位置：
+多数支持技能的 Agent 从一个目录发现技能——把三个技能目录拷进你的 Agent 扫描的位置：
 
 | Agent | 技能目录 |
 |---|---|
@@ -58,9 +60,9 @@ demo 无需任何密钥或网络。
 
 ```bash
 # Qoder
-mkdir -p .qoder/skills  && cp -R skills/umodel-query skills/umodel-rca .qoder/skills/
+mkdir -p .qoder/skills  && cp -R skills/umodel-query skills/umodel-rca skills/umodel-skill-runner .qoder/skills/
 # Codex —— 中立的 .agents/skills/ Qoder 也读
-mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca .agents/skills/
+mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca skills/umodel-skill-runner .agents/skills/
 ```
 
 然后正常提问——例如*"查一下这个 workspace 里 degraded 的服务"*（激活 `umodel-query`），
@@ -68,15 +70,18 @@ mkdir -p .agents/skills && cp -R skills/umodel-query skills/umodel-rca .agents/s
 `description` 决定 Agent 何时激活它；手动触发用 `/umodel-query`（Claude Code / Qoder）
 或 `$umodel-query`（Codex）。
 
-## 两个技能的关系
+## 三个技能的关系
 
-它们对应 Agent 用 UModel 做的三件事：
+它们对应 Agent 用 UModel 做的四件事：
 
 - **`umodel-query`** 覆盖读取——(1) 实体与关系/拓扑数据（`.entity` / `.topo`），
   (2) 模型本身（`.umodel` + `__list_method__` / `list_data_set`）。开源返回真实数据行；
   对接 PaaS 端点返回 PaaS API 的数据。
 - **`umodel-rca`** 增加 (3) 模型引导取数（`get_metrics` / `get_logs`，开源*计划* /
   PaaS *数据*）和自主根因循环。它复用 `umodel-query` 的读取，调查时两个一起加载。
+- **`umodel-skill-runner`** 增加 (4) 动态执行指引：从 EntitySet 发现
+  `list_skills`，选择一个 RunbookSet Skill，加载其内联 `SKILL.md` 与同一
+  RunbookSet 中适用的内联 Knowledge，且不把 Knowledge 或 `allowed_tools` 当作授权。
 
 ## 编写新技能
 
