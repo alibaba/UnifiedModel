@@ -73,12 +73,16 @@ func TestGraphStoreProviderRegistryCanSelectFileMemory(t *testing.T) {
 }
 
 func exerciseGraphStore(t *testing.T, store contract.GraphStore) {
+	exerciseGraphStoreWorkspace(t, store, "demo")
+}
+
+func exerciseGraphStoreWorkspace(t *testing.T, store contract.GraphStore, workspace string) {
 	t.Helper()
 	ctx := context.Background()
-	if err := store.OpenWorkspace(ctx, model.WorkspaceMetadata{ID: "demo"}); err != nil {
+	if err := store.OpenWorkspace(ctx, model.WorkspaceMetadata{ID: workspace}); err != nil {
 		t.Fatalf("open workspace: %v", err)
 	}
-	if err := store.EnsureSchema(ctx, "demo"); err != nil {
+	if err := store.EnsureSchema(ctx, workspace); err != nil {
 		t.Fatalf("ensure schema: %v", err)
 	}
 	if _, err := store.Capabilities(ctx); err != nil {
@@ -89,7 +93,7 @@ func exerciseGraphStore(t *testing.T, store contract.GraphStore) {
 	}
 
 	write, err := store.PutUModelElements(ctx, model.UModelElementBatch{
-		Workspace: "demo",
+		Workspace: workspace,
 		Elements: []model.UModelElement{{
 			Kind:    "entity_set",
 			Domain:  "apm",
@@ -103,7 +107,7 @@ func exerciseGraphStore(t *testing.T, store contract.GraphStore) {
 	if err != nil || write.Accepted != 1 {
 		t.Fatalf("put umodel: %+v err=%v", write, err)
 	}
-	snapshot, err := store.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: "demo"})
+	snapshot, err := store.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
 	if err != nil {
 		t.Fatalf("snapshot: %v", err)
 	}
@@ -113,21 +117,21 @@ func exerciseGraphStore(t *testing.T, store contract.GraphStore) {
 	if snapshot.Elements[0].Version != "v1" || snapshot.Elements[0].Spec["display_name"] != "APM Service" {
 		t.Fatalf("unexpected umodel snapshot: %+v", snapshot.Elements[0])
 	}
-	missingDelete, err := store.DeleteUModelElements(ctx, "demo", []string{"apm/missing/entity_set"})
+	missingDelete, err := store.DeleteUModelElements(ctx, workspace, []string{"apm/missing/entity_set"})
 	if err != nil {
 		t.Fatalf("delete missing umodel: %v", err)
 	}
 	if missingDelete.Failed != 1 || missingDelete.Items[0].Code != string(apperrors.CodeNotFound) {
 		t.Fatalf("expected missing umodel delete failure, got %+v", missingDelete)
 	}
-	deleteResult, err := store.DeleteUModelElements(ctx, "demo", []string{"apm/apm.service/entity_set"})
+	deleteResult, err := store.DeleteUModelElements(ctx, workspace, []string{"apm/apm.service/entity_set"})
 	if err != nil {
 		t.Fatalf("delete umodel: %v", err)
 	}
 	if deleteResult.Accepted != 1 || deleteResult.Failed != 0 || deleteResult.Items[0].ID != "apm/apm.service/entity_set" {
 		t.Fatalf("unexpected umodel delete result: %+v", deleteResult)
 	}
-	snapshot, err = store.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: "demo"})
+	snapshot, err = store.GetUModelSnapshot(ctx, model.UModelSnapshotRequest{Workspace: workspace})
 	if err != nil {
 		t.Fatalf("snapshot after delete: %v", err)
 	}
@@ -135,13 +139,13 @@ func exerciseGraphStore(t *testing.T, store contract.GraphStore) {
 		t.Fatalf("expected deleted umodel element to be absent, got %+v", snapshot.Elements)
 	}
 
-	if _, err := store.WriteEntities(ctx, model.EntityWriteBatch{Workspace: "demo", Entities: []model.EntityPayload{entity("54013ba69c196820e56801f1ef5aad54")}}); err != nil {
+	if _, err := store.WriteEntities(ctx, model.EntityWriteBatch{Workspace: workspace, Entities: []model.EntityPayload{entity("54013ba69c196820e56801f1ef5aad54")}}); err != nil {
 		t.Fatalf("write entity: %v", err)
 	}
 	from := time.Unix(150, 0)
 	to := time.Unix(180, 0)
 	entityRows, err := store.QueryEntities(ctx, model.EntityQueryPlan{
-		Workspace: "demo",
+		Workspace: workspace,
 		Filters:   map[string]any{"domain": "apm", "name": "apm.*", "ids": []string{"54013ba69c196820e56801f1ef5aad54"}, "query": "cart service"},
 		TimeRange: model.TimeRange{From: &from, To: &to},
 		Limit:     10,
@@ -157,7 +161,7 @@ func exerciseGraphStore(t *testing.T, store contract.GraphStore) {
 	}
 	future := time.Unix(1000, 0)
 	futureRows, err := store.QueryEntities(ctx, model.EntityQueryPlan{
-		Workspace: "demo",
+		Workspace: workspace,
 		TimeRange: model.TimeRange{From: &future},
 		Limit:     10,
 	})
@@ -168,11 +172,11 @@ func exerciseGraphStore(t *testing.T, store contract.GraphStore) {
 		t.Fatalf("expected no future entity rows, got %+v", futureRows.Rows)
 	}
 
-	if _, err := store.WriteRelations(ctx, model.RelationWriteBatch{Workspace: "demo", Relations: []model.RelationPayload{relation("54013ba69c196820e56801f1ef5aad54", "177627f91af678a9b03e993f1a91917f")}}); err != nil {
+	if _, err := store.WriteRelations(ctx, model.RelationWriteBatch{Workspace: workspace, Relations: []model.RelationPayload{relation("54013ba69c196820e56801f1ef5aad54", "177627f91af678a9b03e993f1a91917f")}}); err != nil {
 		t.Fatalf("write relation: %v", err)
 	}
 	topoRows, err := store.QueryTopo(ctx, model.TopoQueryPlan{
-		Workspace: "demo",
+		Workspace: workspace,
 		Filters:   map[string]any{"relation_type": "calls"},
 		TimeRange: model.TimeRange{From: &from, To: &to},
 		Limit:     10,

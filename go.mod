@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/LadybugDB/go-ladybug v0.13.1
+	github.com/neo4j/neo4j-go-driver/v5 v5.28.4
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )

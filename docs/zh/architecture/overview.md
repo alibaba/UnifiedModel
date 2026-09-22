@@ -22,7 +22,7 @@ flowchart LR
   Query["Query Service"]
   AgentGateway["AgentGateway"]
   GraphStore["GraphStore"]
-  Provider["memory / file.memory / local.ladybug"]
+  Provider["memory / file.memory / local.ladybug / neo4j"]
 
   Developer --> Web
   Developer --> CLI
@@ -53,7 +53,7 @@ flowchart LR
 | Application services | `internal/workspace`, `internal/umodel`, `internal/entitystore`, `internal/query`, `internal/agentgateway` | Workspace、模型写入、运行时写入、读取和 Agent 接入。 |
 | Contracts | `pkg/contract`, `pkg/model`, `pkg/errors` | 公共接口、共享类型、稳定错误 envelope。 |
 | Storage abstraction | `internal/graphstore` | Provider-neutral 的持久化和图访问。 |
-| Providers | `memory`, `file.memory`, `local.ladybug` | 运行时存储实现。 |
+| Providers | `memory`, `file.memory`, `local.ladybug`, `neo4j` | 运行时存储实现。 |
 | Clients | `web`, `sdk/go`, `sdk/python`, `generated/java` | 用户和集成客户端。 |
 
 ## 公共契约

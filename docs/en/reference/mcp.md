@@ -38,6 +38,16 @@ For Ladybug-backed environments:
 go run -tags ladybug ./cmd/umodel-mcp --data data --graphstore local.ladybug
 ```
 
+For Neo4j persistence, configure `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`, and `NEO4J_DATABASE`, then run:
+
+```bash
+go run ./cmd/umodel-mcp --data data --graphstore neo4j
+```
+
+Connection defaults and deployment options: [GraphStore Providers](../graphstore-providers.md#neo4j).
+
+The same command supports `NEO4J_DIALECT=opencypher` with `NEO4J_DATABASE=''` and a direct Bolt endpoint. Compatibility mode permits one writing provider instance per database. When the REST server owns writes, keep write tools disabled in a separate MCP process and do not use MCP `--quickstart`, which imports data. See [openCypher compatibility mode](../graphstore-providers.md#opencypher-compatibility-mode).
+
 ## Methods
 
 MCP schema: [api/mcp/tools.schema.json](../../../api/mcp/tools.schema.json).

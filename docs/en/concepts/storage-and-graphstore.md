@@ -41,6 +41,7 @@ GraphStore providers are runtime implementations behind the local UModel service
 | `memory` | Fast in-memory provider for tests and disposable local work. |
 | `file.memory` | JSON-backed local provider; default for `make dev`, Docker, and Compose. |
 | `local.ladybug` | Ladybug-backed provider when built with `-tags ladybug`. |
+| `neo4j` | Remote Neo4j persistence over Bolt, with workspace-scoped records and shared Go query evaluation. |
 
 Start the service with a specific provider:
 

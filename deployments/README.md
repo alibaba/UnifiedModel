@@ -6,6 +6,7 @@ This directory contains local deployment assets for UModel Open Source.
 |---|---|
 | `docker/Dockerfile` | Builds `umodel-server` into a small runtime image. |
 | `compose/docker-compose.yaml` | Runs the server with a persistent local Docker volume. |
+| `compose/docker-compose.neo4j.yaml` | Runs Neo4j and UModel with separate graph and workspace metadata volumes. |
 
 ## Provider Default
 
@@ -65,6 +66,17 @@ Remove persisted data:
 ```bash
 docker compose -f deployments/compose/docker-compose.yaml down -v
 ```
+
+## Neo4j Compose
+
+```bash
+export NEO4J_PASSWORD='replace-with-your-password'
+docker compose -f deployments/compose/docker-compose.neo4j.yaml up --build
+```
+
+This selects `--graphstore neo4j` and waits for Neo4j to become healthy before starting UModel. Neo4j Browser and Bolt listen on local ports 7474 and 7687; UModel uses port 8080. Graph data uses the `neo4j-data` volume, while workspace metadata uses `umodel-neo4j-metadata`. Keep both volumes when restarting.
+
+To connect UModel to an existing database, pass `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`, and `NEO4J_DATABASE` to the container and override its command with `--addr :8080 --data /data --graphstore neo4j`. See [GraphStore Providers](../docs/en/graphstore-providers.md#neo4j) for configuration and query limits.
 
 ## Ports And Data
 

@@ -22,7 +22,7 @@ flowchart LR
   Query["Query Service"]
   AgentGateway["AgentGateway"]
   GraphStore["GraphStore"]
-  Provider["memory / file.memory / local.ladybug"]
+  Provider["memory / file.memory / local.ladybug / neo4j"]
 
   Developer --> Web
   Developer --> CLI
@@ -53,7 +53,7 @@ flowchart LR
 | Application services | `internal/workspace`, `internal/umodel`, `internal/entitystore`, `internal/query`, `internal/agentgateway` | Use-case logic for workspaces, model writes, runtime writes, reads, and agent access. |
 | Contracts | `pkg/contract`, `pkg/model`, `pkg/errors` | Public service interfaces, shared types, stable error envelopes. |
 | Storage abstraction | `internal/graphstore` | Provider-neutral persistence and graph access. |
-| Providers | `memory`, `file.memory`, `local.ladybug` | Runtime storage implementations. |
+| Providers | `memory`, `file.memory`, `local.ladybug`, `neo4j` | Runtime storage implementations. |
 | Clients | `web`, `sdk/go`, `sdk/python`, `generated/java` | User-facing and integration-facing clients. |
 
 ## Public Contract Rule

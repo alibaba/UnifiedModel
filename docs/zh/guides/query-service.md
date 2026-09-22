@@ -89,7 +89,7 @@ go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".topo | graph-call getDirectRelations([(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | project src,relation,dest | limit 20"
 ```
 
-`.topo` 支持 graph-call 风格的拓扑操作。`memory`、`file.memory` 和可选的 `local.ladybug` provider 都通过共享的 Go engine 支持受控只读 Cypher 兼容查询。`local.ladybug` 在使用 `-tags ladybug` 和本地 Ladybug runtime 构建时，仍然把图数据持久化到 Ladybug。
+`.topo` 支持 graph-call 风格的拓扑操作。`memory`、`file.memory`、`neo4j` 和可选的 `local.ladybug` provider 都通过共享的 Go engine 支持受控只读 Cypher 兼容查询。`local.ladybug` 在使用 `-tags ladybug` 和本地 Ladybug runtime 构建时，仍然把图数据持久化到 Ladybug。`neo4j` 将节点和拓扑边持久化到 Neo4j，不会把用户 Cypher 直接转发给数据库。
 
 Cypher 可以在一次查询里返回完整实体属性和关系属性：
 

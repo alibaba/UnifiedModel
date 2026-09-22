@@ -39,6 +39,16 @@ Ladybug-backed 环境：
 go run -tags ladybug ./cmd/umodel-mcp --data data --graphstore local.ladybug
 ```
 
+使用 Neo4j 持久化时，先配置 `NEO4J_URI`、`NEO4J_USERNAME`、`NEO4J_PASSWORD`、`NEO4J_DATABASE`，再运行：
+
+```bash
+go run ./cmd/umodel-mcp --data data --graphstore neo4j
+```
+
+连接默认值与部署选项：[GraphStore Providers](../graphstore-providers.md#neo4j)。
+
+相同命令支持 `NEO4J_DIALECT=opencypher`，配合 `NEO4J_DATABASE=''` 和 Bolt 直连地址。兼容模式下每个数据库只允许一个可写 provider 实例。REST 服务承担写入时，独立 MCP 进程应保持写工具关闭，也不要使用会导入数据的 MCP `--quickstart`。详见 [openCypher 兼容模式](../graphstore-providers.md#opencypher-兼容模式)。
+
 ## Methods
 
 MCP schema：[api/mcp/tools.schema.json](../../../api/mcp/tools.schema.json)。
