@@ -52,7 +52,8 @@ test.describe('Query capability via UI', () => {
     await pickQueryExample(page, '.umodel')
     await page.getByRole('button', { name: 'Explain' }).click()
 
-    await expect(page.locator('text=memory')).toBeVisible({ timeout: 10_000 })
+    const explainPanel = page.getByRole('region', { name: 'Explain panel' })
+    await expect(explainPanel.getByText('memory', { exact: true })).toBeVisible({ timeout: 10_000 })
   })
 
   test('explorer view renders graph', async ({ page }) => {
