@@ -25,7 +25,7 @@ FORBIDDEN_PATTERNS = [
     (re.compile(r"\bumctl\s+(entity|get|list|search|topo\s+neighbors|topo\s+subgraph)"), "CLI domain read commands are forbidden"),
 ]
 
-PROVIDER_IMPORT = re.compile(r'internal/graphstore/provider/(ladybug|cloud|custom)')
+PROVIDER_IMPORT = re.compile(r'internal/graphstore/provider/[a-zA-Z0-9_]+')
 ALLOWED_PROVIDER_IMPORTS = {
     "internal/bootstrap/app.go",
     "internal/graphstore/provider/ladybug/provider_stub.go",
@@ -34,10 +34,10 @@ ALLOWED_PROVIDER_IMPORTS = {
 
 
 def iter_files() -> list[pathlib.Path]:
-    # .claude holds gitignored local agent artifacts — nested git worktrees of
-    # other branches and copies of tooling — which are not the source tree under
-    # review and would otherwise trip the path-exact self-exclusion / allowlist.
-    ignored_parts = {".git", ".venv", "__pycache__", "node_modules", ".claude"}
+    # Local agent artifacts include nested worktrees, tooling copies (.claude),
+    # and generated repository documentation (.qoder). They are not source code
+    # under review and can contain provider paths quoted from the actual source.
+    ignored_parts = {".git", ".venv", "__pycache__", "node_modules", ".claude", ".qoder"}
     files: list[pathlib.Path] = []
     for path in ROOT.rglob("*"):
         if not path.is_file() or path.suffix not in TEXT_SUFFIXES:

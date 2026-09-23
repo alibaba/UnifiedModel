@@ -94,7 +94,7 @@ The required filters are `domain` and `name`; `ids` is accepted as EntitySet cal
 go run ./cmd/umctl --addr http://localhost:8080 query run demo ".topo | graph-call getDirectRelations([(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | project src,relation,dest | limit 20"
 ```
 
-`.topo` supports graph-call style topology operations. The `memory`, `file.memory`, and optional `local.ladybug` providers support controlled read-only Cypher-compatible graph calls through the shared Go engine. `local.ladybug` still persists graph data in Ladybug when built with `-tags ladybug` and a local Ladybug runtime.
+`.topo` supports graph-call style topology operations. The `memory`, `file.memory`, `neo4j`, and optional `local.ladybug` providers support controlled read-only Cypher-compatible graph calls through the shared Go engine. `local.ladybug` still persists graph data in Ladybug when built with `-tags ladybug` and a local Ladybug runtime. `neo4j` persists nodes and topology edges in Neo4j; it does not forward user Cypher directly to the database.
 
 Cypher can return full entity and relation property maps in one query:
 

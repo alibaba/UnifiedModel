@@ -120,6 +120,12 @@ Ladybug runtime：
 go run -tags ladybug ./cmd/umodel-server --addr :8080 --data data --graphstore local.ladybug
 ```
 
+Neo4j（使用 [NEO4J_* 环境变量](../graphstore-providers.md#neo4j)配置连接）：
+
+```bash
+go run ./cmd/umodel-server --addr :8080 --data data --graphstore neo4j
+```
+
 ## 验证仓库
 
 ```bash

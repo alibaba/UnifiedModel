@@ -1,0 +1,39 @@
+services:
+  neo4j:
+    image: neo4j:5.26-community
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:?Set NEO4J_PASSWORD}"
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          cypher-shell -u neo4j -p "$${NEO4J_AUTH#*/}" 'RETURN 1' >/dev/null
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  umodel-server:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile
+    command: ["--addr", ":8080", "--data", "/data", "--graphstore", "neo4j"]
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: "${NEO4J_PASSWORD:?Set NEO4J_PASSWORD}"
+      NEO4J_DATABASE: neo4j
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - umodel-neo4j-metadata:/data
+
+volumes:
+  neo4j-data: {}
+  umodel-neo4j-metadata: {}

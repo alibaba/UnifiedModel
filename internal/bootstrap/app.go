@@ -15,6 +15,7 @@ import (
 	"github.com/alibaba/UnifiedModel/internal/entitystore"
 	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	_ "github.com/alibaba/UnifiedModel/internal/graphstore/provider/ladybug"
+	_ "github.com/alibaba/UnifiedModel/internal/graphstore/provider/neo4j"
 	"github.com/alibaba/UnifiedModel/internal/query"
 	"github.com/alibaba/UnifiedModel/internal/sampledata"
 	"github.com/alibaba/UnifiedModel/internal/search"
@@ -88,7 +89,7 @@ func NewAppWithGraphStore(dataRoot string, config graphstore.ProviderConfig, opt
 		config.Type = providerType
 	}
 	workspaceSvc := workspace.NewService(dataRoot, nil)
-	if providerType == graphstore.ProviderTypeFileMemory || providerType == graphstore.ProviderTypeLadybug {
+	if providerType == graphstore.ProviderTypeFileMemory || providerType == graphstore.ProviderTypeLadybug || providerType == graphstore.ProviderTypeNeo4j {
 		var err error
 		workspaceSvc, err = workspace.NewPersistentServiceForProvider(dataRoot, nil, providerType)
 		if err != nil {
@@ -120,6 +121,17 @@ func NewAppWithGraphStore(dataRoot string, config graphstore.ProviderConfig, opt
 		Search:       searchSvc,
 		AgentGateway: agentSvc,
 	}, nil
+}
+
+// Close releases provider connections when an embedded app or MCP session ends.
+func (a *App) Close() error {
+	switch closer := a.GraphStore.(type) {
+	case interface{ Close() error }:
+		return closer.Close()
+	case interface{ Close() }:
+		closer.Close()
+	}
+	return nil
 }
 
 func (a *App) Handler() http.Handler {

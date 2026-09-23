@@ -8,6 +8,7 @@ English version: [README.md](README.md)
 |---|---|
 | `docker/Dockerfile` | 将 `umodel-server` 构建为小型运行时镜像。 |
 | `compose/docker-compose.yaml` | 使用持久化 Docker volume 运行服务。 |
+| `compose/docker-compose.neo4j.yaml` | 同时运行 Neo4j 和 UModel，分别持久化图数据和工作区元数据。 |
 
 ## 默认 Provider
 
@@ -43,6 +44,17 @@ docker compose -f deployments/compose/docker-compose.yaml down
 ```bash
 docker compose -f deployments/compose/docker-compose.yaml down -v
 ```
+
+## Neo4j Compose
+
+```bash
+export NEO4J_PASSWORD='replace-with-your-password'
+docker compose -f deployments/compose/docker-compose.neo4j.yaml up --build
+```
+
+该配置选择 `--graphstore neo4j`，等待 Neo4j 健康后再启动 UModel。Neo4j Browser 和 Bolt 使用本地端口 7474、7687，UModel 使用 8080。图数据使用 `neo4j-data` volume，工作区元数据使用 `umodel-neo4j-metadata` volume，重启时应保留两者。
+
+连接已有数据库时，将 `NEO4J_URI`、`NEO4J_USERNAME`、`NEO4J_PASSWORD`、`NEO4J_DATABASE` 传入容器，并将启动参数设为 `--addr :8080 --data /data --graphstore neo4j`。配置与查询限制见 [GraphStore Providers](../docs/zh/graphstore-providers.md#neo4j)。
 
 ## 端口与数据
 

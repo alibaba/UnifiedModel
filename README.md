@@ -164,6 +164,7 @@ Runtime GraphStore providers are selected with `--graphstore`.
 | `memory` | Ephemeral local tests and quickstart demos. Data is lost after process exit. |
 | `file.memory` | JSON persistence under `--data`. Default for `make dev`, Docker, and Compose. |
 | `local.ladybug` | Ladybug-backed environments. Requires `-tags ladybug` and a local Ladybug runtime. |
+| `neo4j` | Bolt persistence with native Neo4j and `NEO4J_DIALECT=opencypher` compatibility modes. Configure via `NEO4J_*`; no build tag required. |
 
 Provider details: [GraphStore Providers](docs/en/graphstore-providers.md).
 

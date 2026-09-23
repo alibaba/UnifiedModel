@@ -17,6 +17,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  neo4j:
+    name: Neo4j Provider (${{ matrix.dialect }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        dialect: [neo4j, opencypher]
+    services:
+      neo4j:
+        image: neo4j:5.26-community
+        env:
+          NEO4J_AUTH: neo4j/umodel-ci-password
+        ports:
+          - 7687:7687
+        options: >-
+          --health-cmd "cypher-shell -u neo4j -p umodel-ci-password 'RETURN 1'"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.22.x"
+          cache-dependency-path: go.sum
+      - name: Run Neo4j provider, contract, and E2E tests
+        env:
+          UMODEL_TEST_NEO4J: "1"
+          NEO4J_URI: bolt://localhost:7687
+          NEO4J_PASSWORD: umodel-ci-password
+          NEO4J_DIALECT: ${{ matrix.dialect }}
+          NEO4J_DATABASE: ${{ matrix.dialect == 'neo4j' && 'neo4j' || '' }}
+        run: make test-neo4j
+
   ci:
     name: Local CI Gate
     runs-on: ubuntu-latest
