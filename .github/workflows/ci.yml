@@ -17,6 +17,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  gremlin:
+    name: Gremlin Provider Acceptance Matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.22.x"
+          cache-dependency-path: go.sum
+      - name: Run real Gremlin plain/TLS/auth/transaction/restart matrix
+        run: make test-gremlin-matrix
+
   neo4j:
     name: Neo4j Provider (${{ matrix.dialect }})
     runs-on: ubuntu-latest

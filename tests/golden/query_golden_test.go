@@ -3,17 +3,19 @@ package golden_test
 import (
 	"context"
 	"encoding/json"
+	_ "github.com/alibaba/UnifiedModel/internal/bootstrap"
+	"github.com/alibaba/UnifiedModel/pkg/contract"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 	"strings"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	"github.com/alibaba/UnifiedModel/internal/query"
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
 
 func TestQueryGoldenResults(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	seedQueryGoldenData(t, ctx, store)
 	svc := query.NewService(store)
 
@@ -162,14 +164,15 @@ func TestQueryGoldenResults(t *testing.T) {
 				t.Fatalf("execute: %v", err)
 			}
 			got := mustGoldenJSON(t, result)
-			if got != strings.TrimSpace(tc.want) {
-				t.Fatalf("golden mismatch\nwant:\n%s\n\ngot:\n%s", tc.want, got)
+			want := strings.ReplaceAll(tc.want, `"memory"`, `"`+graphfixture.Provider()+`"`)
+			if got != strings.TrimSpace(want) {
+				t.Fatalf("golden mismatch\nwant:\n%s\n\ngot:\n%s", want, got)
 			}
 		})
 	}
 }
 
-func seedQueryGoldenData(t *testing.T, ctx context.Context, store *graphstore.MemoryStore) {
+func seedQueryGoldenData(t *testing.T, ctx context.Context, store contract.GraphStore) {
 	t.Helper()
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",

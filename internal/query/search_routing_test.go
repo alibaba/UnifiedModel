@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 type fakeSearch struct {
@@ -62,7 +62,7 @@ func TestExecuteRoutesRunbookSetToSearch(t *testing.T) {
 		Name:   "slow-request",
 		Score:  0.42,
 	}}}
-	svc := NewServiceWithSearch(graphstore.NewMemoryStore(), fake)
+	svc := NewServiceWithSearch(graphfixture.New(t), fake)
 
 	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
 		Query: ".runbook_set with(domain='apm', type='knowledge', query='slow request', mode='hyper', topk=5)",
@@ -110,7 +110,7 @@ func TestExecuteRoutesEntityVectorMode(t *testing.T) {
 		},
 		Score: 0.9,
 	}}}
-	svc := NewServiceWithSearch(graphstore.NewMemoryStore(), fake)
+	svc := NewServiceWithSearch(graphfixture.New(t), fake)
 
 	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
 		Query: ".entity with(domain='apm', name='apm.service', query='checkout', mode='vector', topk=20)",
@@ -147,7 +147,7 @@ func TestExecuteRoutesEntityVectorMode(t *testing.T) {
 func TestExecuteEntityKeywordModeStillRoutesToSearch(t *testing.T) {
 	ctx := context.Background()
 	fake := &fakeSearch{}
-	svc := NewServiceWithSearch(graphstore.NewMemoryStore(), fake)
+	svc := NewServiceWithSearch(graphfixture.New(t), fake)
 
 	if _, err := svc.Execute(ctx, "demo", model.QueryRequest{
 		Query: ".entity with(domain='apm', name='apm.service', query='checkout', mode='keyword')",
@@ -162,7 +162,7 @@ func TestExecuteEntityKeywordModeStillRoutesToSearch(t *testing.T) {
 func TestExecuteEntityWithoutModeStaysOnGraphStore(t *testing.T) {
 	ctx := context.Background()
 	fake := &fakeSearch{}
-	svc := NewServiceWithSearch(graphstore.NewMemoryStore(), fake)
+	svc := NewServiceWithSearch(graphfixture.New(t), fake)
 
 	if _, err := svc.Execute(ctx, "demo", model.QueryRequest{
 		Query: ".entity with(domain='apm', name='apm.service', query='checkout')",
@@ -175,7 +175,7 @@ func TestExecuteEntityWithoutModeStaysOnGraphStore(t *testing.T) {
 }
 
 func TestRunbookSetRequiresSearchService(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query: ".runbook_set with(domain='apm', type='knowledge', query='x')",
 	})

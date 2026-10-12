@@ -235,6 +235,9 @@ func (s *Service) RebuildIndex(ctx context.Context, workspace string) error {
 		return err
 	}
 	s.replaceIndex(workspace, snapshot.Elements)
+	if s.search != nil {
+		return s.search.Index(ctx, workspace, umodelSearchChunks(snapshot.Elements))
+	}
 	return nil
 }
 

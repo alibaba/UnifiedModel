@@ -10,10 +10,12 @@ import (
 	"testing"
 
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
+	"github.com/alibaba/UnifiedModel/tests/testutil"
 )
 
 func TestHTTPQuickFlow(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir()).Handler())
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir()).Handler())
 	defer server.Close()
 
 	root := get(t, server.URL+"/")
@@ -21,7 +23,7 @@ func TestHTTPQuickFlow(t *testing.T) {
 		t.Fatalf("unexpected root response: %+v", root)
 	}
 	graphstore, ok := root["graphstore"].(map[string]any)
-	if !ok || graphstore["provider"] != "memory" {
+	if !ok || graphstore["provider"] != graphfixture.Provider() {
 		t.Fatalf("root response should include graphstore health: %+v", root)
 	}
 
@@ -88,7 +90,7 @@ func TestHTTPQuickFlow(t *testing.T) {
 		t.Fatalf("unexpected cypher explain metadata: %+v", cypherExplain)
 	}
 	explain := post(t, server.URL+"/api/v1/query/demo/explain", map[string]any{"query": ".topo | graph-call getNeighborNodes('full', 2, [(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 10"})
-	if explain["source"] != ".topo" || explain["provider"] != "memory" || explain["depth"].(float64) != 2 {
+	if explain["source"] != ".topo" || explain["provider"] != graphfixture.Provider() || explain["depth"].(float64) != 2 {
 		t.Fatalf("unexpected explain: %+v", explain)
 	}
 	discovery := get(t, server.URL+"/api/v1/agent/demo/discover")
@@ -126,7 +128,7 @@ func TestHTTPQuickFlow(t *testing.T) {
 }
 
 func TestHTTPErrorContractsAndWriteToolDefault(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir()).Handler())
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir()).Handler())
 	defer server.Close()
 
 	queryError := postStatus(t, server.URL+"/api/v1/query/demo/execute", map[string]any{"query": "select * from entity"}, http.StatusBadRequest)
@@ -166,7 +168,7 @@ func TestHTTPErrorContractsAndWriteToolDefault(t *testing.T) {
 }
 
 func TestHTTPUModelImportThenQuery(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir(), bootstrap.WithImportRoot("/")).Handler())
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir(), bootstrap.WithImportRoot("/")).Handler())
 	defer server.Close()
 
 	post(t, server.URL+"/api/v1/workspaces", map[string]any{"id": "demo"})
@@ -185,7 +187,7 @@ func TestHTTPUModelImportThenQuery(t *testing.T) {
 }
 
 func TestHTTPSampleImportThenQuery(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir()).Handler())
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir()).Handler())
 	defer server.Close()
 
 	post(t, server.URL+"/api/v1/workspaces", map[string]any{"id": "demo"})
@@ -219,7 +221,7 @@ func TestHTTPServesSPAWhenUIDirConfigured(t *testing.T) {
 		t.Fatalf("write asset: %v", err)
 	}
 
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir()).HandlerWithUI(uiDir))
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir()).HandlerWithUI(uiDir))
 	defer server.Close()
 
 	resp, err := http.Get(server.URL + "/")

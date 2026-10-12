@@ -165,6 +165,7 @@ make ci
 | `file.memory` | `--data` 下的 JSON 持久化。这是 `make dev`、Docker 和 Compose 的默认值。 |
 | `local.ladybug` | Ladybug-backed 环境。需要 `-tags ladybug` 和本地 Ladybug runtime。 |
 | `neo4j` | 通过 Bolt 持久化，支持原生 Neo4j 和 `NEO4J_DIALECT=opencypher` 兼容模式。使用 `NEO4J_*` 配置，无需 build tag。 |
+| `gremlin` | 通过 WebSocket 使用 TinkerPop Gremlin Server 持久化。使用 `GREMLIN_*` 配置，无需 build tag。 |
 
 Provider 细节：[GraphStore Providers](docs/zh/graphstore-providers.md)。
 

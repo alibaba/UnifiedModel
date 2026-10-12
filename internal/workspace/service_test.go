@@ -10,6 +10,27 @@ import (
 	"github.com/alibaba/UnifiedModel/pkg/model"
 )
 
+func TestWorkspacePaginationDoesNotSkipNextRecord(t *testing.T) {
+	ctx := context.Background()
+	svc := NewService(t.TempDir(), nil)
+	for _, id := range []string{"a", "b", "c"} {
+		if _, err := svc.CreateWorkspace(ctx, model.CreateWorkspaceRequest{ID: id}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	request := model.WorkspaceListRequest{PageRequest: model.PageRequest{Limit: 1}}
+	for _, want := range []string{"a", "b", "c"} {
+		page, err := svc.ListWorkspaces(ctx, request)
+		if err != nil || len(page.Items) != 1 || page.Items[0].ID != want {
+			t.Fatalf("pagination skipped %s: %+v %v", want, page, err)
+		}
+		request.PageToken = page.NextToken
+	}
+	if request.PageToken != "" {
+		t.Fatal("last page must not advertise another cursor")
+	}
+}
+
 func TestWorkspaceCRUDIsMetadataOnly(t *testing.T) {
 	ctx := context.Background()
 	svc := NewService("data", nil)

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 func TestParseQueryTimeout(t *testing.T) {
@@ -54,7 +54,7 @@ func TestAsQueryTimeout(t *testing.T) {
 // expired deadline flows through Execute -> executor -> memory store, the store
 // aborts, and the ctx error is mapped to CodeTimeout.
 func TestExecuteDeadlineExceededReturnsTimeout(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Hour))
 	defer cancel()
 	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity with(domain='devops', name='devops.service')"})
@@ -67,7 +67,7 @@ func TestExecuteDeadlineExceededReturnsTimeout(t *testing.T) {
 // request must surface an error, but NOT CodeTimeout — it is not a provider
 // timeout and must not look retryable.
 func TestExecuteCancelledContextIsNotTimeout(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity with(domain='devops', name='devops.service')"})

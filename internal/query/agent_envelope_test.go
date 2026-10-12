@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 // TestGetMetricsAgentFormatPlanShape verifies that requesting format=agent
@@ -14,7 +14,7 @@ import (
 // data_source entries instead of full spec dumps.
 func TestGetMetricsAgentFormatPlanShape(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -99,7 +99,7 @@ func TestGetMetricsAgentFormatPlanShape(t *testing.T) {
 // TestGetLogsAgentFormatPlanShape verifies the same envelope for get_logs.
 func TestGetLogsAgentFormatPlanShape(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  logQueryPlanElements(),
@@ -140,7 +140,7 @@ func TestGetLogsAgentFormatPlanShape(t *testing.T) {
 // shape, not content.
 func TestAgentFormatPreservesV1AdditiveFields(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -175,7 +175,7 @@ func TestAgentFormatPreservesV1AdditiveFields(t *testing.T) {
 // without having to round-trip through a separate model lookup.
 func TestGetMetricsAgentFormatIncludeSpec(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -222,7 +222,7 @@ func TestGetMetricsAgentFormatIncludeSpec(t *testing.T) {
 // TestGetLogsAgentFormatIncludeSpec is the get_logs counterpart.
 func TestGetLogsAgentFormatIncludeSpec(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  logQueryPlanElements(),
@@ -253,7 +253,7 @@ func TestGetLogsAgentFormatIncludeSpec(t *testing.T) {
 // and data_source.storage.config is still the full spec.
 func TestClassicFormatUnchangedByV1Point1(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),

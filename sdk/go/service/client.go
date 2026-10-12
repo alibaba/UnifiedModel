@@ -193,9 +193,35 @@ func (c *Client) ExpireRelations(ctx context.Context, workspace string, ids []st
 }
 
 func (c *Client) Query(ctx context.Context, workspace string, req QueryRequest) (QueryResult, error) {
-	var out QueryResult
-	err := c.do(ctx, http.MethodPost, "/api/v1/query/"+escape(workspace)+"/execute", req, &out)
-	return out, err
+	var raw json.RawMessage
+	if err := c.do(ctx, http.MethodPost, "/api/v1/query/"+escape(workspace)+"/execute", req, &raw); err != nil {
+		return QueryResult{}, err
+	}
+	var response struct {
+		QueryResult
+		Data *struct {
+			Header []string `json:"header"`
+			Data   [][]any  `json:"data"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &response); err != nil {
+		return QueryResult{}, err
+	}
+	if response.Data == nil {
+		return response.QueryResult, nil
+	}
+	out := QueryResult{Columns: response.Data.Header, Rows: make([]map[string]any, 0, len(response.Data.Data))}
+	for _, values := range response.Data.Data {
+		if len(values) != len(out.Columns) {
+			return QueryResult{}, fmt.Errorf("query response row length does not match header")
+		}
+		row := make(map[string]any, len(values))
+		for i, column := range out.Columns {
+			row[column] = values[i]
+		}
+		out.Rows = append(out.Rows, row)
+	}
+	return out, nil
 }
 
 func (c *Client) Explain(ctx context.Context, workspace string, req QueryRequest) (QueryExplain, error) {

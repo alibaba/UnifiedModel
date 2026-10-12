@@ -7,13 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 func TestExecuteRequiresUnifiedSPLSource(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{Query: "select * from entity"})
 	if !apperrors.IsCode(err, apperrors.CodeQueryParseError) {
 		t.Fatalf("expected query parse error, got %v", err)
@@ -22,7 +22,7 @@ func TestExecuteRequiresUnifiedSPLSource(t *testing.T) {
 
 func TestExecuteUModelQuery(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements: []model.UModelElement{{
@@ -61,7 +61,7 @@ func TestExecuteUModelQuery(t *testing.T) {
 
 func TestExecuteUModelPipeline(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements: []model.UModelElement{
@@ -92,7 +92,7 @@ func TestExecuteUModelPipeline(t *testing.T) {
 
 func TestExecuteEntityQueryUsesGraphStoreRows(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.WriteEntities(ctx, model.EntityWriteBatch{
 		Workspace: "demo",
 		Entities: []model.EntityPayload{{
@@ -117,7 +117,7 @@ func TestExecuteEntityQueryUsesGraphStoreRows(t *testing.T) {
 	if len(result.Rows) != 1 || result.Rows[0]["__entity_id__"] != "54013ba69c196820e56801f1ef5aad54" {
 		t.Fatalf("unexpected rows: %+v", result.Rows)
 	}
-	if result.Explain == nil || result.Explain.StorageProvider != "memory" {
+	if result.Explain == nil || result.Explain.StorageProvider != graphfixture.Provider() {
 		t.Fatalf("unexpected explain: %+v", result.Explain)
 	}
 
@@ -138,7 +138,7 @@ func TestExecuteEntityQueryUsesGraphStoreRows(t *testing.T) {
 
 func TestExecuteEntitySetListMethodsReturnsAssistantRawData(t *testing.T) {
 	ctx := context.Background()
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	result, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call __list_method__()"})
 	if err != nil {
 		t.Fatalf("execute __list_method__: %v", err)
@@ -171,7 +171,7 @@ func TestExecuteEntitySetListMethodsReturnsAssistantRawData(t *testing.T) {
 
 func TestExecuteEntitySetListDataSetAliasReturnsAssistantRawData(t *testing.T) {
 	ctx := context.Background()
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	result, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call list_dataset(['metric_set'], true)"})
 	if err != nil {
 		t.Fatalf("execute list_dataset alias: %v", err)
@@ -220,7 +220,7 @@ func TestExecuteEntitySetListDataSetUsesFilterByEntityAndSrcFilter(t *testing.T)
 			},
 		},
 	)
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{Workspace: "demo", Elements: elements})
 	if err != nil {
 		t.Fatalf("put umodel: %v", err)
@@ -293,7 +293,7 @@ func TestExecuteEntitySetListDataSetKeepsDataSetWhenStorageFilterMisses(t *testi
 			elements[i].Spec["filter_by_entity"] = "region = 'cn-hangzhou'"
 		}
 	}
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{Workspace: "demo", Elements: elements})
 	if err != nil {
 		t.Fatalf("put umodel: %v", err)
@@ -338,7 +338,7 @@ func TestExecuteEntitySetListDataSetIncludesDefaultDomainDataSets(t *testing.T) 
 			},
 		},
 	)
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{Workspace: "demo", Elements: elements})
 	if err != nil {
 		t.Fatalf("put umodel: %v", err)
@@ -367,7 +367,7 @@ func TestExecuteEntitySetListDataSetIncludesDefaultDomainDataSets(t *testing.T) 
 
 func TestExecuteEntitySetGetLogsReturnsQueryPlan(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  logQueryPlanElements(),
@@ -424,7 +424,7 @@ func TestExecuteEntitySetGetLogsReturnsQueryPlan(t *testing.T) {
 
 func TestExecuteEntitySetGetLogAliasReturnsQueryPlan(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  logQueryPlanElements(),
@@ -450,7 +450,7 @@ func TestExecuteEntitySetGetLogAliasReturnsQueryPlan(t *testing.T) {
 
 func TestExecuteEntitySetGetMetricsReturnsQueryPlan(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -511,7 +511,7 @@ func TestExecuteEntitySetGetMetricsReturnsQueryPlan(t *testing.T) {
 
 func TestExecuteEntitySetGetMetricsUsesFilterByEntities(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -555,7 +555,7 @@ func TestExecuteEntitySetGetMetricsUsesFilterByEntities(t *testing.T) {
 
 func TestExecuteEntitySetGetLogsUsesEntityDataByEntity(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  logQueryPlanElements(),
@@ -598,7 +598,7 @@ func TestEntitySetFilterByEntitySelectsRelatedDataSet(t *testing.T) {
 	ctx := context.Background()
 	elements := metricQueryPlanElements()
 	elements[1].Spec["filter_by_entity"] = "environment = 'prod'"
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  elements,
@@ -636,7 +636,7 @@ func TestEntitySetFilterByEntitySelectsRelatedDataSet(t *testing.T) {
 
 func TestExecuteEntitySetGetMetricAliasReturnsQueryPlan(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -666,7 +666,7 @@ func TestExecuteEntitySetGetMetricAliasReturnsQueryPlan(t *testing.T) {
 
 func TestExecuteEntitySetRejectsPlaceholderMethod(t *testing.T) {
 	ctx := context.Background()
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call METHOD()"})
 	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
 		t.Fatalf("expected query plan error for placeholder method, got %v", err)
@@ -675,7 +675,7 @@ func TestExecuteEntitySetRejectsPlaceholderMethod(t *testing.T) {
 
 func TestExecuteEntitySetRejectsUnsupportedMethod(t *testing.T) {
 	ctx := context.Background()
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(ctx, "demo", model.QueryRequest{Query: ".entity_set with(domain='apm', name='apm.service') | entity-call get_metricz('apm', 'devops.metric.service', 'request_count')"})
 	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
 		t.Fatalf("expected query plan error for unsupported method, got %v", err)
@@ -684,7 +684,7 @@ func TestExecuteEntitySetRejectsUnsupportedMethod(t *testing.T) {
 
 func TestExecuteEntityTopKAndProject(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.WriteEntities(ctx, model.EntityWriteBatch{
 		Workspace: "demo",
 		Entities: []model.EntityPayload{
@@ -715,7 +715,7 @@ func TestExecuteEntityTopKAndProject(t *testing.T) {
 
 func TestExecuteTopoDirectRelations(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.WriteRelations(ctx, model.RelationWriteBatch{
 		Workspace: "demo",
 		Relations: []model.RelationPayload{{
@@ -750,7 +750,7 @@ func TestExecuteTopoDirectRelations(t *testing.T) {
 
 func TestExecuteTopoCypherOnMemory(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.WriteRelations(ctx, model.RelationWriteBatch{
 		Workspace: "demo",
 		Relations: []model.RelationPayload{{
@@ -796,7 +796,7 @@ func TestExecuteTopoCypherOnMemory(t *testing.T) {
 
 func TestExecuteTopoCypherReturnsFullEntityAndRelationProperties(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	_, err := store.WriteEntities(ctx, model.EntityWriteBatch{
 		Workspace: "demo",
 		Entities: []model.EntityPayload{
@@ -871,7 +871,7 @@ func TestExecuteTopoCypherReturnsFullEntityAndRelationProperties(t *testing.T) {
 }
 
 func TestExecuteTopoCypherRejectsMutationsOnMemory(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{Query: ".topo | graph-call cypher(`MATCH (n) SET n.name = 'bad' RETURN n`)"})
 	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
 		t.Fatalf("expected read-only cypher rejection, got %v", err)
@@ -1062,7 +1062,7 @@ func metricQueryPlanElements() []model.UModelElement {
 
 func TestExecuteTopoWhereRelationType(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 
 	// Write many "attend" relations so they outnumber "commit" and sort first.
 	relations := make([]model.RelationPayload, 0, 130)

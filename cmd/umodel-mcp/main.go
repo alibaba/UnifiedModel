@@ -26,7 +26,7 @@ func run(args []string, in io.Reader, out, errOut io.Writer) error {
 	flags.SetOutput(errOut)
 	workspace := flags.String("workspace", "demo", "default workspace for MCP requests")
 	dataRoot := flags.String("data", ".umodel-data", "local UModel data root")
-	provider := flags.String("graphstore", graphstore.DefaultProviderType, "GraphStore provider: local.ladybug, memory, file.memory, or neo4j (configured by NEO4J_* environment variables)")
+	provider := flags.String("graphstore", graphstore.DefaultProviderType, "GraphStore provider: local.ladybug, memory, file.memory, neo4j (NEO4J_*), or gremlin (GREMLIN_*)")
 	quickStart := flags.Bool("quickstart", false, "Create a demo workspace and import bundled quickstart data before serving MCP")
 	quickStartWorkspace := flags.String("quickstart-workspace", bootstrap.DefaultQuickStartWorkspaceID, "Workspace id used by --quickstart")
 	quickStartSample := flags.String("quickstart-sample", bootstrap.DefaultQuickStartSample, "Sample package imported by --quickstart")

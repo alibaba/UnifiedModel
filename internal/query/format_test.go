@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 func TestExecuteAcceptsEmptyFormat(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query:  ".umodel | limit 1",
 		Format: "",
@@ -21,7 +21,7 @@ func TestExecuteAcceptsEmptyFormat(t *testing.T) {
 }
 
 func TestExecuteAcceptsAgentFormat(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query:  ".umodel | limit 1",
 		Format: model.FormatAgent,
@@ -32,7 +32,7 @@ func TestExecuteAcceptsAgentFormat(t *testing.T) {
 }
 
 func TestExecuteRejectsUnknownFormat(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query:  ".umodel | limit 1",
 		Format: "bogus",
@@ -50,7 +50,7 @@ func TestExecuteRejectsUnknownFormat(t *testing.T) {
 }
 
 func TestExplainAlsoValidatesFormat(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Explain(context.Background(), "demo", model.QueryRequest{
 		Query:  ".umodel | limit 1",
 		Format: "bogus",

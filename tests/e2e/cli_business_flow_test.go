@@ -10,10 +10,11 @@ import (
 	"testing"
 
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
+	"github.com/alibaba/UnifiedModel/tests/testutil"
 )
 
 func TestCLIBusinessFlowUsesOnlyPublicContracts(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir(), bootstrap.WithImportRoot("/")).Handler())
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir(), bootstrap.WithImportRoot("/")).Handler())
 	defer server.Close()
 
 	root := filepath.Join("..", "..")
