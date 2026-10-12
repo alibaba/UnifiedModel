@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
@@ -12,6 +13,10 @@ import (
 )
 
 func main() {
+	// Container runtimes and most log collectors scrape stdout.
+	// Go's default log destination is stderr.
+	log.SetOutput(os.Stdout)
+
 	addr := flag.String("addr", ":8080", "HTTP listen address")
 	dataRoot := flag.String("data", "data", "UModel data root")
 	provider := flag.String("graphstore", graphstore.DefaultProviderType, "GraphStore provider: local.ladybug, memory, file.memory, or neo4j (configured by NEO4J_* environment variables)")
