@@ -81,6 +81,10 @@ func TestGremlinDatabaseRestartAndDisconnectedWrites(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 	}
 	if !ready {
+		for _, args := range [][]string{{"inspect", "--format", "{{json .State}} {{json .NetworkSettings.Ports}}", container}, {"logs", "--tail", "50", container}} {
+			out, err := exec.Command(runtime, args...).CombinedOutput()
+			t.Logf("restart diagnostics %v: %v\n%s", args, err, out)
+		}
 		t.Fatal("persistent server did not restart")
 	}
 	reopened := testutil.GremlinApp(t, root)

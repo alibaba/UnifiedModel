@@ -130,7 +130,7 @@ func requestPacket(id, operation string, args map[string]any) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("gremlin: encode request: %w", err)
 	}
-	if len(body)+1+len(graphSONMime) > 1<<20 {
+	if len(body) > (1<<20)-1-len(graphSONMime) {
 		return nil, fmt.Errorf("gremlin: request exceeds 1 MiB; split the write batch")
 	}
 	packet := append([]byte{byte(len(graphSONMime))}, graphSONMime...)
@@ -148,7 +148,9 @@ func graphSONEncode(v any) any {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
-		values := make([]any, 0, len(v)*2)
+		// Append performs checked slice growth; multiplying a map length to
+		// compute allocation capacity can overflow on large inputs.
+		values := make([]any, 0, len(v))
 		for _, k := range keys {
 			values = append(values, k, graphSONEncode(v[k]))
 		}

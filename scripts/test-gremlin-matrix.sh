@@ -10,8 +10,9 @@ state="$(mktemp -d)"
 state="$(cd "$state" && pwd -P)"
 prefix="umodel-gremlin-matrix-$$"
 containers=("$prefix-plain" "$prefix-secure" "$prefix-persistent" "$prefix-transaction")
+port_allocator="$prefix-port"
 cleanup() {
-  "$runtime" rm -f "${containers[@]}" >/dev/null 2>&1 || true
+  "$runtime" rm -f "${containers[@]}" "$port_allocator" >/dev/null 2>&1 || true
   rm -rf "$state"
 }
 trap cleanup EXIT
@@ -31,8 +32,19 @@ openssl pkcs12 -export -inkey "$state/server.key" -in "$state/ca.pem" \
 configs=(/test/server.yaml /test/secure.yaml /state/persistent.yaml /state/transaction.yaml)
 ports=()
 for i in 0 1 2 3; do
+  publish='127.0.0.1::8182'
+  if [ "$i" = 2 ]; then
+    # Docker can assign a different ephemeral host port after stop/start.
+    # Allocate an available port, then pin it for the persistent server so
+    # the restart test and its cleanup retain the same GREMLIN_URI.
+    "$runtime" run -d --name "$port_allocator" -p "$publish" \
+      --entrypoint /bin/sleep "$image" 60 >/dev/null
+    binding="$("$runtime" port "$port_allocator" 8182/tcp)"
+    "$runtime" rm -f "$port_allocator" >/dev/null
+    publish="127.0.0.1:${binding##*:}:8182"
+  fi
   "$runtime" run -d --name "${containers[$i]}" --user 0 --memory=768m \
-    -p 127.0.0.1::8182 -v "$fixtures:/test:ro" -v "$state:/state" \
+    -p "$publish" -v "$fixtures:/test:ro" -v "$state:/state" \
     --entrypoint /opt/gremlin-server/bin/gremlin-server.sh "$image" "${configs[$i]}" >/dev/null
   binding="$("$runtime" port "${containers[$i]}" 8182/tcp)"
   ports+=("${binding##*:}")
