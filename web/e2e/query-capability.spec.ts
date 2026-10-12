@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
+const GRAPHSTORE_PROVIDER = process.env.UMODEL_TEST_GRAPHSTORE ?? 'memory'
+
 async function pickQueryExample(page: Page, name: string) {
   await page.locator('.query-example-trigger').click()
   await page.getByRole('menuitem', { name }).click()
@@ -53,7 +55,7 @@ test.describe('Query capability via UI', () => {
     await page.getByRole('button', { name: 'Explain' }).click()
 
     const explainPanel = page.getByRole('region', { name: 'Explain panel' })
-    await expect(explainPanel.getByText('memory', { exact: true })).toBeVisible({ timeout: 10_000 })
+    await expect(explainPanel.getByText(GRAPHSTORE_PROVIDER, { exact: true })).toBeVisible({ timeout: 10_000 })
   })
 
   test('explorer view renders graph', async ({ page }) => {

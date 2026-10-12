@@ -126,6 +126,12 @@ Neo4j（使用 [NEO4J_* 环境变量](../graphstore-providers.md#neo4j)配置连
 go run ./cmd/umodel-server --addr :8080 --data data --graphstore neo4j
 ```
 
+Gremlin Server（使用 [GREMLIN_* 环境变量](../graphstore-providers.md#gremlin)配置连接）：
+
+```bash
+go run ./cmd/umodel-server --addr :8080 --data data --graphstore gremlin
+```
+
 ## 验证仓库
 
 ```bash

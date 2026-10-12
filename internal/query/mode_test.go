@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 func TestExecuteAcceptsEmptyModeAsPlan(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query: ".umodel | limit 1",
 		Mode:  "",
@@ -21,7 +21,7 @@ func TestExecuteAcceptsEmptyModeAsPlan(t *testing.T) {
 }
 
 func TestExecuteAcceptsExplicitPlanMode(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query: ".umodel | limit 1",
 		Mode:  "plan",
@@ -32,7 +32,7 @@ func TestExecuteAcceptsExplicitPlanMode(t *testing.T) {
 }
 
 func TestExecuteRejectsDataMode(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query: ".umodel | limit 1",
 		Mode:  "data",
@@ -43,7 +43,7 @@ func TestExecuteRejectsDataMode(t *testing.T) {
 }
 
 func TestExecuteRejectsUnknownMode(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query: ".umodel | limit 1",
 		Mode:  "bogus",
@@ -54,7 +54,7 @@ func TestExecuteRejectsUnknownMode(t *testing.T) {
 }
 
 func TestExplainAlsoValidatesMode(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Explain(context.Background(), "demo", model.QueryRequest{
 		Query: ".umodel | limit 1",
 		Mode:  "data",
@@ -68,7 +68,7 @@ func TestExplainAlsoValidatesMode(t *testing.T) {
 // includes structured migration_* keys an AI agent can act on without having
 // to parse the error message.
 func TestModeRejectionCarriesMigrationDetails(t *testing.T) {
-	svc := NewService(graphstore.NewMemoryStore())
+	svc := NewService(graphfixture.New(t))
 	_, err := svc.Execute(context.Background(), "demo", model.QueryRequest{
 		Query: ".umodel | limit 1",
 		Mode:  "data",

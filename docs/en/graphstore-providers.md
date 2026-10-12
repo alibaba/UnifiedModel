@@ -23,6 +23,64 @@ Active provider locations:
 | `file.memory` | JSON files under `--data` | Local demos and development where data should survive process restart without Ladybug; supports the same pure Go read-only Cypher engine as `memory`. `make dev` selects this provider by default. |
 | `local.ladybug` | Ladybug database files | Ladybug-backed provider with graph-match and Cypher passthrough enabled; requires building with `-tags ladybug` and a local Ladybug runtime. |
 | `neo4j` | Remote Neo4j database | Bolt-backed nodes and topology edges; controlled read-only Cypher uses the shared Go engine. No build tag or native runtime required. |
+| `gremlin` | Remote TinkerPop graph | WebSocket-backed vertices and topology edges through Gremlin Server; queries use the shared Go engine. No build tag or native runtime required. |
+
+## `gremlin`
+
+Both `umodel-server` and `umodel-mcp` accept `--graphstore gremlin`. The provider uses synchronous WebSocket requests with GraphSON 3, preserving the Go 1.22 baseline. The endpoint must support `application/vnd.gremlin-v3.0+json`, bound `gremlin-groovy` scripts, and a graph traversal source. `wss://` verifies TLS certificates; optional username/password authentication uses SASL PLAIN. The test fixtures also use the official TinkerPop Go driver over GraphBinary to independently inspect and clean up stored records.
+
+```bash
+export GREMLIN_URI=ws://localhost:8182/gremlin
+export GREMLIN_TRAVERSAL_SOURCE=g
+go run ./cmd/umodel-server --addr :8080 --data data --graphstore gremlin
+```
+
+| Environment variable | `ProviderConfig.Options` key | Default |
+|---|---|---|
+| `GREMLIN_URI` | `uri` | `ws://localhost:8182/gremlin` |
+| `GREMLIN_USERNAME` | `username` | Empty; configure together with password |
+| `GREMLIN_PASSWORD` | `password` | Empty; configure together with username |
+| `GREMLIN_TRAVERSAL_SOURCE` | `traversal_source` | `g` |
+| `GREMLIN_CA_FILE` | `ca_file` | Empty; uses system roots. Optional PEM CA file for `wss://` |
+| `GREMLIN_TIMEOUT` | `timeout` | `10s` for an entire operation, including queueing; accepts `1ms` to `24h` |
+
+Programmatic options override environment variables, including explicitly empty credentials. Credentials belong in the username/password settings rather than the URI. Connection or traversal-source failures stop startup. The account needs graph read/write permissions; backend-specific indexes and constraints remain operator-managed.
+
+Requests are limited to 1 MiB; configure the server's `maxContentLength` accordingly and keep write batches below both limits. Each request is sent in one WebSocket frame; partial result responses are collected until completion. The bundled test server configuration uses 1 MiB.
+
+The provider persists `UModelElement` and `UModelEntity` vertices keyed by `(workspace, key)`, and `UMODEL_RELATION` edges between entity vertices. JSON payload properties preserve nested values and integer precision. Relations can arrive before their entities; placeholder endpoints are excluded from entity reads. `Create`, `Update`, `Expire`, `Delete`, and historical visibility use the same evaluator as `memory`.
+
+**Run one writing provider instance per graph.** Operations within that instance are serialized, and duplicate records are rejected. Separate REST/MCP writers or external writers cannot coordinate through portable Gremlin. Each accepted batch is serialized completely before one bound write script is submitted. Server-side rollback depends on the backend's transaction support and Gremlin Server configuration; non-transactional graphs can retain partial writes after a server failure. An error reports no accepted items and is never automatically retried. Cancellation of an in-flight request closes the provider; reopen the application and inspect remote state before retrying writes whose outcome is unknown.
+
+Query Service continues to accept SPL and controlled read-only Cypher. The provider fetches workspace collections and evaluates them in Go; arbitrary user Gremlin is not exposed, and filters/traversals are not pushed down. Read cost and application memory grow with the workspace collection size.
+
+Workspace metadata remains at `<data-root>/workspaces.json`. Preserve `--data` across application restarts and back it up together with the remote graph. Startup restores derived schema and search indexes from persisted records, including `.runbook_set` and keyword/vector/hyper search routing. The default embedder is `noop`; these tests validate routing and persistence, not embedding quality. Graph persistence across database restarts must be configured in the backend; the default Gremlin Server TinkerGraph example is in memory.
+
+Run an isolated local test server and the opt-in contract/restart suite:
+
+```bash
+docker run -d --name umodel-gremlin-e2e -p 127.0.0.1:18182:8182 \
+  -v "$PWD/tests/fixtures/gremlin:/test:ro" \
+  --entrypoint /opt/gremlin-server/bin/gremlin-server.sh tinkerpop/gremlin-server:3.7.3 /test/server.yaml
+docker logs umodel-gremlin-e2e
+# After Gremlin Server reports that it is listening:
+GREMLIN_URI=ws://localhost:18182/gremlin UMODEL_TEST_GREMLIN=1 make test-gremlin
+docker rm -f umodel-gremlin-e2e
+```
+
+The opt-in suite runs the existing Query Service, REST integration, CLI, MCP stdio/HTTP, golden, GraphStore contract, SDK example, and restart tests on Gremlin. Tests use isolated workspace IDs and clean up only their own records; packages run serially. `graph-match` is not advertised by this provider, and its `PROVIDER_UNSUPPORTED` response is checked. The standard `make test-service` needs no Gremlin Server.
+
+Run the full acceptance matrix, including separate plain, authenticated TLS, persistent, and transaction-capable servers:
+
+```bash
+make test-gremlin-matrix
+# With Podman:
+UMODEL_CONTAINER_RUNTIME=podman make test-gremlin-matrix
+```
+
+The runner creates disposable TLS certificates and credential graphs, verifies bad credentials/untrusted certificates, oversized batches, rollback after a server exception, server disconnection, and database restart with search recovery. It removes only its own containers and temporary files. CI runs this matrix on the official Gremlin Server 3.7.3 image. Rollback is tested on TinkerTransactionGraph; non-transactional TinkerGraph retains the limitation above. Protocol details: [Apache TinkerPop provider protocol](https://tinkerpop.apache.org/docs/3.7.3/dev/provider/).
+
+Earlier contract and application-restart tests also passed against standalone Gremlin Server 3.8.1 with TinkerGraph, using TinkerPop libraries bundled in ArcadeDB 26.9.1. Hosted services and other graph backends still require their own compatibility checks.
 
 ## `neo4j`
 

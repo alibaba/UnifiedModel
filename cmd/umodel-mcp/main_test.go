@@ -8,9 +8,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/alibaba/UnifiedModel/internal/agentgateway"
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
+	"github.com/alibaba/UnifiedModel/tests/testutil"
 )
 
 func TestRunQuickStartPreloadsMCPWorkspace(t *testing.T) {
@@ -47,10 +49,7 @@ func TestEncodeTOONCoversObjectsAndTables(t *testing.T) {
 }
 
 func TestMCPProtocolShapesUseTOONContent(t *testing.T) {
-	app, err := bootstrap.NewAppWithGraphStore(t.TempDir(), graphstore.ProviderConfig{Type: "memory"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	app := testutil.ProviderApp(t, t.TempDir())
 	ctx := context.Background()
 
 	for _, payload := range []string{
@@ -79,10 +78,7 @@ func TestMCPProtocolShapesUseTOONContent(t *testing.T) {
 }
 
 func TestStreamableHTTPBatchSkipsNotifications(t *testing.T) {
-	app, err := bootstrap.NewAppWithGraphStore(t.TempDir(), graphstore.ProviderConfig{Type: "memory"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	app := testutil.ProviderApp(t, t.TempDir())
 	responses, err := handleHTTPPayload(context.Background(), app, "demo", []byte(`[
 		{"jsonrpc":"2.0","method":"notifications/initialized"},
 		{"jsonrpc":"2.0","id":1,"method":"ping"}
@@ -96,10 +92,7 @@ func TestStreamableHTTPBatchSkipsNotifications(t *testing.T) {
 }
 
 func TestStreamableHTTPPostEndpoint(t *testing.T) {
-	app, err := bootstrap.NewAppWithGraphStore(t.TempDir(), graphstore.ProviderConfig{Type: "memory"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	app := testutil.ProviderApp(t, t.TempDir())
 	req := httptest.NewRequest(http.MethodPost, "http://127.0.0.1/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","workspace":"demo"}}`))
 	req.Header.Set("Origin", "http://127.0.0.1")
 	req.Header.Set("MCP-Protocol-Version", "2025-06-18")
@@ -120,5 +113,48 @@ func TestStreamableHTTPPostEndpoint(t *testing.T) {
 	streamableHTTPHandler(context.Background(), app, "demo").ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected invalid protocol header to fail, got %d", rec.Code)
+	}
+}
+
+func TestMCPEnabledWriteToolsUseRealServices(t *testing.T) {
+	app := testutil.ProviderApp(t, t.TempDir(), bootstrap.WithImportRoot("/"))
+	if _, err := app.LoadQuickStart(context.Background(), bootstrap.QuickStartOptions{WorkspaceID: "demo"}); err != nil {
+		t.Fatal(err)
+	}
+	app.AgentGateway = agentgateway.NewService(app.Query, agentgateway.WithWriteToolsEnabled(true), agentgateway.WithWriteServices(app.UModel, app.EntityStore))
+	server := httptest.NewServer(streamableHTTPHandler(context.Background(), app, "demo"))
+	defer server.Close()
+	call := func(tool string, args map[string]any) string {
+		t.Helper()
+		body, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": map[string]any{"workspace": "demo", "name": tool, "arguments": args}})
+		response, err := http.Post(server.URL, "application/json", bytes.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		var result map[string]any
+		if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+			t.Fatal(err)
+		}
+		payload, _ := json.Marshal(result)
+		if response.StatusCode != http.StatusOK || result["error"] != nil || bytes.Contains(payload, []byte(`"isError":true`)) {
+			t.Fatalf("enabled MCP tool %s failed: %s", tool, payload)
+		}
+		return string(payload)
+	}
+	now := time.Now().Unix()
+	id := strings.Repeat("e", 32)
+	written := call("entity_write", map[string]any{"entities": []map[string]any{{"__domain__": "devops", "__entity_type__": "devops.service", "__entity_id__": id, "__method__": "Create", "__first_observed_time__": now, "__last_observed_time__": now, "display_name": "mcp-write-marker"}}})
+	if !strings.Contains(written, `"accepted":1`) {
+		t.Fatalf("MCP entity write did not reach EntityStore: %s", written)
+	}
+	if rows := call("query_spl_execute", map[string]any{"query": ".entity with(query='mcp-write-marker')"}); !strings.Contains(rows, "mcp-write-marker") {
+		t.Fatalf("MCP query lost written entity: %s", rows)
+	}
+	if expired := call("entity_expire", map[string]any{"ids": []string{"devops/devops.service/" + id}}); !strings.Contains(expired, `"accepted":1`) {
+		t.Fatalf("MCP entity expiration failed: %s", expired)
+	}
+	if rows := call("query_spl_execute", map[string]any{"query": ".entity with(query='mcp-write-marker')"}); !strings.Contains(rows, "rows[0]") {
+		t.Fatalf("expired MCP entity remained visible: %s", rows)
 	}
 }

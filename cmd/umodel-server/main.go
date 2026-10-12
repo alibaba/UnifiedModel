@@ -14,7 +14,7 @@ import (
 func main() {
 	addr := flag.String("addr", ":8080", "HTTP listen address")
 	dataRoot := flag.String("data", "data", "UModel data root")
-	provider := flag.String("graphstore", graphstore.DefaultProviderType, "GraphStore provider: local.ladybug, memory, file.memory, or neo4j (configured by NEO4J_* environment variables)")
+	provider := flag.String("graphstore", graphstore.DefaultProviderType, "GraphStore provider: local.ladybug, memory, file.memory, neo4j (NEO4J_*), or gremlin (GREMLIN_*)")
 	uiDir := flag.String("ui-dir", "", "Optional directory containing built UModel web UI assets")
 	quickStart := flag.Bool("quickstart", false, "Create a demo workspace and import bundled quickstart data before serving")
 	quickStartWorkspace := flag.String("quickstart-workspace", bootstrap.DefaultQuickStartWorkspaceID, "Workspace id used by --quickstart")

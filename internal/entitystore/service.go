@@ -94,7 +94,7 @@ func (s *Service) WriteEntities(ctx context.Context, workspace string, batch mod
 		if err != nil {
 			return model.WriteResult{}, err
 		}
-		s.indexEntities(ctx, workspace, valid.Entities, &graphResult)
+		s.indexEntities(ctx, workspace, acceptedEntityPayloads(valid.Entities, graphResult), &graphResult)
 	}
 	result := mergeWriteResults(graphResult, validationResult)
 	if result.Failed > 0 && !batch.PartialSuccess {
@@ -266,6 +266,41 @@ func failedItem(id string, code apperrors.Code, message string, details []model.
 		Message: message,
 		Details: cloneErrorDetails(details),
 	}
+}
+
+// RestoreSearchIndex rebuilds derived search state from persisted entity rows
+// without replaying writes or changing lifecycle fields.
+func (s *Service) RestoreSearchIndex(ctx context.Context, workspace string, payloads []model.EntityPayload) error {
+	if s.search == nil {
+		return nil
+	}
+	chunks, _ := entitySearchIndexBatch(payloads)
+	return s.search.Index(ctx, workspace, chunks)
+}
+
+// Index only successful items, taking the final accepted mutation for each ID.
+// A rejected Create must not overwrite a persisted entity's search document,
+// and Update followed by Delete must not resurrect it in the same batch.
+func acceptedEntityPayloads(payloads []model.EntityPayload, result model.WriteResult) []model.EntityPayload {
+	final := make([]model.EntityPayload, 0, result.Accepted)
+	positions := map[string]int{}
+	for i, payload := range payloads {
+		if len(result.Items) == 0 {
+			if result.Accepted != len(payloads) {
+				continue
+			}
+		} else if i >= len(result.Items) || !result.Items[i].OK {
+			continue
+		}
+		key := model.EntityStableKey(payload)
+		if position, ok := positions[key]; ok {
+			final[position] = payload
+		} else {
+			positions[key] = len(final)
+			final = append(final, payload)
+		}
+	}
+	return final
 }
 
 func (s *Service) indexEntities(ctx context.Context, workspace string, payloads []model.EntityPayload, result *model.WriteResult) {

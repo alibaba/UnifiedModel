@@ -1,5 +1,5 @@
 .PHONY: help check-env install-env setup setup-ui expand doc docs-schema docs-schema-check example-validate check-manifest public-links-check
-.PHONY: test-neo4j
+.PHONY: test-neo4j test-gremlin test-gremlin-matrix
 .PHONY: build build-service build-cli install-cli build-ui build-sdk-go dev quickstart dev-api dev-web deploy serve-ui status stop-all stop-dev stop-deploy test test-service test-ui test-ui-e2e test-capability test-quickstart-health test-ladybug vulncheck verify verify-go verify-python verify-java guard ci clean
 
 VENV_PYTHON := .venv/bin/python
@@ -49,6 +49,8 @@ help:
 	@echo "  serve-ui               Build UI and serve it from umodel-server in the foreground"
 	@echo "  test-ladybug           Run local.ladybug provider and E2E tests when UMODEL_TEST_LADYBUG=1"
 	@echo "  test-neo4j             Run Neo4j provider and E2E tests when UMODEL_TEST_NEO4J=1"
+	@echo "  test-gremlin           Run Gremlin provider and E2E tests when UMODEL_TEST_GREMLIN=1"
+	@echo "  test-gremlin-matrix    Run plain/TLS/auth/transaction/persistence tests on disposable Gremlin servers"
 	@echo "  guard                  Run architecture and public link guards"
 	@echo ""
 	@echo "Schema and SDK assets:"
@@ -161,6 +163,16 @@ test-neo4j:
 	else \
 		go test -race -p 1 -count=1 -run 'Neo4j|OpenCypher' ./internal/graphstore/provider/neo4j ./tests/contract ./tests/e2e; \
 	fi
+
+test-gremlin:
+	@if [ "$$UMODEL_TEST_GREMLIN" != "1" ]; then \
+		echo "Skipping Gremlin integration tests; set UMODEL_TEST_GREMLIN=1 and GREMLIN_* to run them."; \
+	else \
+		UMODEL_TEST_GRAPHSTORE=gremlin go test -race -p 1 -count=1 ./internal/graphstore/provider/gremlin ./internal/query ./cmd/umodel-mcp ./tests/contract ./tests/golden ./tests/integration ./tests/e2e; \
+	fi
+
+test-gremlin-matrix:
+	@bash ./scripts/test-gremlin-matrix.sh
 
 test-ladybug:
 	@if [ "$$UMODEL_TEST_LADYBUG" != "1" ]; then \
