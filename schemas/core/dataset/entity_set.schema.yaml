@@ -41,13 +41,13 @@ versions:
           properties:
             first_observed_time_field:
               description: 
-                zh_cn: Entity 的首次被观测时间所在字段。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
-                en_us: 'The field containing the first observed time of the Entity. See: https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL'
+                zh_cn: Entity 的首次被观测时间所在字段。
+                en_us: 'The field containing the first observed time of the Entity.'
               type: string
             last_observed_time_field:
               description: 
-                zh_cn: Entity 最近被观测时间所在字段。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
-                en_us: 'The field containing the last observed time of the Entity. See: https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL'
+                zh_cn: Entity 最近被观测时间所在字段。
+                en_us: 'The field containing the last observed time of the Entity.'
               type: string
             primary_key_fields:
               description: 
@@ -69,10 +69,10 @@ versions:
                 required: false
             keep_alive_seconds:
               description: 
-                zh_cn: 保持活跃的持续时间，在最后观测时间加上保活秒数后，Entity 将被视为消失。默认为3600秒（1小时）。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
+                zh_cn: 保持活跃的持续时间，在最后观测时间加上保活秒数后，Entity 将被视为消失。默认为3600秒（1小时）。
                 en_us: >
                   The duration to keep active is, after the last observed time plus the keep-alive seconds, the Entity 
-                  will be considered as disappeared. Default is 3600 seconds (1 hour). See: https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
+                  will be considered as disappeared. Default is 3600 seconds (1 hour).
               type: number
               constraint:
                 default_value: 3600

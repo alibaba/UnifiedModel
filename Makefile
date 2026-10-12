@@ -1,4 +1,4 @@
-.PHONY: help check-env install-env setup setup-ui expand doc docs-schema docs-schema-check example-validate check-manifest
+.PHONY: help check-env install-env setup setup-ui expand doc docs-schema docs-schema-check example-validate check-manifest public-links-check
 .PHONY: test-neo4j
 .PHONY: build build-service build-cli install-cli build-ui build-sdk-go dev quickstart dev-api dev-web deploy serve-ui status stop-all stop-dev stop-deploy test test-service test-ui test-ui-e2e test-capability test-quickstart-health test-ladybug vulncheck verify verify-go verify-python verify-java guard ci clean
 
@@ -49,11 +49,12 @@ help:
 	@echo "  serve-ui               Build UI and serve it from umodel-server in the foreground"
 	@echo "  test-ladybug           Run local.ladybug provider and E2E tests when UMODEL_TEST_LADYBUG=1"
 	@echo "  test-neo4j             Run Neo4j provider and E2E tests when UMODEL_TEST_NEO4J=1"
-	@echo "  guard                  Run architecture guard"
+	@echo "  guard                  Run architecture and public link guards"
 	@echo ""
 	@echo "Schema and SDK assets:"
 	@echo "  expand                 Expand schemas and regenerate SDK assets"
 	@echo "  doc                    Generate schema HTML docs"
+	@echo "  public-links-check     Reject private document links in public assets"
 	@echo "  example-validate       Validate example UModel files"
 	@echo "  verify                 Verify generated SDKs"
 	@echo "  verify-go              Verify Go model SDK"
@@ -168,8 +169,12 @@ test-ladybug:
 		go test -tags ladybug ./...; \
 	fi
 
-guard:
+guard: public-links-check
 	@$(PYTHON) ./tools/guards/architecture_guard.py
+
+public-links-check:
+	@$(PYTHON) -m unittest discover -s tools/guards -p 'test_public_link_guard.py'
+	@$(PYTHON) ./tools/guards/public_link_guard.py
 
 expand:
 	@echo "Expanding schemas..."

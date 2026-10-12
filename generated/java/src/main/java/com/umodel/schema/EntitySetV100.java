@@ -66,7 +66,7 @@ public class EntitySetV100 implements UModelCoreObject {
      */
     public static class EntitySetV100Spec extends TelemetryDataV1 {
         /**
-         * Entity 的首次被观测时间所在字段。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
+         * Entity 的首次被观测时间所在字段。
          */
         @JSONField(name = "first_observed_time_field")
         private String firstObservedTimeField;
@@ -80,7 +80,7 @@ public class EntitySetV100 implements UModelCoreObject {
         }
 
         /**
-         * Entity 最近被观测时间所在字段。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
+         * Entity 最近被观测时间所在字段。
          */
         @JSONField(name = "last_observed_time_field")
         private String lastObservedTimeField;
@@ -122,7 +122,7 @@ public class EntitySetV100 implements UModelCoreObject {
         }
 
         /**
-         * 保持活跃的持续时间，在最后观测时间加上保活秒数后，Entity 将被视为消失。默认为3600秒（1小时）。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
+         * 保持活跃的持续时间，在最后观测时间加上保活秒数后，Entity 将被视为消失。默认为3600秒（1小时）。
          */
         @JSONField(name = "keep_alive_seconds")
         private Double keepAliveSeconds;
