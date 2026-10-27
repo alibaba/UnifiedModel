@@ -29,6 +29,7 @@ Documentation root: [docs/README.md](../README.md)
 
 ## Guides
 
+- [Modeling and Entity Relationships Guide](guides/umodel-modeling-and-entity-relations.md) - Comprehensive breakdown of UModel modeling architecture, core relationships, and end-to-end operation examples.
 - [Model Authoring Guide](guides/model-authoring.md)
 - [Entity And Relation Write Guide](guides/entity-relation-writes.md)
 - [Query Service Guide](guides/query-service.md)

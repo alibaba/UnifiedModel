@@ -29,6 +29,7 @@ English: [UModel Documentation](../en/README.md)
 
 ## 使用指南
 
+- [建模体系与实体关系指南](guides/umodel-modeling-and-entity-relations.md) - 全面解析 UModel 建模体系、核心元素与网状拓扑、全流程操作与示例。
 - [模型编写指南](guides/model-authoring.md)
 - [实体与关系写入指南](guides/entity-relation-writes.md)
 - [Query Service 指南](guides/query-service.md)
