@@ -15,6 +15,9 @@ Storage 是 UModel element，描述遥测数据存放在哪里。
 | `sls_metricstore` | SLS MetricStore。 |
 | `sls_entitystore` | SLS 实体数据。 |
 | `aliyun_prometheus` | Prometheus-compatible 指标数据。 |
+| `prometheus` | Prometheus 指标数据。 |
+| `elasticsearch` | Elasticsearch 日志。 |
+| `loki` | 通过 LogQL 计划查询 Loki 流日志与日志派生指标。 |
 | `external_storage` | 内置 provider 之外的存储。 |
 
 示例：
@@ -51,6 +54,8 @@ go run ./cmd/umodel-server --addr :8080 --data data --graphstore file.memory
 ## 分离规则
 
 Storage 定义领域遥测数据组织方式；GraphStore provider 保存并查询 UModel 自身的模型图、实体记录和关系记录。
+
+Loki 模型字段、查询计划和执行方式参见 [Loki Storage 指南](../guides/loki-storage.md)。
 
 ```mermaid
 flowchart LR

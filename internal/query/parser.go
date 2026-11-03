@@ -104,14 +104,17 @@ func planFromAST(req model.QueryRequest, ast AST) model.QueryPlan {
 	}
 
 	limit := defaultLimit
+	limitExplicit := false
 	if topk > 0 {
 		limit = topk
 	}
 	if ast.Limit > 0 {
 		limit = ast.Limit
+		limitExplicit = true
 	}
 	if req.Limit > 0 {
 		limit = req.Limit
+		limitExplicit = true
 	}
 
 	depth := ast.Depth
@@ -120,25 +123,26 @@ func planFromAST(req model.QueryRequest, ast AST) model.QueryPlan {
 	}
 
 	return model.QueryPlan{
-		Source:      ast.Source,
-		Query:       req.Query,
-		Filters:     filters,
-		Operators:   operators,
-		Pipeline:    pipeline,
-		Predicates:  predicates,
-		Project:     project,
-		Sort:        sortSpecs,
-		GraphCall:   graphCall,
-		EntityCall:  entityCall,
-		TopK:        topk,
-		TimeRange:   req.TimeRange,
-		Params:      req.Params,
-		EntityData:  req.EntityFilterData(),
-		Limit:       limit,
-		Depth:       depth,
-		TimeoutMS:   req.TimeoutMS,
-		Format:      req.Format,
-		IncludeSpec: req.IncludeSpec,
+		Source:        ast.Source,
+		Query:         req.Query,
+		Filters:       filters,
+		Operators:     operators,
+		Pipeline:      pipeline,
+		Predicates:    predicates,
+		Project:       project,
+		Sort:          sortSpecs,
+		GraphCall:     graphCall,
+		EntityCall:    entityCall,
+		TopK:          topk,
+		TimeRange:     req.TimeRange,
+		Params:        req.Params,
+		EntityData:    req.EntityFilterData(),
+		Limit:         limit,
+		LimitExplicit: limitExplicit,
+		Depth:         depth,
+		TimeoutMS:     req.TimeoutMS,
+		Format:        req.Format,
+		IncludeSpec:   req.IncludeSpec,
 	}
 }
 

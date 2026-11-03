@@ -1,0 +1,23 @@
+kind: storage_link
+schema:
+  url: umodel.aliyun.com
+  version: v1.0.0
+metadata:
+  name: ops.logs_to_loki
+  domain: ops
+  display_name:
+    en_us: Logs in Loki
+    zh_cn: Loki 中的日志
+spec:
+  src:
+    domain: ops
+    kind: log_set
+    name: ops.node.logs
+  dest:
+    domain: ops
+    kind: loki
+    name: ops.loki
+  fields_mapping:
+    node_id: host
+    environment: env
+    level: severity

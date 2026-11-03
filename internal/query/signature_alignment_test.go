@@ -13,8 +13,7 @@ import (
 // TestGetMetricsAcceptsAggregateAndStorageParams verifies that the parser
 // accepts the aggregate / storage_domain / storage_name / storage_kind named
 // arguments aligned with umodel-assistant's get_metric handler. The
-// open-source planner does not consume them, but they round-trip through
-// params_echo so a downstream executor can act on them.
+// planner consumes storage selectors and echoes them for downstream clients.
 func TestGetMetricsAcceptsAggregateAndStorageParams(t *testing.T) {
 	ctx := context.Background()
 	store := graphfixture.New(t)
@@ -27,7 +26,7 @@ func TestGetMetricsAcceptsAggregateAndStorageParams(t *testing.T) {
 
 	svc := NewService(store)
 	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
-		Query: ".entity_set with(domain='devops', name='devops.service', ids=['svc-1']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s', aggregate=false, storage_domain='alt', storage_name='primary', storage_kind='prometheus')",
+		Query: ".entity_set with(domain='devops', name='devops.service', ids=['svc-1']) | entity-call get_metrics('devops', 'devops.metric.service', 'request_count', step='30s', aggregate=false, storage_domain='devops', storage_name='devops.prometheus.core', storage_kind='prometheus')",
 	})
 	if err != nil {
 		t.Fatalf("execute get_metrics: %v", err)
@@ -41,11 +40,11 @@ func TestGetMetricsAcceptsAggregateAndStorageParams(t *testing.T) {
 	if echo["aggregate"] != false {
 		t.Fatalf("params_echo[aggregate] = %#v, want false", echo["aggregate"])
 	}
-	if echo["storage_domain"] != "alt" {
-		t.Fatalf("params_echo[storage_domain] = %#v, want alt", echo["storage_domain"])
+	if echo["storage_domain"] != "devops" {
+		t.Fatalf("params_echo[storage_domain] = %#v, want devops", echo["storage_domain"])
 	}
-	if echo["storage_name"] != "primary" {
-		t.Fatalf("params_echo[storage_name] = %#v, want primary", echo["storage_name"])
+	if echo["storage_name"] != "devops.prometheus.core" {
+		t.Fatalf("params_echo[storage_name] = %#v, want devops.prometheus.core", echo["storage_name"])
 	}
 	if echo["storage_kind"] != "prometheus" {
 		t.Fatalf("params_echo[storage_kind] = %#v, want prometheus", echo["storage_kind"])
@@ -65,7 +64,7 @@ func TestGetLogsAcceptsStorageParams(t *testing.T) {
 
 	svc := NewService(store)
 	result, err := svc.Execute(ctx, "demo", model.QueryRequest{
-		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"', storage_domain='alt', storage_name='primary', storage_kind='elasticsearch')",
+		Query: ".entity_set with(domain='devops', name='devops.service') | entity-call get_logs('devops', 'devops.log.service', query='level = \"ERROR\"', storage_domain='devops', storage_name='devops.elasticsearch.logs', storage_kind='elasticsearch')",
 	})
 	if err != nil {
 		t.Fatalf("execute get_logs: %v", err)
@@ -76,11 +75,11 @@ func TestGetLogsAcceptsStorageParams(t *testing.T) {
 	if !ok {
 		t.Fatalf("params_echo missing: %+v", plan)
 	}
-	if echo["storage_domain"] != "alt" {
-		t.Fatalf("params_echo[storage_domain] = %#v, want alt", echo["storage_domain"])
+	if echo["storage_domain"] != "devops" {
+		t.Fatalf("params_echo[storage_domain] = %#v, want devops", echo["storage_domain"])
 	}
-	if echo["storage_name"] != "primary" {
-		t.Fatalf("params_echo[storage_name] = %#v, want primary", echo["storage_name"])
+	if echo["storage_name"] != "devops.elasticsearch.logs" {
+		t.Fatalf("params_echo[storage_name] = %#v, want devops.elasticsearch.logs", echo["storage_name"])
 	}
 	if echo["storage_kind"] != "elasticsearch" {
 		t.Fatalf("params_echo[storage_kind] = %#v, want elasticsearch", echo["storage_kind"])

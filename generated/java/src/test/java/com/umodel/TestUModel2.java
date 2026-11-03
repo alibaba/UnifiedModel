@@ -139,6 +139,15 @@ public class TestUModel2 {
     }
 
     @Test
+    public void testParseUModelJsonLoki() {
+        String json = "{\"kind\":\"loki\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_loki\"}}";
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertEquals("loki", obj.getKind());
+        assertTrue(obj instanceof LokiV100);
+    }
+
+    @Test
     public void testParseUModelJsonMetricSet() {
         String json = "{\"kind\":\"metric_set\",\"schema\":{\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_metric_set\"}}";
         UModelCoreObject obj = UModel.parseUModelJson(json);
@@ -293,6 +302,7 @@ public class TestUModel2 {
         assertTrue(UModel.isCoreObject(new ExplorerLinkV100()));
         assertTrue(UModel.isCoreObject(new ExternalStorageV100()));
         assertTrue(UModel.isCoreObject(new LogSetV100()));
+        assertTrue(UModel.isCoreObject(new LokiV100()));
         assertTrue(UModel.isCoreObject(new MetricSetV100()));
         assertTrue(UModel.isCoreObject(new MysqlV100()));
         assertTrue(UModel.isCoreObject(new ProfileSetV100()));
@@ -324,6 +334,7 @@ public class TestUModel2 {
         assertTrue(UModel.isLinkObject(new ExplorerLinkV100()));
         assertFalse(UModel.isLinkObject(new ExternalStorageV100()));
         assertFalse(UModel.isLinkObject(new LogSetV100()));
+        assertFalse(UModel.isLinkObject(new LokiV100()));
         assertFalse(UModel.isLinkObject(new MetricSetV100()));
         assertFalse(UModel.isLinkObject(new MysqlV100()));
         assertFalse(UModel.isLinkObject(new ProfileSetV100()));
