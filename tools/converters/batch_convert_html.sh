@@ -62,9 +62,9 @@ esac
 print_info "批量转换 YAML 文件为 HTML ($LANGUAGE_MODE 模式)"
 print_info "========================================"
 
-# cd 当前脚本所在目录
+# cd 到项目根目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/../"
+cd "$SCRIPT_DIR/../../"
 
 # echo 当前目录
 print_info "当前目录: $PWD"
@@ -77,20 +77,20 @@ if [ ! -d "scripts" ] || [ ! -d "expanded_schemas" ]; then
     exit 1
 fi
 
+# 检查必要的文件和目录
+if [ ! -f "./tools/converters/yaml_to_html.py" ]; then
+    print_error "转换脚本不存在: ./tools/converters/yaml_to_html.py"
+    exit 1
+fi
+
+if [ ! -d "./expanded_schemas" ]; then
+    print_error "源目录不存在: ./expanded_schemas"
+    exit 1
+fi
+
 # 切换到 scripts 目录
 print_info "切换到 scripts 目录..."
 cd scripts
-
-# 检查必要的文件和目录
-if [ ! -f "./converters/yaml_to_html.py" ]; then
-    print_error "转换脚本不存在: ./converters/yaml_to_html.py"
-    exit 1
-fi
-
-if [ ! -d "../expanded_schemas" ]; then
-    print_error "源目录不存在: ../expanded_schemas"
-    exit 1
-fi
 
 # 根据语言模式确定输出目录
 case "$LANGUAGE_MODE" in
@@ -153,7 +153,7 @@ for yaml_file in ../expanded_schemas/*.expanded.yaml; do
     print_info "转换: $filename.expanded.yaml -> $filename.html ($LANGUAGE_MODE)"
     
     # 执行转换
-    if "$PYTHON_BIN" ./converters/yaml_to_html.py "$yaml_file" -o "$html_file" -l "$LANGUAGE_MODE"; then
+    if "$PYTHON_BIN" ../tools/converters/yaml_to_html.py "$yaml_file" -o "$html_file" -l "$LANGUAGE_MODE"; then
         print_success "✓ 转换成功: $filename.html"
         ((++success_count))
     else
@@ -167,7 +167,7 @@ done
 
 # 生成索引文件
 print_info "生成索引文件..."
-"$PYTHON_BIN" ./converters/generate_index.py -l "$LANGUAGE_MODE" -d "$OUTPUT_DIR"
+"$PYTHON_BIN" ../tools/converters/generate_index.py -l "$LANGUAGE_MODE" -d "$OUTPUT_DIR"
 print_success "索引文件生成完成"
 
 # 返回项目根目录
