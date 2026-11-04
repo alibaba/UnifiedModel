@@ -111,6 +111,20 @@ func applyConstraints(value any, c *Constraint, propType string, path string, re
 			})
 		}
 	}
+	if n, ok := floatFromAny(value); ok {
+		if c.MinValue != nil && n < *c.MinValue {
+			res.Errors = append(res.Errors, Issue{
+				Path:   path,
+				Reason: fmt.Sprintf("value %v is below min_value %v", n, *c.MinValue),
+			})
+		}
+		if c.MaxValue != nil && n > *c.MaxValue {
+			res.Errors = append(res.Errors, Issue{
+				Path:   path,
+				Reason: fmt.Sprintf("value %v exceeds max_value %v", n, *c.MaxValue),
+			})
+		}
+	}
 	if arr, ok := value.([]any); ok && c.Array != nil {
 		if c.Array.MinSize != nil && len(arr) < *c.Array.MinSize {
 			res.Errors = append(res.Errors, Issue{

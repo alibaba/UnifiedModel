@@ -2,40 +2,41 @@
 
 ## 📊 统计信息
 - 共处理schema文件: 25
-- 共加载类型定义: 43
+- 共加载类型定义: 46
 
 ## 📋 处理的Schema列表
-- **entity_set**: 1 个版本
+- **event_set**: 1 个版本
+- **log_set**: 1 个版本
 - **trace_set**: 1 个版本
 - **runbook_set**: 1 个版本
-- **explorer**: 1 个版本
-- **metric_set**: 1 个版本
-- **event_set**: 1 个版本
-- **entity_source**: 1 个版本
 - **profile_set**: 1 个版本
-- **log_set**: 1 个版本
-- **clickhouse**: 1 个版本
-- **aliyun_prometheus**: 1 个版本
-- **mysql**: 1 个版本
-- **sls_entitystore**: 1 个版本
-- **elasticsearch**: 1 个版本
-- **sls_logstore**: 1 个版本
-- **external_storage**: 1 个版本
-- **prometheus**: 1 个版本
-- **victoriametrics**: 1 个版本
-- **sls_metricstore**: 1 个版本
-- **explorer_link**: 1 个版本
+- **explorer**: 1 个版本
+- **entity_source**: 1 个版本
+- **entity_set**: 1 个版本
+- **metric_set**: 1 个版本
+- **entity_set_link**: 1 个版本
 - **runbook_link**: 1 个版本
 - **data_link**: 1 个版本
-- **storage_link**: 1 个版本
 - **entity_source_link**: 1 个版本
-- **entity_set_link**: 1 个版本
+- **storage_link**: 1 个版本
+- **explorer_link**: 1 个版本
+- **external_storage**: 1 个版本
+- **victoriametrics**: 1 个版本
+- **aliyun_prometheus**: 1 个版本
+- **sls_logstore**: 1 个版本
+- **sls_entitystore**: 1 个版本
+- **clickhouse**: 1 个版本
+- **prometheus**: 1 个版本
+- **mysql**: 1 个版本
+- **elasticsearch**: 1 个版本
+- **sls_metricstore**: 1 个版本
 
 ## 🔗 可用的类型定义
 - **action_config**: action_config:v1
 - **aliyun_prometheus**: aliyun_prometheus:v1.0.0
 - **automation_config**: automation_config:v1
 - **clickhouse**: clickhouse:v1.0.0
+- **confidence**: confidence:v1
 - **constraint_type**: constraint_type:v1
 - **data_link**: data_link:v1.0.0
 - **elasticsearch**: elasticsearch:v1.0.0
@@ -54,6 +55,7 @@
 - **metadata**: metadata:v1
 - **metric**: metric:v1
 - **metric_set**: metric_set:v1.0.0
+- **model_binding**: model_binding:v1
 - **mysql**: mysql:v1.0.0
 - **observation**: observation:v1
 - **parameter_config**: parameter_config:v1
@@ -69,6 +71,7 @@
 - **sls_metricstore**: sls_metricstore:v1.0.0
 - **storage_link**: storage_link:v1.0.0
 - **telemetry_data**: telemetry_data:v1
+- **term**: term:v1
 - **tool**: tool:v1
 - **tool_parameter_config**: tool_parameter_config:v1
 - **toolkit**: toolkit:v1
