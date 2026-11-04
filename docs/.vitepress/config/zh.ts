@@ -3,6 +3,7 @@ import schemaSidebar from './schema-sidebar.json'
 
 const nav: DefaultTheme.NavItem[] = [
   { text: '指南', link: '/zh/getting-started/quickstart', activeMatch: '/zh/(getting-started|concepts|guides|architecture)/' },
+  { text: '最佳实践', link: '/zh/best-practices/', activeMatch: '/zh/best-practices/' },
   { text: '参考', link: '/zh/reference/cli', activeMatch: '/zh/reference/' },
   {
     text: '示例',
@@ -49,6 +50,15 @@ const sidebar: DefaultTheme.SidebarItem[] = [
       { text: 'Web UI', link: '/zh/guides/web-ui' },
       { text: 'SDK 与客户端', link: '/zh/guides/sdk-clients' },
       { text: 'Agent 集成', link: '/zh/guides/agent-integration' },
+    ],
+  },
+  {
+    text: '最佳实践',
+    collapsed: true,
+    items: [
+      { text: '概览', link: '/zh/best-practices/' },
+      { text: '稳定、按域限定的身份', link: '/zh/best-practices/stable-identity' },
+      { text: '用 AI Agent 读取对象图', link: '/zh/best-practices/agent-reads-the-object-graph' },
     ],
   },
   {
