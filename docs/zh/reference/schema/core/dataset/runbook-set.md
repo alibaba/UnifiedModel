@@ -16,3 +16,4 @@ RunbookSet 用于定义实体、数据的操作手册集合，包含分析工具
 | `knowledge` | array&lt;object&gt; |  |  | 知识库配置列表 |
 | `automations` | array&lt;object&gt; |  |  | 自动化配置列表 |
 | `skills` | array&lt;object&gt; |  |  | 技能配置列表，遵循 Agent Skills 规范 |
+| `terms` | array&lt;[term](../../shared-types#term)&gt; |  |  | 术语定义列表，承载可复用、可被引用的业务或技术术语。 |

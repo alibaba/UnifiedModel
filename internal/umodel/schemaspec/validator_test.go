@@ -209,6 +209,36 @@ func TestValidateEntitySetMinimalSpecAccepted(t *testing.T) {
 	}
 }
 
+func TestValidateRunbookSetTerms(t *testing.T) {
+	v := schemaspec.DefaultValidator()
+	el := model.UModelElement{
+		Kind: "runbook_set", Domain: "demo", Name: "demo.ops",
+		Spec: map[string]any{
+			"terms": []any{map[string]any{
+				"name": "retry_storm",
+				"confidence": map[string]any{
+					"score":  101,
+					"status": "manually_applied",
+				},
+				"model_bindings": []any{map[string]any{
+					"domain": "demo",
+					"kind":   "entity_set",
+				}},
+			}},
+		},
+	}
+	res, err := v.Validate(el)
+	if err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+	if !hasErrorAt(res, "spec.terms[0].confidence.score", "max_value") {
+		t.Errorf("expected confidence score maximum error, got %+v", res.Errors)
+	}
+	if !hasErrorAt(res, "spec.terms[0].model_bindings[0].name", "required") {
+		t.Errorf("expected required model binding name error, got %+v", res.Errors)
+	}
+}
+
 func TestValidateRequiredMissingForEmptyValue(t *testing.T) {
 	// "required" should also fire when the value is nil, not just when the key
 	// is absent. Use entity_set_link.src=nil.

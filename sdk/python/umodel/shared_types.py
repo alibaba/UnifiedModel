@@ -55,49 +55,27 @@ class ConstraintTypeV1Advanced:
     expression: Optional['ConstraintTypeV1AdvancedExpression'] = None
 
 @dataclass
-class AutomationConfigV1Trigger:
-    """触发条件配置。"""
-    # 触发条件类型，如 scheduled（定期触发）、event（事件触发）、custom（自定义触发）等。
-    trigger_type: Optional[str] = None
-    # 触发条件相关属性配置，根据type类型自由扩展。
-    properties: Optional[Dict[str, str]] = None
-
-@dataclass
-class SkillConfigV1FilesItem:
-    """SkillConfigV1FilesItem inline class"""
-    # 文件名称，包含相对路径（如 SKILL.md、scripts/extract.py、references/REFERENCE.md）。
-    name: Optional[str] = None
-    # 文件内容。
-    content: Optional[str] = None
-
-@dataclass
-class LinkV1Src:
-    """源 Set 的标识。值不能为空。"""
-    # 源 Set 的域。
-    domain: Optional[str] = None
-    # 源 Set 的类型。值不能为空。
-    kind: Optional[str] = None
-    # 源 Set 的名称。值不能为空。
-    name: Optional[str] = None
-    # 对于源 Set 的过滤器，用于部分 Link 的场景，例如 EntitySet 中只有"region=cn-beijing"的实体存在此关联。该方式已废弃，请使用 filter_by_entity 替代。
-    filter: Optional[str] = None
-
-@dataclass
-class LinkV1Dest:
-    """目标 Set 的标识。值不能为空。"""
-    # 目标 Set 的域。
-    domain: Optional[str] = None
-    # 目标 Set 的类型。值不能为空。
-    kind: Optional[str] = None
-    # 目标 Set 的名称。值不能为空。
-    name: Optional[str] = None
-
-@dataclass
 class KnowledgeConfigV1ApplyPolicy:
     """知识如何应用的配置。"""
     # 应用策略，如auto（自动）、manual（手动）、always（总是）、custom（自定义）等。
     apply_type: Optional[str] = None
     # 应用相关属性配置，根据 custom 类型自由扩展。
+    properties: Optional[Dict[str, str]] = None
+
+@dataclass
+class MetadataV1CommonSchemaInfo:
+    """背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外..."""
+    # CommonSchema的Group信息
+    group: Optional[str] = None
+    # CommonSchema的版本号
+    version: Optional[str] = None
+
+@dataclass
+class AutomationConfigV1Trigger:
+    """触发条件配置。"""
+    # 触发条件类型，如 scheduled（定期触发）、event（事件触发）、custom（自定义触发）等。
+    trigger_type: Optional[str] = None
+    # 触发条件相关属性配置，根据type类型自由扩展。
     properties: Optional[Dict[str, str]] = None
 
 @dataclass
@@ -133,12 +111,34 @@ class ObservationV1ConclusionsItem:
     properties: Optional[Dict[str, str]] = None
 
 @dataclass
-class MetadataV1CommonSchemaInfo:
-    """背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外..."""
-    # CommonSchema的Group信息
-    group: Optional[str] = None
-    # CommonSchema的版本号
-    version: Optional[str] = None
+class LinkV1Src:
+    """源 Set 的标识。值不能为空。"""
+    # 源 Set 的域。
+    domain: Optional[str] = None
+    # 源 Set 的类型。值不能为空。
+    kind: Optional[str] = None
+    # 源 Set 的名称。值不能为空。
+    name: Optional[str] = None
+    # 对于源 Set 的过滤器，用于部分 Link 的场景，例如 EntitySet 中只有"region=cn-beijing"的实体存在此关联。该方式已废弃，请使用 filter_by_entity 替代。
+    filter: Optional[str] = None
+
+@dataclass
+class LinkV1Dest:
+    """目标 Set 的标识。值不能为空。"""
+    # 目标 Set 的域。
+    domain: Optional[str] = None
+    # 目标 Set 的类型。值不能为空。
+    kind: Optional[str] = None
+    # 目标 Set 的名称。值不能为空。
+    name: Optional[str] = None
+
+@dataclass
+class SkillConfigV1FilesItem:
+    """SkillConfigV1FilesItem inline class"""
+    # 文件名称，包含相对路径（如 SKILL.md、scripts/extract.py、references/REFERENCE.md）。
+    name: Optional[str] = None
+    # 文件内容。
+    content: Optional[str] = None
 
 
 if TYPE_CHECKING:
@@ -185,6 +185,116 @@ class ConstraintTypeV1(UModelObject):
         return 'constraint_type'
 
 @dataclass
+class TelemetryDataV1(UModelObject):
+    """telemetry_data class"""
+    # 可观测数据的字段列表。
+    fields: Optional[List[Optional['FieldSpecV1']]] = None
+    # 可观测数据的时间字段。一般要求时间字段为时间戳类型，支持秒、毫秒、微秒、纳秒。
+    time_field: Optional[str] = None
+    # 注意：定位和 `name_fields` 有一定重叠，字段已废弃，请使用 `name_fields` 字段第一个值替代。可观测数据的显示字段。即默认展示的字段。
+    display_field: Optional[str] = None
+    # 可观测数据的显示字段。建议按照显示重要性配置先后顺序，前端、算法等在各类场景会根据特点自由选择，例如极窄/引用场景下只取name_fields的第一个值。 例如：服务操作实体，建议取值为 ["operation_name", "service_nam...
+    name_fields: Optional[List[str]] = None
+    # 可观测数据的隐藏字段。即不用作展示的字段。
+    hidden_fields: Optional[List[str]] = None
+    # 可观测数据的标签字段。标签字段默认聚合在一起显示和分析。
+    tag_fields: Optional[List[str]] = None
+    # 可观测数据的排序字段。即当前数据集的排序字段。
+    ordered_fields: Optional[List[str]] = None
+    # 可观测数据的默认排序。默认值为 asc。
+    default_order: Optional[str] = None
+
+    def get_kind(self) -> str:
+        return 'telemetry_data'
+
+@dataclass
+class ActionConfigV1(UModelObject):
+    """action_config class"""
+    # 操作名称，在同一个RunbookSet中必须唯一。
+    name: Optional[str] = None
+    # 操作显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 操作简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 操作详细描述信息。
+    description: Optional['SemanticStringV1'] = None
+    # 操作类型，例如pop_api、mcp、api_call、script、webhook等。
+    action_type: Optional[str] = None
+    # 操作参数配置列表。
+    inputs: Optional[List[Optional['ParameterConfigV1']]] = None
+    # 操作输出配置列表。
+    outputs: Optional[List[Optional['ParameterConfigV1']]] = None
+    # 是否需要确认才能执行操作。
+    confirmation_required: Optional[bool] = None
+    # 操作的风险等级。
+    risk_level: Optional[str] = None
+    # 详细配置信息，用于配置不同类型操作的详细信息
+    properties: Optional[Dict[str, str]] = None
+    # 操作标签。
+    tags: Optional[Dict[str, str]] = None
+
+    def get_kind(self) -> str:
+        return 'action_config'
+
+@dataclass
+class KnowledgeConfigV1(UModelObject):
+    """knowledge_config class"""
+    # 知识项名称，在同一个RunbookSet中必须唯一。
+    name: Optional[str] = None
+    # 知识项显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 知识项简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 知识项详细描述信息。
+    description: Optional['SemanticStringV1'] = None
+    # 知识如何应用的配置。
+    apply_policy: Optional['KnowledgeConfigV1ApplyPolicy'] = None
+    # 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
+    content_type: Optional[str] = None
+    # 知识内容，根据content_type可以是文本内容或URL地址。
+    content: Optional[str] = None
+    # 知识内容的外部URL地址。
+    content_url: Optional[str] = None
+    # 知识项优先级，用于排序显示以及模型推理时选择。
+    priority: Optional[int] = None
+    # 最后更新时间。
+    last_updated: Optional[datetime] = None
+    # 知识项标签。
+    tags: Optional[Dict[str, str]] = None
+
+    def get_kind(self) -> str:
+        return 'knowledge_config'
+
+@dataclass
+class MetadataV1(UModelObject):
+    """metadata class"""
+    # 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+    name: Optional[str] = None
+    # 元素在 UModel 系统中的显示名称。值不能为空。
+    display_name: Optional['SemanticStringV1'] = None
+    # 元素在 UModel 系统中的描述。
+    description: Optional['SemanticStringV1'] = None
+    # 元素在 UModel系统中的简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 域。值格式为'domain.domain'。可以以点连接。
+    domain: Optional[str] = None
+    # 元素的发布阶段。默认值为 preview。
+    launch_stage: Optional[str] = None
+    # 元素在UModel系统中的图标。值格式为'url'。
+    icon: Optional[str] = None
+    # 用于表示该元素唯一标识。
+    uri: Optional[str] = None
+    # 用于表示该元素的标签。
+    tags: Optional[Dict[str, str]] = None
+    # 用于表示该元素的附加属性。
+    properties: Optional[Dict[str, str]] = None
+    # 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
+    common_schema_info: Optional['MetadataV1CommonSchemaInfo'] = None
+
+    def get_kind(self) -> str:
+        return 'metadata'
+
+@dataclass
 class AutomationConfigV1(UModelObject):
     """automation_config class"""
     # 自动化项名称，在同一个RunbookSet中必须唯一。
@@ -206,6 +316,236 @@ class AutomationConfigV1(UModelObject):
 
     def get_kind(self) -> str:
         return 'automation_config'
+
+@dataclass
+class ObservationV1(UModelObject):
+    """observation class"""
+    # 观察名称，在同一个RunbookSet中必须唯一。
+    name: Optional[str] = None
+    # 观察显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 观察简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 观察详细描述信息。
+    description: Optional['SemanticStringV1'] = None
+    # 现象定义，描述要观察什么以及如何观察。
+    phenomenon: Optional['ObservationV1Phenomenon'] = None
+    # 结论配置列表，根据现象观察结果进行判断。
+    conclusions: Optional[List[Optional['ObservationV1ConclusionsItem']]] = None
+    # 观察属性配置。
+    properties: Optional[Dict[str, str]] = None
+    # 观察标签。
+    tags: Optional[Dict[str, str]] = None
+
+    def get_kind(self) -> str:
+        return 'observation'
+
+@dataclass
+class ValueMappingV1(UModelObject):
+    """value_mapping class"""
+    # 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+    name: Optional[str] = None
+    # 在 UModel 系统中的显示名称。值不能为空。
+    display_name: Optional['SemanticStringV1'] = None
+    # 在 UModel 系统中的描述。
+    description: Optional['SemanticStringV1'] = None
+    # 在 UModel 系统中的简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+
+    def get_kind(self) -> str:
+        return 'value_mapping'
+
+@dataclass
+class ConfidenceV1(UModelObject):
+    """confidence class"""
+    # 语义置信度分数，范围 0-100。
+    score: Optional[int] = None
+    # 语义定义的应用状态，按优先级从高到低依次为人工确认应用、系统自动应用和尚未应用。
+    status: Optional[str] = None
+    # 置信度来源。
+    source: Optional[str] = None
+    # 形成该置信度所依据的主要证据类型，只记录类别，不记录证据明细。
+    basis: Optional[List[Optional[str]]] = None
+    # 简短说明为什么给出该置信度。
+    reason: Optional[str] = None
+
+    def get_kind(self) -> str:
+        return 'confidence'
+
+@dataclass
+class MetricV1(UModelObject):
+    """metric class"""
+    # 指标的名称。值不能为空。
+    name: Optional[str] = None
+    # 指标的显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 指标的描述。值格式为语义字符串。
+    description: Optional['SemanticStringV1'] = None
+    # 指标的简短描述。值格式为语义字符串。
+    short_description: Optional['SemanticStringV1'] = None
+    # 元素的发布阶段。默认值为 preview。
+    launch_stage: Optional[str] = None
+    # 指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format 即可满足需求，unit 填写为空即可。 若不满...
+    unit: Optional[str] = None
+    # 指标的格式化方式，值格式为字符串。支持的格式化选项： 数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000 存储格式化： - byte: 处理为字节格式，样例：B/KB...
+    data_format: Optional[str] = None
+    # 字段的最大值。值可以为空。仅适用于整数和浮点类型。
+    max_value: Optional[float] = None
+    # 字段的最小值。值可以为空。仅适用于整数和浮点类型。
+    min_value: Optional[float] = None
+    # 字段的默认值。值可以为空。
+    default_value: Optional[Any] = None
+    # 用于表示该指标的图标。
+    icon: Optional[str] = None
+    # 用于表示该指标自身额外的标签。即在 MetricSet 的标签基础上，该指标还具有的额外标签。
+    labels: Optional[List[Optional['FieldSpecV1']]] = None
+    # 是否为黄金指标。
+    golden_metric: Optional[bool] = None
+    # 指标的生成方式，如果是 PromMode，该字段为 PromQL语句，能够执行并得到一个可直接使用的 Measure 类型指标。 例如：rate(request_count{}[1m])，在一些场景下结合 aggregator 字段，能够计算出聚合维...
+    generator: Optional[str] = None
+    # 指标的聚合方式。如果指标本身是聚合的，且聚合方式在多种维度组合下均一致，则不需要配置次字段，其他情况需要配置。一些示例场景如下： 1. Prometheus指标和Metric从时间线维度相同 1.1 rate(cpu_usage_seconds_to...
+    aggregator: Optional[str] = None
+    # 指标的间隔，值格式为整数或整数数组，单位为微秒。 - 当为单个整数时：表示固定的采集间隔 - 当为整数数组时：表示多个采集间隔，用于支持不同精度的数据采集
+    interval_us: Optional[Any] = None
+    # 指标的类型。对于无需二次处理的指标，该字段应固定为 gauge。
+    type: Optional[str] = None
+    # 指标期望的查询模式。值必须是以下之一：range, instant, both。
+    query_mode: Optional[str] = None
+    # 指标的显示类型。当前未使用。
+    display_type: Optional[str] = None
+    # 生成该指标时的统计方式，即该指标有多种生成方式。当前仅在基础云监控场景下使用。
+    statistics: Optional[List[str]] = None
+    # 用于表示该指标的标签。
+    tags: Optional[Dict[str, str]] = None
+    # 用于表示该指标的附加属性。
+    properties: Optional[Dict[str, str]] = None
+    # 指标的默认填充策略。 值可以是 null, 0, last, next。
+    default_fill_policy: Optional[str] = None
+
+    def get_kind(self) -> str:
+        return 'metric'
+
+@dataclass
+class ToolParameterConfigV1(UModelObject):
+    """tool_parameter_config class"""
+    # 参数属性定义，键为参数名称，值为参数定义对象。
+    properties: Optional[Dict[str, Any]] = None
+    # 必填参数名称列表。
+    required: Optional[List[str]] = None
+
+    def get_kind(self) -> str:
+        return 'tool_parameter_config'
+
+@dataclass
+class FieldSpecV1(UModelObject):
+    """field_spec class"""
+    # Field 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+    name: Optional[str] = None
+    # Field 在 UModel 系统中的显示名称。值不能为空。
+    display_name: Optional['SemanticStringV1'] = None
+    # Field 在 UModel 系统中的描述。
+    description: Optional['SemanticStringV1'] = None
+    # Field 在 UModel 系统中的简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 元素的发布阶段。默认值为 preview。
+    launch_stage: Optional[str] = None
+    # 字段的类型。值必须是以下之一：string、integer、float、boolean、time、json_object、json_array。值不能为空。
+    type: Optional[str] = None
+    # 对于枚举值的映射和解释，为了更好的展示映射值含义，对于 mapping 的 value 字段单独定义，value 包含4个字段："name"、"display_name"、"description"和"short_description"。例如，"s...
+    value_mapping: Optional[Dict[str, Optional['ValueMappingV1']]] = None
+    # 指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format 即可满足需求，unit 填写为空即可。 若不满...
+    unit: Optional[str] = None
+    # 指标的格式化方式，值格式为字符串。支持的格式化选项： 数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000 存储格式化： - byte: 处理为字节格式，样例：B/KB...
+    data_format: Optional[str] = None
+    # 用于表示字段是否可分析，即作为Group By的列。默认值为false。
+    analysable: Optional[bool] = None
+    # 用于表示字段是否可过滤，即支持索引过滤。默认值为false。
+    filterable: Optional[bool] = None
+    # 用于表示字段是否可排序。默认值为false。
+    orderable: Optional[bool] = None
+    # 用于表示字段的默认排序顺序。值必须是以下之一：asc、desc。默认值为asc。
+    default_order: Optional[str] = None
+    # 正则表达式，用于定义字段的值范围（字符串）。
+    pattern: Optional[str] = None
+    # 字符串值的最大长度。仅适用于字符串类型。
+    max_length: Optional[int] = None
+    # 字段值的示例。值可以为空。
+    example: Optional[Any] = None
+    # 字段的最大值。值可以为空。仅适用于整数和浮点类型。
+    max_value: Optional[float] = None
+    # 字段的最小值。值可以为空。仅适用于整数和浮点类型。
+    min_value: Optional[float] = None
+    # 字段的默认值。值可以为空。
+    default_value: Optional[Any] = None
+    # Field 在 UModel 系统中的图标。值格式为'url'。
+    icon: Optional[str] = None
+    # 用于表示该字段唯一标识。
+    uri: Optional[str] = None
+    # 用于表示该 Field 的标签。
+    tags: Optional[Dict[str, str]] = None
+    # 用于表示该 Field 的附加属性。
+    properties: Optional[Dict[str, str]] = None
+
+    def get_kind(self) -> str:
+        return 'field_spec'
+
+@dataclass
+class ParameterConfigV1(UModelObject):
+    """parameter_config class"""
+    # 参数名称。
+    name: Optional[str] = None
+    # 参数显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 参数描述信息。
+    description: Optional['SemanticStringV1'] = None
+    # 参数类型。
+    type: Optional[str] = None
+    # 是否为必填参数。
+    required: Optional[bool] = None
+    # 参数默认值。
+    default: Optional[str] = None
+
+    def get_kind(self) -> str:
+        return 'parameter_config'
+
+@dataclass
+class LinkV1(UModelObject):
+    """link class"""
+    # 源 Set 的标识。值不能为空。
+    src: Optional['LinkV1Src'] = None
+    # 目标 Set 的标识。值不能为空。
+    dest: Optional['LinkV1Dest'] = None
+    # 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
+    filter_by_entity: Optional[str] = None
+    # Link 的优先级。值可以为空。默认值为5。
+    priority: Optional[int] = None
+
+    def get_kind(self) -> str:
+        return 'link'
+
+@dataclass
+class SchemaV1(UModelObject):
+    """schema class"""
+    # Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
+    url: Optional[str] = None
+    # Schema 的版本。命名格式为 "v1.2.3"。
+    version: Optional[str] = None
+
+    def get_kind(self) -> str:
+        return 'schema'
+
+@dataclass
+class ModelBindingV1(UModelObject):
+    """model_binding class"""
+    # 模型所属域，对应目标 Set 的 metadata.domain。
+    domain: Optional[str] = None
+    # 模型类型，如 log_set、metric_set、event_set、entity_set。
+    kind: Optional[str] = None
+    # 模型名称，对应目标 Set 的 metadata.name。
+    name: Optional[str] = None
+
+    def get_kind(self) -> str:
+        return 'model_binding'
 
 @dataclass
 class SkillConfigV1(UModelObject):
@@ -264,316 +604,6 @@ class ToolkitV1(UModelObject):
         return 'toolkit'
 
 @dataclass
-class FieldSpecV1(UModelObject):
-    """field_spec class"""
-    # Field 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-    name: Optional[str] = None
-    # Field 在 UModel 系统中的显示名称。值不能为空。
-    display_name: Optional['SemanticStringV1'] = None
-    # Field 在 UModel 系统中的描述。
-    description: Optional['SemanticStringV1'] = None
-    # Field 在 UModel 系统中的简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 元素的发布阶段。默认值为 preview。
-    launch_stage: Optional[str] = None
-    # 字段的类型。值必须是以下之一：string、integer、float、boolean、time、json_object、json_array。值不能为空。
-    type: Optional[str] = None
-    # 对于枚举值的映射和解释，为了更好的展示映射值含义，对于 mapping 的 value 字段单独定义，value 包含4个字段："name"、"display_name"、"description"和"short_description"。例如，"s...
-    value_mapping: Optional[Dict[str, Optional['ValueMappingV1']]] = None
-    # 指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format 即可满足需求，unit 填写为空即可。 若不满...
-    unit: Optional[str] = None
-    # 指标的格式化方式，值格式为字符串。支持的格式化选项： 数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000 存储格式化： - byte: 处理为字节格式，样例：B/KB...
-    data_format: Optional[str] = None
-    # 用于表示字段是否可分析，即作为Group By的列。默认值为false。
-    analysable: Optional[bool] = None
-    # 用于表示字段是否可过滤，即支持索引过滤。默认值为false。
-    filterable: Optional[bool] = None
-    # 用于表示字段是否可排序。默认值为false。
-    orderable: Optional[bool] = None
-    # 用于表示字段的默认排序顺序。值必须是以下之一：asc、desc。默认值为asc。
-    default_order: Optional[str] = None
-    # 正则表达式，用于定义字段的值范围（字符串）。
-    pattern: Optional[str] = None
-    # 字符串值的最大长度。仅适用于字符串类型。
-    max_length: Optional[int] = None
-    # 字段值的示例。值可以为空。
-    example: Optional[Any] = None
-    # 字段的最大值。值可以为空。仅适用于整数和浮点类型。
-    max_value: Optional[float] = None
-    # 字段的最小值。值可以为空。仅适用于整数和浮点类型。
-    min_value: Optional[float] = None
-    # 字段的默认值。值可以为空。
-    default_value: Optional[Any] = None
-    # Field 在 UModel 系统中的图标。值格式为'url'。
-    icon: Optional[str] = None
-    # 用于表示该字段唯一标识。
-    uri: Optional[str] = None
-    # 用于表示该 Field 的标签。
-    tags: Optional[Dict[str, str]] = None
-    # 用于表示该 Field 的附加属性。
-    properties: Optional[Dict[str, str]] = None
-
-    def get_kind(self) -> str:
-        return 'field_spec'
-
-@dataclass
-class LinkV1(UModelObject):
-    """link class"""
-    # 源 Set 的标识。值不能为空。
-    src: Optional['LinkV1Src'] = None
-    # 目标 Set 的标识。值不能为空。
-    dest: Optional['LinkV1Dest'] = None
-    # 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
-    filter_by_entity: Optional[str] = None
-    # Link 的优先级。值可以为空。默认值为5。
-    priority: Optional[int] = None
-
-    def get_kind(self) -> str:
-        return 'link'
-
-@dataclass
-class ValueMappingV1(UModelObject):
-    """value_mapping class"""
-    # 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-    name: Optional[str] = None
-    # 在 UModel 系统中的显示名称。值不能为空。
-    display_name: Optional['SemanticStringV1'] = None
-    # 在 UModel 系统中的描述。
-    description: Optional['SemanticStringV1'] = None
-    # 在 UModel 系统中的简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-
-    def get_kind(self) -> str:
-        return 'value_mapping'
-
-@dataclass
-class KnowledgeConfigV1(UModelObject):
-    """knowledge_config class"""
-    # 知识项名称，在同一个RunbookSet中必须唯一。
-    name: Optional[str] = None
-    # 知识项显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 知识项简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 知识项详细描述信息。
-    description: Optional['SemanticStringV1'] = None
-    # 知识如何应用的配置。
-    apply_policy: Optional['KnowledgeConfigV1ApplyPolicy'] = None
-    # 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
-    content_type: Optional[str] = None
-    # 知识内容，根据content_type可以是文本内容或URL地址。
-    content: Optional[str] = None
-    # 知识内容的外部URL地址。
-    content_url: Optional[str] = None
-    # 知识项优先级，用于排序显示以及模型推理时选择。
-    priority: Optional[int] = None
-    # 最后更新时间。
-    last_updated: Optional[datetime] = None
-    # 知识项标签。
-    tags: Optional[Dict[str, str]] = None
-
-    def get_kind(self) -> str:
-        return 'knowledge_config'
-
-@dataclass
-class ActionConfigV1(UModelObject):
-    """action_config class"""
-    # 操作名称，在同一个RunbookSet中必须唯一。
-    name: Optional[str] = None
-    # 操作显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 操作简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 操作详细描述信息。
-    description: Optional['SemanticStringV1'] = None
-    # 操作类型，例如pop_api、mcp、api_call、script、webhook等。
-    action_type: Optional[str] = None
-    # 操作参数配置列表。
-    inputs: Optional[List[Optional['ParameterConfigV1']]] = None
-    # 操作输出配置列表。
-    outputs: Optional[List[Optional['ParameterConfigV1']]] = None
-    # 是否需要确认才能执行操作。
-    confirmation_required: Optional[bool] = None
-    # 操作的风险等级。
-    risk_level: Optional[str] = None
-    # 详细配置信息，用于配置不同类型操作的详细信息
-    properties: Optional[Dict[str, str]] = None
-    # 操作标签。
-    tags: Optional[Dict[str, str]] = None
-
-    def get_kind(self) -> str:
-        return 'action_config'
-
-@dataclass
-class ToolParameterConfigV1(UModelObject):
-    """tool_parameter_config class"""
-    # 参数属性定义，键为参数名称，值为参数定义对象。
-    properties: Optional[Dict[str, Any]] = None
-    # 必填参数名称列表。
-    required: Optional[List[str]] = None
-
-    def get_kind(self) -> str:
-        return 'tool_parameter_config'
-
-@dataclass
-class ParameterConfigV1(UModelObject):
-    """parameter_config class"""
-    # 参数名称。
-    name: Optional[str] = None
-    # 参数显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 参数描述信息。
-    description: Optional['SemanticStringV1'] = None
-    # 参数类型。
-    type: Optional[str] = None
-    # 是否为必填参数。
-    required: Optional[bool] = None
-    # 参数默认值。
-    default: Optional[str] = None
-
-    def get_kind(self) -> str:
-        return 'parameter_config'
-
-@dataclass
-class MetricV1(UModelObject):
-    """metric class"""
-    # 指标的名称。值不能为空。
-    name: Optional[str] = None
-    # 指标的显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 指标的描述。值格式为语义字符串。
-    description: Optional['SemanticStringV1'] = None
-    # 指标的简短描述。值格式为语义字符串。
-    short_description: Optional['SemanticStringV1'] = None
-    # 元素的发布阶段。默认值为 preview。
-    launch_stage: Optional[str] = None
-    # 指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format 即可满足需求，unit 填写为空即可。 若不满...
-    unit: Optional[str] = None
-    # 指标的格式化方式，值格式为字符串。支持的格式化选项： 数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000 存储格式化： - byte: 处理为字节格式，样例：B/KB...
-    data_format: Optional[str] = None
-    # 字段的最大值。值可以为空。仅适用于整数和浮点类型。
-    max_value: Optional[float] = None
-    # 字段的最小值。值可以为空。仅适用于整数和浮点类型。
-    min_value: Optional[float] = None
-    # 字段的默认值。值可以为空。
-    default_value: Optional[Any] = None
-    # 用于表示该指标的图标。
-    icon: Optional[str] = None
-    # 用于表示该指标自身额外的标签。即在 MetricSet 的标签基础上，该指标还具有的额外标签。
-    labels: Optional[List[Optional['FieldSpecV1']]] = None
-    # 是否为黄金指标。
-    golden_metric: Optional[bool] = None
-    # 指标的生成方式，如果是 PromMode，该字段为 PromQL语句，能够执行并得到一个可直接使用的 Measure 类型指标。 例如：rate(request_count{}[1m])，在一些场景下结合 aggregator 字段，能够计算出聚合维...
-    generator: Optional[str] = None
-    # 指标的聚合方式。如果指标本身是聚合的，且聚合方式在多种维度组合下均一致，则不需要配置次字段，其他情况需要配置。一些示例场景如下： 1. Prometheus指标和Metric从时间线维度相同 1.1 rate(cpu_usage_seconds_to...
-    aggregator: Optional[str] = None
-    # 指标的间隔，值格式为整数或整数数组，单位为微秒。 - 当为单个整数时：表示固定的采集间隔 - 当为整数数组时：表示多个采集间隔，用于支持不同精度的数据采集
-    interval_us: Optional[Any] = None
-    # 指标的类型。对于无需二次处理的指标，该字段应固定为 gauge。
-    type: Optional[str] = None
-    # 指标期望的查询模式。值必须是以下之一：range, instant, both。
-    query_mode: Optional[str] = None
-    # 指标的显示类型。当前未使用。
-    display_type: Optional[str] = None
-    # 生成该指标时的统计方式，即该指标有多种生成方式。当前仅在基础云监控场景下使用。
-    statistics: Optional[List[str]] = None
-    # 用于表示该指标的标签。
-    tags: Optional[Dict[str, str]] = None
-    # 用于表示该指标的附加属性。
-    properties: Optional[Dict[str, str]] = None
-    # 指标的默认填充策略。 值可以是 null, 0, last, next。
-    default_fill_policy: Optional[str] = None
-
-    def get_kind(self) -> str:
-        return 'metric'
-
-@dataclass
-class ObservationV1(UModelObject):
-    """observation class"""
-    # 观察名称，在同一个RunbookSet中必须唯一。
-    name: Optional[str] = None
-    # 观察显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 观察简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 观察详细描述信息。
-    description: Optional['SemanticStringV1'] = None
-    # 现象定义，描述要观察什么以及如何观察。
-    phenomenon: Optional['ObservationV1Phenomenon'] = None
-    # 结论配置列表，根据现象观察结果进行判断。
-    conclusions: Optional[List[Optional['ObservationV1ConclusionsItem']]] = None
-    # 观察属性配置。
-    properties: Optional[Dict[str, str]] = None
-    # 观察标签。
-    tags: Optional[Dict[str, str]] = None
-
-    def get_kind(self) -> str:
-        return 'observation'
-
-@dataclass
-class MetadataV1(UModelObject):
-    """metadata class"""
-    # 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-    name: Optional[str] = None
-    # 元素在 UModel 系统中的显示名称。值不能为空。
-    display_name: Optional['SemanticStringV1'] = None
-    # 元素在 UModel 系统中的描述。
-    description: Optional['SemanticStringV1'] = None
-    # 元素在 UModel系统中的简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 域。值格式为'domain.domain'。可以以点连接。
-    domain: Optional[str] = None
-    # 元素的发布阶段。默认值为 preview。
-    launch_stage: Optional[str] = None
-    # 元素在UModel系统中的图标。值格式为'url'。
-    icon: Optional[str] = None
-    # 用于表示该元素唯一标识。
-    uri: Optional[str] = None
-    # 用于表示该元素的标签。
-    tags: Optional[Dict[str, str]] = None
-    # 用于表示该元素的附加属性。
-    properties: Optional[Dict[str, str]] = None
-    # 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
-    common_schema_info: Optional['MetadataV1CommonSchemaInfo'] = None
-
-    def get_kind(self) -> str:
-        return 'metadata'
-
-@dataclass
-class SchemaV1(UModelObject):
-    """schema class"""
-    # Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
-    url: Optional[str] = None
-    # Schema 的版本。命名格式为 "v1.2.3"。
-    version: Optional[str] = None
-
-    def get_kind(self) -> str:
-        return 'schema'
-
-@dataclass
-class TelemetryDataV1(UModelObject):
-    """telemetry_data class"""
-    # 可观测数据的字段列表。
-    fields: Optional[List[Optional['FieldSpecV1']]] = None
-    # 可观测数据的时间字段。一般要求时间字段为时间戳类型，支持秒、毫秒、微秒、纳秒。
-    time_field: Optional[str] = None
-    # 注意：定位和 `name_fields` 有一定重叠，字段已废弃，请使用 `name_fields` 字段第一个值替代。可观测数据的显示字段。即默认展示的字段。
-    display_field: Optional[str] = None
-    # 可观测数据的显示字段。建议按照显示重要性配置先后顺序，前端、算法等在各类场景会根据特点自由选择，例如极窄/引用场景下只取name_fields的第一个值。 例如：服务操作实体，建议取值为 ["operation_name", "service_nam...
-    name_fields: Optional[List[str]] = None
-    # 可观测数据的隐藏字段。即不用作展示的字段。
-    hidden_fields: Optional[List[str]] = None
-    # 可观测数据的标签字段。标签字段默认聚合在一起显示和分析。
-    tag_fields: Optional[List[str]] = None
-    # 可观测数据的排序字段。即当前数据集的排序字段。
-    ordered_fields: Optional[List[str]] = None
-    # 可观测数据的默认排序。默认值为 asc。
-    default_order: Optional[str] = None
-
-    def get_kind(self) -> str:
-        return 'telemetry_data'
-
-@dataclass
 class ToolV1(UModelObject):
     """tool class"""
     # 工具名称，在同一个 Toolkit 内必须唯一。
@@ -601,3 +631,24 @@ class ToolV1(UModelObject):
 
     def get_kind(self) -> str:
         return 'tool'
+
+@dataclass
+class TermV1(UModelObject):
+    """term class"""
+    # 术语名称，在同一个 RunbookSet 内必须唯一。
+    name: Optional[str] = None
+    # 术语显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 术语的详细描述，说明其含义与适用场景。
+    description: Optional['SemanticStringV1'] = None
+    # 简短描述，便于 LLM 或用户快速判断术语含义。
+    short_description: Optional['SemanticStringV1'] = None
+    # 术语别名，只记录真实出现过或强约定的别名。
+    aliases: Optional[List[str]] = None
+    # 术语语义置信度。
+    confidence: Optional['ConfidenceV1'] = None
+    # 术语关联的模型或 Set 引用列表，指明术语出现在哪些 LogSet、MetricSet、EventSet 或 EntitySet 上。
+    model_bindings: Optional[List[Optional['ModelBindingV1']]] = None
+
+    def get_kind(self) -> str:
+        return 'term'

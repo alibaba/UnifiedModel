@@ -443,3 +443,29 @@ spec:
             - Monitor target service P99 for 5 minutes
             - Check if upstream error rate temporarily increases (expected for retry rollback)
             - If no improvement in 5 min → escalate to next tool in priority
+
+  terms:
+    - name: retry_storm
+      display_name:
+        en_us: "Retry Storm"
+        zh_cn: "重试风暴"
+      description:
+        en_us: "Retry amplification that increases load on a downstream service."
+        zh_cn: "重试放大导致下游服务负载持续增加。"
+      short_description:
+        en_us: "Amplified retries overload a downstream service."
+        zh_cn: "放大的重试会压垮下游服务。"
+      aliases:
+        - retry_amplification
+      confidence:
+        score: 95
+        status: manually_applied
+        source: human
+        basis:
+          - schema
+          - human_review
+        reason: "Defined by the incident-investigation runbook."
+      model_bindings:
+        - domain: platform
+          kind: entity_set
+          name: platform.service
