@@ -643,26 +643,27 @@ type QueryPipelineOperator struct {
 }
 
 type QueryPlan struct {
-	Workspace   string
-	Source      string
-	Query       string
-	Filters     map[string]any
-	Operators   []string
-	Pipeline    []QueryPipelineOperator
-	Predicates  []QueryPredicate
-	Project     []string
-	Sort        []QuerySort
-	GraphCall   *GraphCallPlan
-	EntityCall  *EntityCallPlan
-	TopK        int
-	TimeRange   TimeRange
-	Params      map[string]any
-	EntityData  *EntityData
-	Limit       int
-	Depth       int
-	TimeoutMS   int
-	Format      string // mirrors QueryRequest.Format; threaded to the executor for envelope selection
-	IncludeSpec bool   // mirrors QueryRequest.IncludeSpec; threaded to the executor for spec expansion
+	Workspace     string
+	Source        string
+	Query         string
+	Filters       map[string]any
+	Operators     []string
+	Pipeline      []QueryPipelineOperator
+	Predicates    []QueryPredicate
+	Project       []string
+	Sort          []QuerySort
+	GraphCall     *GraphCallPlan
+	EntityCall    *EntityCallPlan
+	TopK          int
+	TimeRange     TimeRange
+	Params        map[string]any
+	EntityData    *EntityData
+	Limit         int
+	LimitExplicit bool // true when the request or SPL pipeline supplied a limit
+	Depth         int
+	TimeoutMS     int
+	Format        string // mirrors QueryRequest.Format; threaded to the executor for envelope selection
+	IncludeSpec   bool   // mirrors QueryRequest.IncludeSpec; threaded to the executor for spec expansion
 }
 
 type EntityQueryPlan = QueryPlan

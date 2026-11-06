@@ -1,0 +1,34 @@
+kind: log_set
+schema:
+  url: umodel.aliyun.com
+  version: v1.0.0
+metadata:
+  name: ops.node.logs
+  domain: ops
+  display_name:
+    en_us: Node Logs
+    zh_cn: 节点日志
+spec:
+  fields:
+    - name: timestamp
+      type: time
+      display_name:
+        en_us: Timestamp
+        zh_cn: 时间
+    - name: node_id
+      type: string
+      display_name:
+        en_us: Node ID
+        zh_cn: 节点 ID
+    - name: environment
+      type: string
+      display_name:
+        en_us: Environment
+        zh_cn: 环境
+    - name: level
+      type: string
+      display_name:
+        en_us: Level
+        zh_cn: 级别
+  time_field: timestamp
+  default_order: desc

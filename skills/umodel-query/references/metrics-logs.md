@@ -106,7 +106,29 @@ The query is ready to run — you decide how: if a Prometheus / Elasticsearch CL
 in your environment, call it; otherwise hit the HTTP API directly, or use any client you have.
 The backend's own response format is what you parse next: Prometheus →
 `.data.result[]` (each `{metric, value:[ts,"v"]}` for instant, or `values:[[ts,"v"],…]` for
-range); Elasticsearch → `.hits.hits[]._source` (one object per log line).
+range); Elasticsearch → `.hits.hits[]._source` (one object per log line); Loki →
+`.data.result` with `streams` for logs, `vector` for instant metrics, or `matrix`
+for range metrics.
+
+### `loki_logql`
+
+For Loki, call `umctl query run` with `--plan-format agent`, `--to`, and `--from`
+for log or range metric queries. Use `--entity-data` to bind mapped entity
+attributes. Dispatch on `query.dialect=loki_logql`; each `query.queries[].logql`
+is complete. The caller may use the bundled read-only helper from the repository root:
+
+```bash
+umctl query run demo --plan-format agent --from '2026-11-03T10:00:00+08:00' \
+  --to '2026-11-03T11:00:00+08:00' \
+  --entity-data '{"header":["id"],"data":[["node-01"]]}' \
+  ".entity_set with(domain='ops', name='ops.node') | entity-call get_logs('ops', 'ops.node.logs', storage_kind='loki')" \
+  | python3 skills/umodel-query/scripts/run_loki_plan.py
+```
+
+The helper reads credential values from the environment variable names in the
+plan, sends `X-Scope-OrgID` when `tenant` is configured, and combines multiple
+log queries after sorting. It keeps metric queries separate. See the
+[Loki Storage guide](../../../docs/en/guides/loki-storage.md).
 
 ## 4. Adapt the parameters
 

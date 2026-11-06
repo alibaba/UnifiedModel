@@ -16,5 +16,5 @@ MetricSet is used to define metrics. A metric set is a collection of metrics wit
 | `labels.filter` | `string` |  |  | The filter of the label. When dynamic is true, it will be filtered according to this filter. |
 | `label_keys` | array&lt;[field_spec](../../shared-types#field_spec)&gt; |  |  | The label keys of the MetricSet. It is currently deprecated and will be deleted. Please use the labels field instead. |
 | `metrics` | array&lt;[metric](../../shared-types#metric)&gt; |  |  | The detailed list of metrics. |
-| `query_type` | enum: `prom`, `spl`, `cms` |  |  | The query type of the metric. The value can be prom, spl or cms. |
+| `query_type` | enum: `prom`, `spl`, `cms`, `logql` |  |  | The metric query language: prom, spl, cms, or logql. |
 | `needs_processing` | `boolean` |  | `false` | Whether the MetricSet needs to be processed again. That is, whether the metrics in the MetricSet need to be processed again to be used. For example, the counter/summary/histogram metrics in Prometheus need to be proce… |

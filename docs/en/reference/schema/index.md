@@ -45,6 +45,7 @@ See the contribution guide for how to propose L1–L3 content.
 - [clickhouse](./core/storage/clickhouse)
 - [elasticsearch](./core/storage/elasticsearch)
 - [external_storage](./core/storage/external-storage)
+- [loki](./core/storage/loki)
 - [mysql](./core/storage/mysql)
 - [prometheus](./core/storage/prometheus)
 - [sls_entitystore](./core/storage/sls-entitystore)

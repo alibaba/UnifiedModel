@@ -106,6 +106,8 @@ output[6]: ".umodel with(kind='entity_set') | project domain,name,kind | sort do
 
 Write tools are disabled by default so MCP clients start from a safe read-oriented posture.
 
+`query_spl_execute` accepts `time_range`, `entity_data`, and `limit` with an `.entity_set` `get_logs` or `get_metrics` call. A Loki StorageLink produces a `loki_logql` plan; the client executes its LogQL against Loki. See [Loki Storage](../guides/loki-storage.md).
+
 ## Resources
 
 | Resource | URI template | Notes |

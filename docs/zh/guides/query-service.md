@@ -79,6 +79,8 @@ go run ./cmd/umctl --addr http://localhost:8080 query run demo ".entity_set with
 
 `domain` 和 `name` 是必填 filter；`ids` 可作为 EntitySet 调用上下文。当前支持的方法是 `__list_method__`、`list_data_set`（兼容 `list_dataset` 别名）、`list_skills`（兼容 `list_skill` 别名）、规范方法 `list_knowledge`、`get_logs`（兼容 `get_log` 别名）和 `get_metrics`（兼容 `get_metric` 别名）；方法参数按 UModel Assistant 的签名校验。`get_logs` 和 `get_metrics` 会解析基础 SPL where 语法，按 `data_link.fields_mapping` 映射 EntitySet 字段，按 `storage_link.fields_mapping` 映射 DataSet 字段，并只返回翻译后的存储查询计划，不直接查询存储。
 
+数据集关联多个 Storage 时，`storage_domain`、`storage_name` 和 `storage_kind` 选择 StorageLink 目标；指定后必须恰好匹配一个目标。Loki 通过这两个方法生成日志与日志派生指标的 `loki_logql` 计划。时间、标签映射及执行示例参见 [Loki Storage 指南](loki-storage.md)。
+
 当直接且当前可见的 `runbook_link` 指向包含对应内容的 RunbookSet 时，`__list_method__()` 会分别公开 `list_skills` 与 `list_knowledge`。使用 `list_skills()` 或 `list_knowledge()` 获取摘要，把第二个参数设为 `true` 可按精确 ID 加载详情。规范 ID 分别是 `<runbook_domain>@runbook_set@<runbook_name>@skills@<skill_name>` 与 `<runbook_domain>@runbook_set@<runbook_name>@knowledge@<knowledge_name>`。请求携带的实体数据会参与 `runbook_link.filter_by_entity`；没有对应能力时返回空表。Query Service 只返回定义，不解释 `SKILL.md` 或 Knowledge、不下载 `skill_url`/`content_url`，也不执行工具。本阶段不加入 `list_tools`；选择、工具 Schema、授权和执行仍由 Runtime 负责。
 
 ## `.topo`

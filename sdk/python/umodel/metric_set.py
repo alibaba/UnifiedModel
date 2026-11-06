@@ -57,7 +57,7 @@ class MetricSetV100Spec:
     label_keys: Optional[List[Optional['FieldSpecV1']]] = None
     # 详细的指标列表。
     metrics: Optional[List[Optional['MetricV1']]] = None
-    # 指标的查询语法，取值包括：prom、spl、cms 。
+    # 指标的查询语法，取值包括 prom、spl、cms 和 logql。
     query_type: Optional[str] = None
     # 是否需要二次处理，即该 MetricSet 中指标是否需要二次处理才能被使用。例如 Prometheus 中的 counter/summary/histogram 等指标需要二次处理才能被使用。
     needs_processing: Optional[bool] = None

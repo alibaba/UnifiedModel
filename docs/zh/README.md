@@ -32,6 +32,7 @@ English: [UModel Documentation](../en/README.md)
 - [模型编写指南](guides/model-authoring.md)
 - [实体与关系写入指南](guides/entity-relation-writes.md)
 - [Query Service 指南](guides/query-service.md)
+- [Loki Storage 指南](guides/loki-storage.md) - 建模 Loki 日志与日志派生指标，生成 LogQL 计划并执行。
 - [Web UI 指南](guides/web-ui.md)
 - [SDK 与客户端指南](guides/sdk-clients.md) - REST、CLI、MCP、生成模型 SDK 和集成示例。
 - [Agent 集成指南](guides/agent-integration.md) - 接入 MCP 客户端、Agent 的工具/资源接口、Agent 使用的查询面，以及一个完整的故障排查样例。

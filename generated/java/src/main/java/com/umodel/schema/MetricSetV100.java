@@ -156,7 +156,7 @@ public class MetricSetV100 implements UModelCoreObject {
         }
 
         /**
-         * 指标的查询语法，取值包括：prom、spl、cms 。
+         * 指标的查询语法，取值包括 prom、spl、cms 和 logql。
          */
         @JSONField(name = "query_type")
         private String queryType;

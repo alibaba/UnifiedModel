@@ -32,6 +32,7 @@ Documentation root: [docs/README.md](../README.md)
 - [Model Authoring Guide](guides/model-authoring.md)
 - [Entity And Relation Write Guide](guides/entity-relation-writes.md)
 - [Query Service Guide](guides/query-service.md)
+- [Loki Storage Guide](guides/loki-storage.md) - model Loki logs and log-derived metrics, generate LogQL plans, and execute them with the bundled helper.
 - [Web UI Guide](guides/web-ui.md)
 - [SDK And Client Guide](guides/sdk-clients.md) - REST, CLI, MCP, generated model SDKs, and integration examples.
 - [Agent Integration Guide](guides/agent-integration.md) - connect an MCP client, the agent tool/resource surface, the query surface an agent uses, and a worked incident-investigation walkthrough.
