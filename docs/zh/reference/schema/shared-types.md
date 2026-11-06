@@ -161,3 +161,39 @@ ValueMapping 用于定义值的映射关系。
 | `display_name` | semantic_string (i18n) |  |  | 在 UModel 系统中的显示名称。值不能为空。 |
 | `description` | semantic_string (i18n) |  |  | 在 UModel 系统中的描述。 |
 | `short_description` | semantic_string (i18n) |  |  | 在 UModel 系统中的简短描述。 |
+
+## confidence
+
+置信度用于表达稳定语义定义当前有多可信，以及主要基于什么形成。
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| `score` | `integer` |  |  | 语义置信度分数，范围 0-100。 |
+| `status` | enum: `manually_applied`, `auto_applied`, `not_applied` |  |  | 语义定义的应用状态，按优先级从高到低依次为人工确认应用、系统自动应用和尚未应用。 |
+| `source` | enum: `human`, `llm`, `system`, `hybrid`, `imported` |  |  | 置信度来源。 |
+| `basis` | array&lt;string&gt; |  |  | 形成该置信度所依据的主要证据类型，只记录类别，不记录证据明细。 |
+| `reason` | `string` |  |  | 简短说明为什么给出该置信度。 |
+
+## model_binding
+
+ModelBinding 用于引用一个模型或 Set（LogSet、MetricSet、EventSet、EntitySet 等），指明查询或术语运行或关联在哪个模型上。结构与 link 的 src/dest 一致。
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| `domain` | `string` | 是 |  | 模型所属域，对应目标 Set 的 metadata.domain。 |
+| `kind` | `string` | 是 |  | 模型类型，如 log_set、metric_set、event_set、entity_set。 |
+| `name` | `string` | 是 |  | 模型名称，对应目标 Set 的 metadata.name。 |
+
+## term
+
+术语定义，描述一条可复用、可被 LLM 或规则引用的业务或技术术语。
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| `name` | `string` | 是 |  | 术语名称，在同一个 RunbookSet 内必须唯一。 |
+| `display_name` | semantic_string (i18n) |  |  | 术语显示名称。 |
+| `description` | semantic_string (i18n) |  |  | 术语的详细描述，说明其含义与适用场景。 |
+| `short_description` | semantic_string (i18n) |  |  | 简短描述，便于 LLM 或用户快速判断术语含义。 |
+| `aliases` | array&lt;string&gt; |  |  | 术语别名，只记录真实出现过或强约定的别名。 |
+| `confidence` | [confidence](shared-types#confidence) |  |  | 术语语义置信度。 |
+| `model_bindings` | array&lt;[model_binding](shared-types#model_binding)&gt; |  |  | 术语关联的模型或 Set 引用列表，指明术语出现在哪些 LogSet、MetricSet、EventSet 或 EntitySet 上。 |

@@ -90,6 +90,27 @@ public class SharedTypeTest {
     }
 
     @Test
+    public void testConfidenceV1() {
+        ConfidenceV1 obj = new ConfidenceV1();
+
+        assertEquals("confidence", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+
+        obj.setScore(42L);
+        assertEquals(Long.valueOf(42L), obj.getScore());
+        obj.setStatus("status_test");
+        assertEquals("status_test", obj.getStatus());
+        obj.setSource("source_test");
+        assertEquals("source_test", obj.getSource());
+        List<String> basisList = new ArrayList<>();
+        basisList.add("item1");
+        obj.setBasis(basisList);
+        assertEquals(basisList, obj.getBasis());
+        obj.setReason("reason_test");
+        assertEquals("reason_test", obj.getReason());
+    }
+
+    @Test
     public void testConstraintTypeV1() {
         ConstraintTypeV1 obj = new ConstraintTypeV1();
 
@@ -359,6 +380,19 @@ public class SharedTypeTest {
     }
 
     @Test
+    public void testModelBindingV1() {
+        ModelBindingV1 obj = new ModelBindingV1();
+
+        assertEquals("model_binding", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+
+        obj.setDomain("domain_test");
+        assertEquals("domain_test", obj.getDomain());
+        obj.setName("name_test");
+        assertEquals("name_test", obj.getName());
+    }
+
+    @Test
     public void testObservationV1() {
         ObservationV1 obj = new ObservationV1();
 
@@ -518,6 +552,37 @@ public class SharedTypeTest {
         assertEquals(orderedFieldsList, obj.getOrderedFields());
         obj.setDefaultOrder("defaultOrder_test");
         assertEquals("defaultOrder_test", obj.getDefaultOrder());
+    }
+
+    @Test
+    public void testTermV1() {
+        TermV1 obj = new TermV1();
+
+        assertEquals("term", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+
+        obj.setName("name_test");
+        assertEquals("name_test", obj.getName());
+        SemanticStringV1 displayNameVal = new SemanticStringV1();
+        obj.setDisplayName(displayNameVal);
+        assertEquals(displayNameVal, obj.getDisplayName());
+        SemanticStringV1 descriptionVal = new SemanticStringV1();
+        obj.setDescription(descriptionVal);
+        assertEquals(descriptionVal, obj.getDescription());
+        SemanticStringV1 shortDescriptionVal = new SemanticStringV1();
+        obj.setShortDescription(shortDescriptionVal);
+        assertEquals(shortDescriptionVal, obj.getShortDescription());
+        List<String> aliasesList = new ArrayList<>();
+        aliasesList.add("item1");
+        obj.setAliases(aliasesList);
+        assertEquals(aliasesList, obj.getAliases());
+        ConfidenceV1 confidenceVal = new ConfidenceV1();
+        obj.setConfidence(confidenceVal);
+        assertEquals(confidenceVal, obj.getConfidence());
+        List<ModelBindingV1> modelBindingsList = new ArrayList<>();
+        modelBindingsList.add(new ModelBindingV1());
+        obj.setModelBindings(modelBindingsList);
+        assertEquals(modelBindingsList, obj.getModelBindings());
     }
 
     @Test

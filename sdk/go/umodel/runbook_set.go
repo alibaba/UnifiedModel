@@ -57,6 +57,8 @@ type RunbookSetV100Spec struct {
 	Automations []*AutomationConfigV1 `json:"automations,omitempty" yaml:"automations,omitempty"`
 	// Skills 技能配置列表，遵循 Agent Skills 规范
 	Skills []*SkillConfigV1 `json:"skills,omitempty" yaml:"skills,omitempty"`
+	// Terms 术语定义列表，承载可复用、可被引用的业务或技术术语。
+	Terms []*TermV1 `json:"terms,omitempty" yaml:"terms,omitempty"`
 }
 
 // Validate 验证RunbookSetV100Spec是否符合schema定义
