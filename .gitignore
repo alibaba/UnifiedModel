@@ -41,3 +41,6 @@ batch_validation_report_examples.md
 
 # Demo video — hosted externally (OSS), not committed (see README "See it")
 /QuickStart.mp4
+
+# Local planning notes. Files already tracked by upstream stay tracked.
+/docs/superpowers/
