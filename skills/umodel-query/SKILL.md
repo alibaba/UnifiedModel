@@ -5,7 +5,7 @@ description: >-
   alternative noted). Three kinds of read: (1) entities & relationships / topology
   (`.entity`, `.topo`) and (2) the model itself (`.umodel`, and `.entity_set`
   methods, including entity-linked `list_skills`) return real rows; (3) metrics & logs (`get_metrics` / `get_logs`)
-  return an executable *plan* — PromQL / Elasticsearch DSL with the entity id
+  return an executable *plan* — PromQL / Elasticsearch DSL / Loki LogQL with the entity id
   pre-substituted — that you run against the backend. Against a PaaS endpoint the
   same calls return data rows instead of a plan. Use to query or read UModel
   entities, relations, topology, or model metadata; to read a service's metrics or
@@ -84,7 +84,7 @@ Typical flow: `.umodel` to learn the types → `.entity` to find an object and g
 
 - Stay **read-only**.
 - `.entity` / `.topo` / `.umodel` reads return **real rows** in open source. `get_metrics` /
-  `get_logs` return an executable *plan* you run against Prometheus / Elasticsearch (or, against
+  `get_logs` return an executable *plan* you run against Prometheus / Elasticsearch / Loki (or, against
   a PaaS endpoint with `mode='data'`, rows directly) — see
   [references/metrics-logs.md](references/metrics-logs.md).
 - **MCP alternative** (instead of the CLI): connect `umodel-mcp` and call the

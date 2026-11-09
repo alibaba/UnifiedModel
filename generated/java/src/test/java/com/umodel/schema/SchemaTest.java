@@ -338,6 +338,30 @@ public class SchemaTest {
     }
 
     @Test
+    public void testLokiV100() {
+        LokiV100 obj = new LokiV100();
+
+        assertEquals("loki", obj.getKind());
+        assertTrue(obj instanceof UModelObject);
+        assertTrue(obj instanceof UModelCoreObject);
+        assertFalse(obj instanceof UModelLinkObject);
+
+        MetadataV1 metadata = new MetadataV1();
+        metadata.setName("test_loki");
+        obj.setMetadata(metadata);
+        assertEquals(metadata, obj.getMetadata());
+        assertEquals("test_loki", obj.getMetadata().getName());
+
+        SchemaV1 schema = new SchemaV1();
+        schema.setVersion("v1.0.0");
+        obj.setSchema(schema);
+        assertEquals(schema, obj.getSchema());
+        assertEquals("v1.0.0", obj.getSchema().getVersion());
+
+        assertNull(obj.validate());
+    }
+
+    @Test
     public void testMetricSetV100() {
         MetricSetV100 obj = new MetricSetV100();
 

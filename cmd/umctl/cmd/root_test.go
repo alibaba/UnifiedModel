@@ -317,6 +317,24 @@ func TestCLICommandsRouteToCorrectEndpoints(t *testing.T) {
 			},
 		},
 		{
+			name: "query run forwards Loki plan context",
+			args: []string{"query", "run", "demo", "--from", "2026-11-03T10:00:00+08:00", "--to", "2026-11-03T11:00:00+08:00", "--limit", "7", "--entity-data", `{"header":["id"],"data":[["node-01"]]}`, "--plan-format", "agent", ".entity_set with(domain='ops', name='ops.node') | entity-call get_logs('ops', 'ops.node.logs')"},
+			handler: func(t *testing.T, r *http.Request) {
+				assertMethod(t, r, http.MethodPost)
+				assertPath(t, r, "/api/v1/query/demo/execute")
+				if r.URL.Query().Get("format") != "agent" {
+					t.Fatalf("expected agent format, got %s", r.URL.RawQuery)
+				}
+				body := decodeBody(t, r)
+				if body["limit"] != float64(7) || body["time_range"].(map[string]any)["to"] != "2026-11-03T11:00:00+08:00" {
+					t.Fatalf("missing Loki context: %#v", body)
+				}
+				if body["entity_data"].(map[string]any)["header"].([]any)[0] != "id" {
+					t.Fatalf("missing entity data: %#v", body)
+				}
+			},
+		},
+		{
 			name: "query explain",
 			args: []string{"query", "explain", "demo", ".entity | limit 1"},
 			handler: func(t *testing.T, r *http.Request) {

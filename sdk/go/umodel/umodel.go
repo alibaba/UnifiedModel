@@ -39,6 +39,7 @@ var TypeRegistry = map[string]func() interface{}{
 	"explorer_link:v1.0.0":      func() interface{} { return &ExplorerLinkV100{} },
 	"external_storage:v1.0.0":   func() interface{} { return &ExternalStorageV100{} },
 	"log_set:v1.0.0":            func() interface{} { return &LogSetV100{} },
+	"loki:v1.0.0":               func() interface{} { return &LokiV100{} },
 	"metric_set:v1.0.0":         func() interface{} { return &MetricSetV100{} },
 	"mysql:v1.0.0":              func() interface{} { return &MysqlV100{} },
 	"profile_set:v1.0.0":        func() interface{} { return &ProfileSetV100{} },

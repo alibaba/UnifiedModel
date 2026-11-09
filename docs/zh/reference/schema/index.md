@@ -45,6 +45,7 @@ L1–L3 的贡献方式见贡献指南。
 - [clickhouse](./core/storage/clickhouse)
 - [elasticsearch](./core/storage/elasticsearch)
 - [external_storage](./core/storage/external-storage)
+- [loki](./core/storage/loki)
 - [mysql](./core/storage/mysql)
 - [prometheus](./core/storage/prometheus)
 - [sls_entitystore](./core/storage/sls-entitystore)

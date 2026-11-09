@@ -16,5 +16,5 @@ MetricSet 用于定义指标，指标集是具有相同属性的指标的集合�
 | `labels.filter` | `string` |  |  | 标签的过滤器，在 dynamic 为 true 时，会根据此过滤器进行过滤。 |
 | `label_keys` | array&lt;[field_spec](../../shared-types#field_spec)&gt; |  |  | 指标集的标签键。当前已废弃，待删除，请使用 labels 字段代替。 |
 | `metrics` | array&lt;[metric](../../shared-types#metric)&gt; |  |  | 详细的指标列表。 |
-| `query_type` | enum: `prom`, `spl`, `cms` |  |  | 指标的查询语法，取值包括：prom、spl、cms 。 |
+| `query_type` | enum: `prom`, `spl`, `cms`, `logql` |  |  | 指标的查询语法，取值包括 prom、spl、cms 和 logql。 |
 | `needs_processing` | `boolean` |  | `false` | 是否需要二次处理，即该 MetricSet 中指标是否需要二次处理才能被使用。例如 Prometheus 中的 counter/summary/histogram 等指标需要二次处理才能被使用。 |

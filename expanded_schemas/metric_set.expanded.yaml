@@ -1781,8 +1781,8 @@ versions:
                 min_size: 1
           query_type:
             description:
-              zh_cn: 指标的查询语法，取值包括：prom、spl、cms 。
-              en_us: The query type of the metric. The value can be prom, spl or cms.
+              zh_cn: 指标的查询语法，取值包括 prom、spl、cms 和 logql。
+              en_us: 'The metric query language: prom, spl, cms, or logql.'
             type: string
             constraint:
               enum:
@@ -1790,6 +1790,7 @@ versions:
                 - prom
                 - spl
                 - cms
+                - logql
           needs_processing:
             type: boolean
             description:

@@ -99,6 +99,10 @@
           "link": "/en/reference/schema/core/storage/external-storage"
         },
         {
+          "text": "loki",
+          "link": "/en/reference/schema/core/storage/loki"
+        },
+        {
           "text": "mysql",
           "link": "/en/reference/schema/core/storage/mysql"
         },
@@ -227,6 +231,10 @@
         {
           "text": "external_storage",
           "link": "/zh/reference/schema/core/storage/external-storage"
+        },
+        {
+          "text": "loki",
+          "link": "/zh/reference/schema/core/storage/loki"
         },
         {
           "text": "mysql",

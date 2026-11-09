@@ -1,0 +1,135 @@
+description:
+  zh_cn: Loki 存储，用于生成日志及日志派生指标的 LogQL 查询计划。
+  en_us: Loki storage for LogQL query plans for logs and log-derived metrics.
+name: loki
+versions:
+  - name: v1.0.0
+    spec:
+      type: object
+      properties:
+        kind:
+          type: string
+          constraint:
+            required: true
+            enum:
+              values:
+                - loki
+        schema:
+          type: object
+          extends:
+            - schema:v1
+          constraint:
+            required: true
+        metadata:
+          type: object
+          extends:
+            - metadata:v1
+          constraint:
+            required: true
+        spec:
+          type: object
+          constraint:
+            required: true
+          description:
+            zh_cn: Loki 查询计划配置。凭据值由调用方在执行时从环境变量读取。
+            en_us: Loki query-plan configuration. The caller reads credential values from environment variables at execution time.
+          properties:
+            endpoint:
+              type: string
+              description:
+                zh_cn: Loki 服务的 HTTP 或 HTTPS 地址。
+                en_us: HTTP or HTTPS URL of the Loki service.
+              constraint:
+                required: true
+            api_prefix:
+              type: string
+              description:
+                zh_cn: Loki HTTP API 前缀，默认 /loki/api/v1。
+                en_us: Loki HTTP API prefix; defaults to /loki/api/v1.
+              constraint:
+                default_value: /loki/api/v1
+            default_query_type:
+              type: string
+              description:
+                zh_cn: 指标查询的默认模式。
+                en_us: Default mode for metric queries.
+              constraint:
+                enum:
+                  values:
+                    - instant
+                    - range
+                default_value: instant
+            default_step:
+              type: string
+              description:
+                zh_cn: 区间指标查询的默认采样步长，例如 30s。
+                en_us: Default step for range metric queries, for example 30s.
+            search_filter:
+              type: string
+              description:
+                zh_cn: 使用 Loki 标签名表达的可选静态过滤条件。
+                en_us: Optional static filter expressed with Loki label names.
+            default_size:
+              type: integer
+              description:
+                zh_cn: 日志查询未指定 limit 时的默认条数，默认 100。
+                en_us: Default log entry limit when none is specified; defaults to 100.
+              constraint:
+                default_value: 100
+            max_size:
+              type: integer
+              description:
+                zh_cn: 单次日志查询的最大条数，默认 1000。
+                en_us: Maximum log entries per query; defaults to 1000.
+              constraint:
+                default_value: 1000
+            tenant:
+              type: string
+              description:
+                zh_cn: 由客户端传递的可选租户 ID。
+                en_us: Optional tenant ID sent by the client.
+            tenant_header:
+              type: string
+              description:
+                zh_cn: 租户 HTTP 头名称，默认 X-Scope-OrgID。
+                en_us: Tenant HTTP header name; defaults to X-Scope-OrgID.
+              constraint:
+                default_value: X-Scope-OrgID
+            auth:
+              type: object
+              description:
+                zh_cn: 认证方式与环境变量名；不得存放凭据值。
+                en_us: Authentication type and environment variable names; never credential values.
+              properties:
+                type:
+                  type: string
+                  constraint:
+                    required: true
+                    enum:
+                      values:
+                        - bearer
+                        - basic
+                token_env:
+                  type: string
+                username_env:
+                  type: string
+                password_env:
+                  type: string
+            tls_verify:
+              type: boolean
+              description:
+                zh_cn: 是否校验 TLS 证书，默认 true。
+                en_us: Whether to verify TLS certificates; defaults to true.
+              constraint:
+                default_value: true
+            headers:
+              type: map
+              description:
+                zh_cn: 不包含认证凭据的附加 HTTP 头。
+                en_us: Additional HTTP headers without authentication credentials.
+              constraint:
+                map:
+                  key:
+                    type: string
+                  value:
+                    type: string
