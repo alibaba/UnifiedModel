@@ -111,13 +111,13 @@ go run ./cmd/umctl --addr http://localhost:8080 workspace delete demo
 ## UModel
 
 ```bash
-go run ./cmd/umctl --addr http://localhost:8080 umodel validate demo examples/quickstart-multidomain/devops/entity_set/devops.service.yaml
+go run ./cmd/umctl --addr http://localhost:8080 umodel validate demo examples/quickstart-multidomain/umodel/devops/entity_set/devops.service.yaml
 go run ./cmd/umctl --addr http://localhost:8080 umodel put demo '{"kind":"entity_set","domain":"devops","name":"devops.service"}'
 go run ./cmd/umctl --addr http://localhost:8080 umodel import demo examples/quickstart-multidomain
 go run ./cmd/umctl --addr http://localhost:8080 umodel export demo 100
 ```
 
-`umodel put` 和 `umodel validate` 接受 JSON object、JSON array，或包含 `elements` 字段的 payload。
+`umodel validate` 接受 JSON object、JSON array、包含 `elements` 字段的 JSON payload，或单个 UModel YAML 源文件。`umodel put` 只接受 JSON：object、array，或包含 `elements` 字段的 payload。
 
 ## EntityStore
 
