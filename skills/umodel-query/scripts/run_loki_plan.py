@@ -14,6 +14,11 @@ from urllib import error, parse, request
 LOG = logging.getLogger(__name__)
 
 
+class _NoRedirect(request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def _auth_header(auth):
     if not auth:
         return None
@@ -58,7 +63,11 @@ def execute(plan, opener=None):
     if auth_header:
         headers["Authorization"] = auth_header
     context = ssl.create_default_context() if query.get("tls_verify", True) else ssl._create_unverified_context()
-    open_url = opener or (lambda req: request.urlopen(req, timeout=30, context=context))
+    if opener is None:
+        http_opener = request.build_opener(_NoRedirect(), request.HTTPSHandler(context=context))
+        open_url = lambda req: http_opener.open(req, timeout=30)
+    else:
+        open_url = opener
 
     results = []
     for item in query.get("queries") or []:

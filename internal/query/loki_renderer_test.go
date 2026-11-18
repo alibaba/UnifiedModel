@@ -108,6 +108,66 @@ func TestLokiRejectsUnsafeOrIncompletePlans(t *testing.T) {
 	}
 }
 
+func TestLokiAuthDoesNotExposeUnknownFields(t *testing.T) {
+	req := lokiTestRequest(planrender.MethodGetLogs)
+	req.Storage.Spec["auth"] = map[string]any{"type": "bearer", "token_env": "LOKI_TOKEN", "token": "literal-secret"}
+	if _, err := (lokiRenderer{}).Render(req); err == nil {
+		t.Fatal("expected unknown credential field rejection")
+	}
+	delete(req.Storage.Spec["auth"].(map[string]any), "token")
+	plan, err := (lokiRenderer{}).Render(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	auth := plan["auth"].(map[string]any)
+	if len(auth) != 2 || auth["token_env"] != "LOKI_TOKEN" {
+		t.Fatalf("unexpected auth plan: %#v", auth)
+	}
+}
+
+func TestLokiSameLabelConditionsPreserveIntersection(t *testing.T) {
+	logql, err := renderLokiLogQL("{}", []Constraint{
+		{Field: "env", Op: "in", Values: []string{"prod", "staging"}},
+		{Field: "env", Op: "eq", Values: []string{"prod"}},
+	})
+	if err != nil || !strings.Contains(logql, `env=~"prod|staging",env="prod"`) {
+		t.Fatalf("same-label intersection lost: %q, %v", logql, err)
+	}
+}
+
+func TestLokiGeneratorParsesOperatorTextInQuotedValue(t *testing.T) {
+	for _, value := range []string{"api!=worker", "api=~worker", "api!~worker"} {
+		generator := `count_over_time({job="` + value + `"}[5m])`
+		got, err := renderLokiLogQL(generator, nil)
+		if err != nil || got != generator {
+			t.Fatalf("generator %q rendered as %q: %v", generator, got, err)
+		}
+	}
+}
+
+func TestLokiSelectorUsesEmptyStringMatcherSemantics(t *testing.T) {
+	for _, selector := range []string{`{job!=""}`, `{job=~".+"}`} {
+		if _, err := renderLokiLogQL(selector, nil); err != nil {
+			t.Fatalf("valid selector %q rejected: %v", selector, err)
+		}
+	}
+	for _, selector := range []string{`{job=~".*"}`, `{job!="worker"}`} {
+		if _, err := renderLokiLogQL(selector, nil); err == nil {
+			t.Fatalf("empty-compatible selector %q accepted", selector)
+		}
+	}
+}
+
+func TestLokiEntityDollarValueIsNotPlaceholder(t *testing.T) {
+	logql, err := renderLokiLogQL("{}", []Constraint{{Field: "host", Op: "eq", Values: []string{"$node-01"}}})
+	if err != nil || logql != `{host="$node-01"}` {
+		t.Fatalf("literal dollar value lost: %q, %v", logql, err)
+	}
+	if _, err := renderLokiLogQL(`{host="$host"}`, nil); err == nil {
+		t.Fatal("expected unbound generator placeholder rejection")
+	}
+}
+
 func TestLokiStorageSelectionFailsOnMissingOrAmbiguousTarget(t *testing.T) {
 	bindings := []storageBinding{
 		{Storage: model.UModelElement{Kind: "elasticsearch", Domain: "ops", Name: "logs"}},

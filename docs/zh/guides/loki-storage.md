@@ -41,6 +41,8 @@ go run ./cmd/umctl --addr http://localhost:8080 query run demo --plan-format age
 
 示例只提供模型定义。请将 `spec.endpoint` 指向真实 Loki 服务，并确保流标签与 StorageLink 映射一致。可选认证在 `spec.auth` 中配置 `type: bearer` 和 `token_env`，或配置 `type: basic`、`username_env`、`password_env`；环境变量值只设置在调用进程中。计划只包含环境变量名，不包含凭据值。若可信代理已写入 `X-Scope-OrgID`，无需设置 `spec.tenant`。
 
+附带的执行脚本会拒绝 HTTP 重定向。请将 `spec.endpoint` 直接设为 Loki 的最终地址。生成的 Go SDK 中，`LokiV100Spec.TlsVerify` 是 `*bool`：`nil` 表示省略该设置并使用默认值 `true`；指向 `false` 的指针会显式设置 `tls_verify: false`。
+
 日志条数的优先级是显式 `QueryRequest.limit`（或 SPL `| limit`）高于 `Storage.default_size`；请求 limit 高于 SPL limit。`Storage.max_size` 限制最终条数。辅助脚本在合并多条日志查询后排序、去重并截取；指标结果保留各查询名称及 Loki vector/matrix 值。
 
 另见 [Query Service 指南](query-service.md)、[CLI 参考](../reference/cli.md)和 [Loki HTTP API](https://grafana.com/docs/loki/latest/reference/loki-http-api/)。

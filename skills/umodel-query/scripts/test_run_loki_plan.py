@@ -1,11 +1,61 @@
 import io
 import json
+import os
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from unittest.mock import patch
 
 from run_loki_plan import execute
 
 
 class LokiPlanExecutionTest(unittest.TestCase):
+    def test_redirect_does_not_forward_auth_or_tenant(self):
+        received = []
+
+        class Target(BaseHTTPRequestHandler):
+            def do_GET(self):
+                received.append(dict(self.headers))
+                self.send_response(200)
+                self.end_headers()
+
+            def log_message(self, *_args):
+                pass
+
+        with ThreadingHTTPServer(("127.0.0.1", 0), Target) as target:
+            target_thread = threading.Thread(target=target.serve_forever)
+            target_thread.start()
+            try:
+                class Redirect(BaseHTTPRequestHandler):
+                    def do_GET(self):
+                        self.send_response(302)
+                        self.send_header("Location", f"http://127.0.0.1:{target.server_port}/capture")
+                        self.end_headers()
+
+                    def log_message(self, *_args):
+                        pass
+
+                with ThreadingHTTPServer(("127.0.0.1", 0), Redirect) as source:
+                    source_thread = threading.Thread(target=source.serve_forever)
+                    source_thread.start()
+                    try:
+                        plan = {"mode": "plan", "operation": "get_metrics",
+                                "time_range": {"to": "2026-11-03T11:00:00+08:00"},
+                                "query": {"dialect": "loki_logql", "endpoint": f"http://127.0.0.1:{source.server_port}",
+                                          "query_type": "instant", "tenant": "review-tenant",
+                                          "auth": {"type": "bearer", "token_env": "LOKI_TEST_TOKEN"},
+                                          "queries": [{"logql": 'count_over_time({job="api"}[5m])'}]}}
+                        with patch.dict(os.environ, {"LOKI_TEST_TOKEN": "dummy-review-token"}):
+                            with self.assertRaises(RuntimeError):
+                                execute(plan)
+                    finally:
+                        source.shutdown()
+                        source_thread.join()
+            finally:
+                target.shutdown()
+                target_thread.join()
+        self.assertEqual(received, [])
+
     def test_logs_use_query_range_and_merge_sorted_entries(self):
         calls = []
 

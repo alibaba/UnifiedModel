@@ -681,6 +681,8 @@ class GoCodeGeneratorV2:
         
         # 获取Go类型
         go_type = self._get_go_type(field_spec, field_name, parent_struct_name)
+        if parent_struct_name == "LokiV100Spec" and field_name == "tls_verify":
+            go_type = "*bool"
         
         # 获取字段标签
         json_tag = field_name

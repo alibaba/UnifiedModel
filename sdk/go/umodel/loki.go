@@ -80,7 +80,7 @@ type LokiV100Spec struct {
 	// Auth 认证方式与环境变量名；不得存放凭据值。
 	Auth *LokiV100SpecAuth `json:"auth,omitempty" yaml:"auth,omitempty"`
 	// TlsVerify 是否校验 TLS 证书，默认 true。
-	TlsVerify bool `json:"tls_verify,omitempty" yaml:"tls_verify,omitempty"`
+	TlsVerify *bool `json:"tls_verify,omitempty" yaml:"tls_verify,omitempty"`
 	// Headers 不包含认证凭据的附加 HTTP 头。
 	Headers map[string]string `json:"headers,omitempty" yaml:"headers,omitempty"`
 }

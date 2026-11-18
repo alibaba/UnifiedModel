@@ -41,6 +41,8 @@ go run ./cmd/umctl --addr http://localhost:8080 query run demo --plan-format age
 
 The example only supplies model definitions. Point `spec.endpoint` at a real Loki service and ensure its stream labels match the StorageLink mapping. For optional authentication, configure `spec.auth` with `type: bearer` and `token_env`, or `type: basic` with `username_env` and `password_env`; set those environment variables only in the caller's process. The plan contains variable names, never credential values. If a trusted proxy supplies `X-Scope-OrgID`, leave `spec.tenant` unset.
 
+The bundled execution helper rejects HTTP redirects. Set `spec.endpoint` to the final Loki URL. In the generated Go SDK, `LokiV100Spec.TlsVerify` is a `*bool`: `nil` omits the setting and uses the default `true`; a pointer to `false` explicitly sets `tls_verify: false`.
+
 Log query size uses explicit `QueryRequest.limit` (or SPL `| limit`) before `Storage.default_size`; a request limit takes precedence over an SPL limit. `Storage.max_size` bounds the result. The helper sorts, deduplicates, and applies the final size after combining multiple log queries. Metric results retain their separate query names and Loki vector or matrix values.
 
 See [Query Service](query-service.md), [CLI reference](../reference/cli.md), and [Loki HTTP API](https://grafana.com/docs/loki/latest/reference/loki-http-api/).

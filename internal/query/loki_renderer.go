@@ -201,7 +201,16 @@ func lokiConfig(req planrender.Request) (map[string]any, error) {
 				return nil, lokiError("Loki auth contains fields from another authentication type")
 			}
 		}
-		out["auth"] = auth
+		for key := range auth {
+			if key != "type" && !containsString(required, key) {
+				return nil, lokiError("Loki auth contains an unsupported field: " + key)
+			}
+		}
+		safeAuth := map[string]any{"type": typ}
+		for _, key := range required {
+			safeAuth[key] = auth[key]
+		}
+		out["auth"] = safeAuth
 	}
 	return out, nil
 }
@@ -346,6 +355,12 @@ func renderLokiLogQL(generator string, constraints []Constraint) (string, error)
 	if err != nil {
 		return "", err
 	}
+	unbound := map[int]bool{}
+	for i, matcher := range matchers {
+		if strings.HasPrefix(matcher.value, "$") {
+			unbound[i] = true
+		}
+	}
 	for _, c := range constraints {
 		matcher, err := constraintToLokiMatcher(c)
 		if err != nil {
@@ -358,8 +373,9 @@ func renderLokiLogQL(generator string, constraints []Constraint) (string, error)
 			}
 			if matchers[i].value == "$"+matcher.label && matchers[i].op == "=" {
 				matchers[i] = matcher
+				delete(unbound, i)
 			} else if matchers[i] != matcher {
-				return "", lokiError("conflicting Loki label conditions: " + matcher.label)
+				continue
 			}
 			found = true
 			break
@@ -372,23 +388,45 @@ func renderLokiLogQL(generator string, constraints []Constraint) (string, error)
 		return "", lokiError("Loki stream selector requires at least one label matcher")
 	}
 	validSelector := false
-	for _, matcher := range matchers {
-		if strings.HasPrefix(matcher.value, "$") {
+	for i, matcher := range matchers {
+		if unbound[i] {
 			return "", lokiError("unbound Loki label placeholder: " + matcher.label)
 		}
-		if (matcher.op == "=" || matcher.op == "=~") && matcher.value != "" {
+		matchesEmpty, err := lokiMatcherMatchesEmpty(matcher)
+		if err != nil {
+			return "", err
+		}
+		if !matchesEmpty {
 			validSelector = true
 		}
 	}
 	if !validSelector {
-		return "", lokiError("Loki stream selector needs a non-empty positive matcher")
+		return "", lokiError("Loki stream selector needs a matcher that does not match the empty string")
 	}
-	sort.Slice(matchers, func(i, j int) bool { return matchers[i].label < matchers[j].label })
+	sort.SliceStable(matchers, func(i, j int) bool { return matchers[i].label < matchers[j].label })
 	parts := make([]string, 0, len(matchers))
 	for _, m := range matchers {
 		parts = append(parts, m.label+m.op+strconv.Quote(m.value))
 	}
 	return generator[:open] + "{" + strings.Join(parts, ",") + "}" + generator[close+1:], nil
+}
+
+func lokiMatcherMatchesEmpty(m lokiMatcher) (bool, error) {
+	switch m.op {
+	case "=":
+		return m.value == "", nil
+	case "!=":
+		return m.value != "", nil
+	case "=~", "!~":
+		pattern, err := regexp.Compile("^(?:" + m.value + ")$")
+		if err != nil {
+			return false, lokiError("invalid Loki label regular expression: " + m.label)
+		}
+		matches := pattern.MatchString("")
+		return matches == (m.op == "=~"), nil
+	default:
+		return false, lokiError("invalid Loki label matcher operator")
+	}
 }
 
 func lokiSelectorBounds(query string) (int, int, error) {
@@ -459,14 +497,21 @@ func parseLokiMatchers(selector string) ([]lokiMatcher, error) {
 	matchers := make([]lokiMatcher, 0, len(parts))
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
-		var label, op, literal string
+		idx := strings.IndexAny(part, "=!~")
+		if idx < 1 {
+			return nil, lokiError("invalid Loki generator label matcher")
+		}
+		label := strings.TrimSpace(part[:idx])
+		rest := part[idx:]
+		op := ""
 		for _, candidate := range []string{"=~", "!~", "!=", "="} {
-			if idx := strings.Index(part, candidate); idx > 0 {
-				label, op, literal = strings.TrimSpace(part[:idx]), candidate, strings.TrimSpace(part[idx+len(candidate):])
+			if strings.HasPrefix(rest, candidate) {
+				op = candidate
 				break
 			}
 		}
-		if !validLokiLabel(label) || len(literal) < 2 || literal[0] != '"' {
+		literal := strings.TrimSpace(strings.TrimPrefix(rest, op))
+		if op == "" || !validLokiLabel(label) || len(literal) < 2 || literal[0] != '"' {
 			return nil, lokiError("invalid Loki generator label matcher")
 		}
 		value, err := strconv.Unquote(literal)
