@@ -168,6 +168,20 @@ func TestLokiEntityDollarValueIsNotPlaceholder(t *testing.T) {
 	}
 }
 
+func TestLokiSameLabelEntityConstraintPreservesDollarLiteral(t *testing.T) {
+	logql, err := renderLokiLogQL(`count_over_time({env=~".+"}[5m])`, []Constraint{
+		{Field: "env", Op: "eq", Values: []string{"$env"}},
+		{Field: "env", Op: "eq", Values: []string{"prod"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `count_over_time({env=~".+",env="$env",env="prod"}[5m])`
+	if logql != want {
+		t.Fatalf("got %q, want %q", logql, want)
+	}
+}
+
 func TestLokiStorageSelectionFailsOnMissingOrAmbiguousTarget(t *testing.T) {
 	bindings := []storageBinding{
 		{Storage: model.UModelElement{Kind: "elasticsearch", Domain: "ops", Name: "logs"}},

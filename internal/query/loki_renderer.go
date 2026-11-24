@@ -371,7 +371,7 @@ func renderLokiLogQL(generator string, constraints []Constraint) (string, error)
 			if matchers[i].label != matcher.label {
 				continue
 			}
-			if matchers[i].value == "$"+matcher.label && matchers[i].op == "=" {
+			if unbound[i] && matchers[i].value == "$"+matcher.label && matchers[i].op == "=" {
 				matchers[i] = matcher
 				delete(unbound, i)
 			} else if matchers[i] != matcher {
