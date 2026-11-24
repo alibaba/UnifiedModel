@@ -3,7 +3,17 @@ services:
     build:
       context: ../..
       dockerfile: deployments/docker/Dockerfile
-    command: ["--addr", ":8080", "--data", "/data", "--graphstore", "file.memory"]
+    command:
+      [
+        "--addr",
+        ":8080",
+        "--data",
+        "/data",
+        "--graphstore",
+        "file.memory",
+        "--ui-dir",
+        "/app/ui",
+      ]
     ports:
       - "8080:8080"
     volumes:
