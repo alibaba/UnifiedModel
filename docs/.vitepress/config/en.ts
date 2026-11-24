@@ -3,6 +3,7 @@ import schemaSidebar from './schema-sidebar.json'
 
 const nav: DefaultTheme.NavItem[] = [
   { text: 'Guide', link: '/en/getting-started/quickstart', activeMatch: '/en/(getting-started|concepts|guides|architecture)/' },
+  { text: 'Best Practices', link: '/en/best-practices/', activeMatch: '/en/best-practices/' },
   { text: 'Reference', link: '/en/reference/cli', activeMatch: '/en/reference/' },
   {
     text: 'Demos',
@@ -49,6 +50,15 @@ const sidebar: DefaultTheme.SidebarItem[] = [
       { text: 'Web UI', link: '/en/guides/web-ui' },
       { text: 'SDK And Client', link: '/en/guides/sdk-clients' },
       { text: 'Agent Integration', link: '/en/guides/agent-integration' },
+    ],
+  },
+  {
+    text: 'Best Practices',
+    collapsed: true,
+    items: [
+      { text: 'Overview', link: '/en/best-practices/' },
+      { text: 'Stable, domain-scoped identity', link: '/en/best-practices/stable-identity' },
+      { text: 'Read the object graph with an AI agent', link: '/en/best-practices/agent-reads-the-object-graph' },
     ],
   },
   {
