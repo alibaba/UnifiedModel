@@ -59,15 +59,15 @@ detect_pnpm_version() {
 
 check_go() {
   if ! command_exists go; then
-    echo "ERROR: Go 1.22+ is required." >&2
+    echo "ERROR: Go 1.26+ is required." >&2
     return 1
   fi
 
   local raw version
   raw="$(go env GOVERSION 2>/dev/null || go version | awk '{print $3}')"
   version="$(normalize_version "${raw}")"
-  if ! version_at_least "${version}" "1.22"; then
-    echo "ERROR: Go 1.22+ is required; found ${raw}." >&2
+  if ! version_at_least "${version}" "1.26"; then
+    echo "ERROR: Go 1.26+ is required; found ${raw}." >&2
     return 1
   fi
   echo "OK: Go ${raw}"

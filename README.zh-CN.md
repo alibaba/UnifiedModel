@@ -1,7 +1,7 @@
 # UModel
 
 [![CI](https://github.com/alibaba/UnifiedModel/actions/workflows/ci.yml/badge.svg)](https://github.com/alibaba/UnifiedModel/actions/workflows/ci.yml)
-![Go 1.22+](https://img.shields.io/badge/Go-1.22%2B-00ADD8)
+![Go 1.26+](https://img.shields.io/badge/Go-1.26%2B-00ADD8)
 ![Node 22+](https://img.shields.io/badge/Node.js-22%2B-339933)
 ![License](https://img.shields.io/badge/License-Apache--2.0-blue)
 
@@ -40,7 +40,7 @@ AI Agent 在 `quickstart-multidomain` workspace 上读取对象图（90 秒）�
 
 依赖：
 
-- Go 1.22 或更新版本。
+- Go 1.26 或更新版本。
 - Make。
 - 运行 Web UI 需要 Node.js 22 或更新版本。
 - Web UI 依赖首选 pnpm 9 或更新版本；Makefile 支持 `corepack` 或 `npm exec` fallback。

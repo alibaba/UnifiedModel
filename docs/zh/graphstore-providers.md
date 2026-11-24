@@ -74,9 +74,24 @@ UMODEL_CONTAINER_RUNTIME=podman make test-gremlin-matrix
 
 此前的合约和应用重启测试也已在独立 Gremlin Server 3.8.1 + TinkerGraph 上通过，使用的是 ArcadeDB 26.9.1 镜像中捆绑的 TinkerPop 库。托管服务及其他图后端仍需各自验证兼容性。
 
+## `local.ladybug`
+
+Go binding 要求 Go 1.26 或更新版本。安装与 `go.mod` 中 `github.com/LadybugDB/go-ladybug` 版本一致的 `liblbug` release，包括 `lbug.h` 头文件。在 Linux 上，将编译和链接路径指向解压目录：
+
+```bash
+export CGO_CFLAGS="-I/path/to/liblbug"
+export LIBRARY_PATH="/path/to/liblbug"
+export LD_LIBRARY_PATH="/path/to/liblbug"
+UMODEL_TEST_LADYBUG=1 make test-ladybug
+```
+
+`ladybug` 构建标签保持不变。CI 从 `go.mod` 读取原生库版本，使依赖升级时引擎和头文件同步更新。
+
+Ladybug 0.17 可读取 0.13.1 的存储格式，并在 checkpoint 时将格式版本从 40 升级为 41。升级前备份现有数据库文件：0.13.1 无法重新打开升级后的文件，降级时需要恢复备份。
+
 ## `neo4j`
 
-默认 `neo4j` 方言面向 Neo4j 5.26 或更新版本。同一 provider 还提供 `opencypher` 兼容方言，用于兼容 Bolt 的数据库。Provider 使用官方 Go driver v5，保留仓库的 Go 1.22 构建基线。`umodel-server` 和 `umodel-mcp` 均支持 `--graphstore neo4j`。
+默认 `neo4j` 方言面向 Neo4j 5.26 或更新版本。同一 provider 还提供 `opencypher` 兼容方言，用于兼容 Bolt 的数据库。Provider 使用官方 Go driver v5。`umodel-server` 和 `umodel-mcp` 均支持 `--graphstore neo4j`。
 
 ```bash
 export NEO4J_URI=bolt://localhost:7687

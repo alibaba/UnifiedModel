@@ -9,7 +9,7 @@ UModel 本地开发环境、服务构建、API/Web UI 启动和 GraphStore provi
 
 | 工具 | 用途 | 最低版本 |
 |---|---|---:|
-| Go | 服务端、CLI、MCP、Go 测试 | 1.22 |
+| Go | 服务端、CLI、MCP、Go 测试 | 1.26 |
 | Make | 本地工作流 | 近期版本 |
 | Python | Schema 展开、验证、SDK 生成 | 3.10 |
 | Node.js | Web UI | 22 |

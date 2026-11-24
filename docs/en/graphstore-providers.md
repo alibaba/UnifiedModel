@@ -82,9 +82,24 @@ The runner creates disposable TLS certificates and credential graphs, verifies b
 
 Earlier contract and application-restart tests also passed against standalone Gremlin Server 3.8.1 with TinkerGraph, using TinkerPop libraries bundled in ArcadeDB 26.9.1. Hosted services and other graph backends still require their own compatibility checks.
 
+## `local.ladybug`
+
+The Go binding requires Go 1.26 or newer. Install the `liblbug` release matching `github.com/LadybugDB/go-ladybug` in `go.mod`, including its `lbug.h` header. On Linux, point compilation and linking at the extracted release:
+
+```bash
+export CGO_CFLAGS="-I/path/to/liblbug"
+export LIBRARY_PATH="/path/to/liblbug"
+export LD_LIBRARY_PATH="/path/to/liblbug"
+UMODEL_TEST_LADYBUG=1 make test-ladybug
+```
+
+The `ladybug` build tag remains unchanged. CI resolves the native release version from `go.mod` so dependency updates also update the engine and header.
+
+Ladybug 0.17 reads the storage format used by 0.13.1 and upgrades it from version 40 to 41 at checkpoint. Back up existing database files before upgrading: 0.13.1 cannot reopen the upgraded files, so a downgrade requires restoring that backup.
+
 ## `neo4j`
 
-The default `neo4j` dialect targets Neo4j 5.26 or later. The same provider offers an `opencypher` compatibility dialect for Bolt-compatible databases. It uses the official Go driver v5 to retain the repository's Go 1.22 build baseline. Both `umodel-server` and `umodel-mcp` accept `--graphstore neo4j`.
+The default `neo4j` dialect targets Neo4j 5.26 or later. The same provider offers an `opencypher` compatibility dialect for Bolt-compatible databases. It uses the official Go driver v5. Both `umodel-server` and `umodel-mcp` accept `--graphstore neo4j`.
 
 ```bash
 export NEO4J_URI=bolt://localhost:7687

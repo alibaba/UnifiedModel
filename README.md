@@ -1,7 +1,7 @@
 # UModel
 
 [![CI](https://github.com/alibaba/UnifiedModel/actions/workflows/ci.yml/badge.svg)](https://github.com/alibaba/UnifiedModel/actions/workflows/ci.yml)
-![Go 1.22+](https://img.shields.io/badge/Go-1.22%2B-00ADD8)
+![Go 1.26+](https://img.shields.io/badge/Go-1.26%2B-00ADD8)
 ![Node 22+](https://img.shields.io/badge/Node.js-22%2B-339933)
 ![License](https://img.shields.io/badge/License-Apache--2.0-blue)
 
@@ -40,7 +40,7 @@ The open-source core focuses on local operation, public contracts, semantic mode
 
 Requirements:
 
-- Go 1.22 or newer.
+- Go 1.26 or newer.
 - Make.
 - Node.js 22 or newer for the Web UI.
 - pnpm 9 or newer is preferred; `corepack` or `npm exec` fallback is supported by the Makefile.

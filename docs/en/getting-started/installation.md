@@ -9,7 +9,7 @@ Local development setup for UModel.
 
 | Tool | Required for | Minimum |
 |---|---|---:|
-| Go | Service, CLI, MCP, Go tests | 1.22 |
+| Go | Service, CLI, MCP, Go tests | 1.26 |
 | Make | Local workflows | any recent version |
 | Python | Schema expansion, validation, SDK generation | 3.10 |
 | Node.js | Web UI | 22 |

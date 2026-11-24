@@ -8,7 +8,7 @@ Chinese version: [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md)
 
 | Tool | Minimum version | Required | Used for |
 |---|---:|---:|---|
-| Go | 1.22 | Yes | Service, CLI, MCP, tests, Go SDK checks |
+| Go | 1.26 | Yes | Service, CLI, MCP, tests, Go SDK checks |
 | Python | 3.10 | Yes | Schema expansion, validation, code generation |
 | Make | Any recent version | Yes | Local workflows |
 | Node.js | 22 | Web UI changes only | React/Vite build |

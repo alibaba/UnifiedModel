@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22.x"
+          go-version-file: go.mod
           cache-dependency-path: go.sum
       - name: Run real Gremlin plain/TLS/auth/transaction/restart matrix
         run: make test-gremlin-matrix
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22.x"
+          go-version-file: go.mod
           cache-dependency-path: go.sum
       - name: Run Neo4j provider, contract, and E2E tests
         env:
@@ -66,7 +66,8 @@ jobs:
 
   ci:
     name: Local CI Gate
-    runs-on: ubuntu-latest
+    # The locked Playwright release does not support Ubuntu 26.04 yet.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
@@ -76,7 +77,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: "1.22.x"
+          go-version-file: go.mod
           cache-dependency-path: |
             go.sum
             sdk/go/go.sum
@@ -150,13 +151,6 @@ jobs:
     name: Ladybug Provider (optional graph backend)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      # Pin the native engine to the same release as the go-ladybug binding
-      # (go.mod: github.com/LadybugDB/go-ladybug v0.13.1). go-ladybug's own CI
-      # pulls releases/latest — already v0.17.1 — which would link a mismatched
-      # ABI against the v0.13.1 binding we build. Bump this together with go.mod.
-      LBUG_VERSION: v0.13.1
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -164,22 +158,24 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: "1.22.x"
+          go-version-file: go.mod
           cache-dependency-path: go.sum
 
       - name: Provision liblbug (pinned to the go-ladybug binding)
         run: |
           set -euo pipefail
+          LBUG_VERSION="$(go list -m -f '{{.Version}}' github.com/LadybugDB/go-ladybug)"
           asset="liblbug-linux-x86_64.tar.gz"
           url="https://github.com/LadybugDB/ladybug/releases/download/${LBUG_VERSION}/${asset}"
           dir="${RUNNER_TEMP}/lbug"
           mkdir -p "$dir"
           curl -fL --retry 5 --retry-all-errors --max-time 180 -o "$dir/$asset" "$url"
           tar -xzf "$dir/$asset" -C "$dir"
-          # go-ladybug's cgo -L/-rpath point at an in-module dir that ships no
-          # .so, so LIBRARY_PATH (link time) and LD_LIBRARY_PATH (run time) are
-          # what actually resolve -llbug.
+          # The binding ships neither lbug.h nor liblbug; use the matching
+          # release's header and shared library for compilation and execution.
+          includedir="$(dirname "$(find "$dir" -name 'lbug.h' | head -1)")"
           libdir="$(dirname "$(find "$dir" -name 'liblbug.so' | head -1)")"
+          echo "CGO_CFLAGS=-I${includedir}" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=${libdir}" >> "$GITHUB_ENV"
           echo "LD_LIBRARY_PATH=${libdir}" >> "$GITHUB_ENV"
 

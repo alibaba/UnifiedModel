@@ -8,7 +8,7 @@ English version: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 | 工具 | 最低版本 | 用途 |
 |---|---:|---|
-| Go | 1.22 | 服务端、CLI、MCP、测试、Go SDK 检查 |
+| Go | 1.26 | 服务端、CLI、MCP、测试、Go SDK 检查 |
 | Python | 3.10 | Schema 展开、校验、代码生成 |
 | Make | 近期版本 | 本地工作流 |
 | Node.js | 22 | Web UI |
