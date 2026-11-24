@@ -17,6 +17,9 @@ Supported storage kinds include:
 | `sls_metricstore` | SLS metric stores. |
 | `sls_entitystore` | SLS entity data. |
 | `aliyun_prometheus` | Prometheus-compatible metric data. |
+| `prometheus` | Prometheus metric data. |
+| `elasticsearch` | Elasticsearch logs. |
+| `loki` | Loki stream logs and log-derived metrics through LogQL plans. |
 | `external_storage` | Storage outside built-in providers. |
 
 Example:
@@ -53,6 +56,8 @@ go run ./cmd/umodel-server --addr :8080 --data data --graphstore file.memory
 ## Separation Rule
 
 Storage definitions define domain telemetry organization. GraphStore providers persist and query UModel's own model graph, entity records, and relation records.
+
+For Loki model fields, query plans, and execution, see [Loki Storage](../guides/loki-storage.md).
 
 ```mermaid
 flowchart LR

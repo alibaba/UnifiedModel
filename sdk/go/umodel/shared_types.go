@@ -61,6 +61,127 @@ func (s *ConstraintTypeV1) GetKind() string {
 	return "constraint_type"
 }
 
+// ModelBindingV1 represents model_binding
+type ModelBindingV1 struct {
+	// Domain 模型所属域，对应目标 Set 的 metadata.domain。
+	Domain string `json:"domain" yaml:"domain"`
+	// Kind 模型类型，如 log_set、metric_set、event_set、entity_set。
+	Kind string `json:"kind" yaml:"kind"`
+	// Name 模型名称，对应目标 Set 的 metadata.name。
+	Name string `json:"name" yaml:"name"`
+}
+
+// Validate 验证ModelBindingV1是否符合schema定义
+func (s *ModelBindingV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ModelBindingV1的类型标识
+func (s *ModelBindingV1) GetKind() string {
+	return "model_binding"
+}
+
+// ConfidenceV1 represents confidence
+type ConfidenceV1 struct {
+	// Score 语义置信度分数，范围 0-100。
+	Score int64 `json:"score,omitempty" yaml:"score,omitempty"`
+	// Status 语义定义的应用状态，按优先级从高到低依次为人工确认应用、系统自动应用和尚未应用。
+	Status string `json:"status,omitempty" yaml:"status,omitempty"`
+	// Source 置信度来源。
+	Source string `json:"source,omitempty" yaml:"source,omitempty"`
+	// Basis 形成该置信度所依据的主要证据类型，只记录类别，不记录证据明细。
+	Basis []string `json:"basis,omitempty" yaml:"basis,omitempty"`
+	// Reason 简短说明为什么给出该置信度。
+	Reason string `json:"reason,omitempty" yaml:"reason,omitempty"`
+}
+
+// Validate 验证ConfidenceV1是否符合schema定义
+func (s *ConfidenceV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ConfidenceV1的类型标识
+func (s *ConfidenceV1) GetKind() string {
+	return "confidence"
+}
+
+// ValueMappingV1 represents value_mapping
+type ValueMappingV1 struct {
+	// Name 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 在 UModel 系统中的显示名称。值不能为空。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description 在 UModel 系统中的描述。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ShortDescription 在 UModel 系统中的简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+}
+
+// Validate 验证ValueMappingV1是否符合schema定义
+func (s *ValueMappingV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ValueMappingV1的类型标识
+func (s *ValueMappingV1) GetKind() string {
+	return "value_mapping"
+}
+
+// ToolkitV1 represents toolkit
+type ToolkitV1 struct {
+	// Name 工具箱名称，在同一个 RunbookSet 内必须唯一。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 工具箱显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
+	// ShortDescription 工具箱简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// Description 工具箱详细描述信息。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ToolkitType 工具箱类型，如 mcp、pop_api、api_call、script、webhook 等。
+	ToolkitType string `json:"toolkit_type" yaml:"toolkit_type"`
+	// Configs 运行时配置，如连接信息、认证、超时等，Toolkit 内所有 Tool 继承使用。
+	Configs map[string]interface{} `json:"configs,omitempty" yaml:"configs,omitempty"`
+	// Properties 扩展元数据，描述性属性，自由扩展的 k-v。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// Tags 共享标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+	// Tools 工具列表。
+	Tools []*ToolV1 `json:"tools" yaml:"tools"`
+}
+
+// Validate 验证ToolkitV1是否符合schema定义
+func (s *ToolkitV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ToolkitV1的类型标识
+func (s *ToolkitV1) GetKind() string {
+	return "toolkit"
+}
+
+// ToolParameterConfigV1 represents tool_parameter_config
+type ToolParameterConfigV1 struct {
+	// Properties 参数属性定义，键为参数名称，值为参数定义对象。
+	Properties map[string]interface{} `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// Required 必填参数名称列表。
+	Required []string `json:"required,omitempty" yaml:"required,omitempty"`
+}
+
+// Validate 验证ToolParameterConfigV1是否符合schema定义
+func (s *ToolParameterConfigV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ToolParameterConfigV1的类型标识
+func (s *ToolParameterConfigV1) GetKind() string {
+	return "tool_parameter_config"
+}
+
 // TelemetryDataV1 represents telemetry_data
 type TelemetryDataV1 struct {
 	// Fields 可观测数据的字段列表。
@@ -92,146 +213,89 @@ func (s *TelemetryDataV1) GetKind() string {
 	return "telemetry_data"
 }
 
-// ActionConfigV1 represents action_config
-type ActionConfigV1 struct {
-	// Name 操作名称，在同一个RunbookSet中必须唯一。
+// SkillConfigV1 represents skill_config
+type SkillConfigV1 struct {
+	// Name 技能名称（唯一标识），仅支持小写字母、数字和连字符，不能以连字符开头或结尾，不能包含连续连字符。
 	Name string `json:"name" yaml:"name"`
-	// DisplayName 操作显示名称。
+	// DisplayName 技能显示名称。
 	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
-	// ShortDescription 操作简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-	// Description 操作详细描述信息。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ActionType 操作类型，例如pop_api、mcp、api_call、script、webhook等。
-	ActionType string `json:"action_type" yaml:"action_type"`
-	// Inputs 操作参数配置列表。
-	Inputs []*ParameterConfigV1 `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	// Outputs 操作输出配置列表。
-	Outputs []*ParameterConfigV1 `json:"outputs,omitempty" yaml:"outputs,omitempty"`
-	// ConfirmationRequired 是否需要确认才能执行操作。
-	ConfirmationRequired bool `json:"confirmation_required,omitempty" yaml:"confirmation_required,omitempty"`
-	// RiskLevel 操作的风险等级。
-	RiskLevel string `json:"risk_level,omitempty" yaml:"risk_level,omitempty"`
-	// Properties 详细配置信息，用于配置不同类型操作的详细信息
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Tags 操作标签。
+	// Description 技能描述，说明技能的功能和使用场景，帮助 Agent 识别何时使用该技能。
+	Description *SemanticStringV1 `json:"description" yaml:"description"`
+	// License 技能的许可证信息。
+	License string `json:"license,omitempty" yaml:"license,omitempty"`
+	// Compatibility 技能的环境兼容性要求，如依赖的系统包、网络访问需求等。
+	Compatibility string `json:"compatibility,omitempty" yaml:"compatibility,omitempty"`
+	// AllowedTools 预授权工具列表，空格分隔的工具标识符。
+	AllowedTools string `json:"allowed_tools,omitempty" yaml:"allowed_tools,omitempty"`
+	// Metadata 技能的额外元数据，如作者、版本等。
+	Metadata map[string]string `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	// Tags 技能标签，用于分类和检索。
 	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-}
-
-// Validate 验证ActionConfigV1是否符合schema定义
-func (s *ActionConfigV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ActionConfigV1的类型标识
-func (s *ActionConfigV1) GetKind() string {
-	return "action_config"
-}
-
-// KnowledgeConfigV1 represents knowledge_config
-type KnowledgeConfigV1 struct {
-	// Name 知识项名称，在同一个RunbookSet中必须唯一。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 知识项显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
-	// ShortDescription 知识项简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description" yaml:"short_description"`
-	// Description 知识项详细描述信息。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ApplyPolicy 知识如何应用的配置。
-	ApplyPolicy *KnowledgeConfigV1ApplyPolicy `json:"apply_policy" yaml:"apply_policy"`
-	// ContentType 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
-	ContentType string `json:"content_type" yaml:"content_type"`
-	// Content 知识内容，根据content_type可以是文本内容或URL地址。
-	Content string `json:"content,omitempty" yaml:"content,omitempty"`
-	// ContentUrl 知识内容的外部URL地址。
-	ContentUrl string `json:"content_url,omitempty" yaml:"content_url,omitempty"`
-	// Priority 知识项优先级，用于排序显示以及模型推理时选择。
+	// Files 技能文件列表，包含 SKILL.md 及其他辅助文件（如 scripts/、references/、assets/ 下的文件）。
+	Files []*SkillConfigV1FilesItem `json:"files,omitempty" yaml:"files,omitempty"`
+	// SkillUrl 技能包的外部URL地址（如OSS地址），与files字段二选一。当使用URL时，技能文件从该地址加载。
+	SkillUrl string `json:"skill_url,omitempty" yaml:"skill_url,omitempty"`
+	// Priority 技能优先级，用于排序和选择。值越小优先级越高。
 	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
 	// LastUpdated 最后更新时间。
 	LastUpdated time.Time `json:"last_updated,omitempty" yaml:"last_updated,omitempty"`
-	// Tags 知识项标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
 }
 
-// Validate 验证KnowledgeConfigV1是否符合schema定义
-func (s *KnowledgeConfigV1) Validate() error {
+// Validate 验证SkillConfigV1是否符合schema定义
+func (s *SkillConfigV1) Validate() error {
 	// TODO: 实现验证逻辑
 	return nil
 }
 
-// GetKind 获取KnowledgeConfigV1的类型标识
-func (s *KnowledgeConfigV1) GetKind() string {
-	return "knowledge_config"
+// GetKind 获取SkillConfigV1的类型标识
+func (s *SkillConfigV1) GetKind() string {
+	return "skill_config"
 }
 
-// MetadataV1 represents metadata
-type MetadataV1 struct {
-	// Name 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+// SchemaV1 represents schema
+type SchemaV1 struct {
+	// Url Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
+	Url string `json:"url" yaml:"url"`
+	// Version Schema 的版本。命名格式为 "v1.2.3"。
+	Version string `json:"version" yaml:"version"`
+}
+
+// Validate 验证SchemaV1是否符合schema定义
+func (s *SchemaV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取SchemaV1的类型标识
+func (s *SchemaV1) GetKind() string {
+	return "schema"
+}
+
+// ParameterConfigV1 represents parameter_config
+type ParameterConfigV1 struct {
+	// Name 参数名称。
 	Name string `json:"name" yaml:"name"`
-	// DisplayName 元素在 UModel 系统中的显示名称。值不能为空。
+	// DisplayName 参数显示名称。
 	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description 元素在 UModel 系统中的描述。
+	// Description 参数描述信息。
 	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ShortDescription 元素在 UModel系统中的简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-	// Domain 域。值格式为'domain.domain'。可以以点连接。
-	Domain string `json:"domain" yaml:"domain"`
-	// LaunchStage 元素的发布阶段。默认值为 preview。
-	LaunchStage string `json:"launch_stage,omitempty" yaml:"launch_stage,omitempty"`
-	// Icon 元素在UModel系统中的图标。值格式为'url'。
-	Icon string `json:"icon,omitempty" yaml:"icon,omitempty"`
-	// Uri 用于表示该元素唯一标识。
-	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
-	// Tags 用于表示该元素的标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-	// Properties 用于表示该元素的附加属性。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// CommonSchemaInfo 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
-	CommonSchemaInfo *MetadataV1CommonSchemaInfo `json:"common_schema_info,omitempty" yaml:"common_schema_info,omitempty"`
+	// Type 参数类型。
+	Type string `json:"type" yaml:"type"`
+	// Required 是否为必填参数。
+	Required bool `json:"required,omitempty" yaml:"required,omitempty"`
+	// Default 参数默认值。
+	Default string `json:"default,omitempty" yaml:"default,omitempty"`
 }
 
-// Validate 验证MetadataV1是否符合schema定义
-func (s *MetadataV1) Validate() error {
+// Validate 验证ParameterConfigV1是否符合schema定义
+func (s *ParameterConfigV1) Validate() error {
 	// TODO: 实现验证逻辑
 	return nil
 }
 
-// GetKind 获取MetadataV1的类型标识
-func (s *MetadataV1) GetKind() string {
-	return "metadata"
-}
-
-// AutomationConfigV1 represents automation_config
-type AutomationConfigV1 struct {
-	// Name 自动化项名称，在同一个RunbookSet中必须唯一。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 自动化项显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
-	// ShortDescription 自动化项简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description" yaml:"short_description"`
-	// Description 自动化项详细描述信息。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// AutomationType 自动化类型，如action、script、webhook等。
-	AutomationType string `json:"automation_type" yaml:"automation_type"`
-	// Trigger 触发条件配置。
-	Trigger *AutomationConfigV1Trigger `json:"trigger" yaml:"trigger"`
-	// Properties 自动化项属性配置。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Tags 自动化项标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-}
-
-// Validate 验证AutomationConfigV1是否符合schema定义
-func (s *AutomationConfigV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取AutomationConfigV1的类型标识
-func (s *AutomationConfigV1) GetKind() string {
-	return "automation_config"
+// GetKind 获取ParameterConfigV1的类型标识
+func (s *ParameterConfigV1) GetKind() string {
+	return "parameter_config"
 }
 
 // ObservationV1 represents observation
@@ -263,54 +327,6 @@ func (s *ObservationV1) Validate() error {
 // GetKind 获取ObservationV1的类型标识
 func (s *ObservationV1) GetKind() string {
 	return "observation"
-}
-
-// ValueMappingV1 represents value_mapping
-type ValueMappingV1 struct {
-	// Name 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 在 UModel 系统中的显示名称。值不能为空。
-	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description 在 UModel 系统中的描述。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ShortDescription 在 UModel 系统中的简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-}
-
-// Validate 验证ValueMappingV1是否符合schema定义
-func (s *ValueMappingV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ValueMappingV1的类型标识
-func (s *ValueMappingV1) GetKind() string {
-	return "value_mapping"
-}
-
-// ConfidenceV1 represents confidence
-type ConfidenceV1 struct {
-	// Score 语义置信度分数，范围 0-100。
-	Score int64 `json:"score,omitempty" yaml:"score,omitempty"`
-	// Status 语义定义的应用状态，按优先级从高到低依次为人工确认应用、系统自动应用和尚未应用。
-	Status string `json:"status,omitempty" yaml:"status,omitempty"`
-	// Source 置信度来源。
-	Source string `json:"source,omitempty" yaml:"source,omitempty"`
-	// Basis 形成该置信度所依据的主要证据类型，只记录类别，不记录证据明细。
-	Basis []string `json:"basis,omitempty" yaml:"basis,omitempty"`
-	// Reason 简短说明为什么给出该置信度。
-	Reason string `json:"reason,omitempty" yaml:"reason,omitempty"`
-}
-
-// Validate 验证ConfidenceV1是否符合schema定义
-func (s *ConfidenceV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ConfidenceV1的类型标识
-func (s *ConfidenceV1) GetKind() string {
-	return "confidence"
 }
 
 // MetricV1 represents metric
@@ -374,23 +390,101 @@ func (s *MetricV1) GetKind() string {
 	return "metric"
 }
 
-// ToolParameterConfigV1 represents tool_parameter_config
-type ToolParameterConfigV1 struct {
-	// Properties 参数属性定义，键为参数名称，值为参数定义对象。
-	Properties map[string]interface{} `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Required 必填参数名称列表。
-	Required []string `json:"required,omitempty" yaml:"required,omitempty"`
+// MetadataV1 represents metadata
+type MetadataV1 struct {
+	// Name 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 元素在 UModel 系统中的显示名称。值不能为空。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description 元素在 UModel 系统中的描述。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ShortDescription 元素在 UModel系统中的简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// Domain 域。值格式为'domain.domain'。可以以点连接。
+	Domain string `json:"domain" yaml:"domain"`
+	// LaunchStage 元素的发布阶段。默认值为 preview。
+	LaunchStage string `json:"launch_stage,omitempty" yaml:"launch_stage,omitempty"`
+	// Icon 元素在UModel系统中的图标。值格式为'url'。
+	Icon string `json:"icon,omitempty" yaml:"icon,omitempty"`
+	// Uri 用于表示该元素唯一标识。
+	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
+	// Tags 用于表示该元素的标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+	// Properties 用于表示该元素的附加属性。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// CommonSchemaInfo 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
+	CommonSchemaInfo *MetadataV1CommonSchemaInfo `json:"common_schema_info,omitempty" yaml:"common_schema_info,omitempty"`
 }
 
-// Validate 验证ToolParameterConfigV1是否符合schema定义
-func (s *ToolParameterConfigV1) Validate() error {
+// Validate 验证MetadataV1是否符合schema定义
+func (s *MetadataV1) Validate() error {
 	// TODO: 实现验证逻辑
 	return nil
 }
 
-// GetKind 获取ToolParameterConfigV1的类型标识
-func (s *ToolParameterConfigV1) GetKind() string {
-	return "tool_parameter_config"
+// GetKind 获取MetadataV1的类型标识
+func (s *MetadataV1) GetKind() string {
+	return "metadata"
+}
+
+// LinkV1 represents link
+type LinkV1 struct {
+	// Src 源 Set 的标识。值不能为空。
+	Src *LinkV1Src `json:"src,omitempty" yaml:"src,omitempty"`
+	// Dest 目标 Set 的标识。值不能为空。
+	Dest *LinkV1Dest `json:"dest,omitempty" yaml:"dest,omitempty"`
+	// FilterByEntity 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
+	FilterByEntity string `json:"filter_by_entity,omitempty" yaml:"filter_by_entity,omitempty"`
+	// Priority Link 的优先级。值可以为空。默认值为5。
+	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
+}
+
+// Validate 验证LinkV1是否符合schema定义
+func (s *LinkV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取LinkV1的类型标识
+func (s *LinkV1) GetKind() string {
+	return "link"
+}
+
+// KnowledgeConfigV1 represents knowledge_config
+type KnowledgeConfigV1 struct {
+	// Name 知识项名称，在同一个RunbookSet中必须唯一。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 知识项显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
+	// ShortDescription 知识项简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description" yaml:"short_description"`
+	// Description 知识项详细描述信息。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ApplyPolicy 知识如何应用的配置。
+	ApplyPolicy *KnowledgeConfigV1ApplyPolicy `json:"apply_policy" yaml:"apply_policy"`
+	// ContentType 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
+	ContentType string `json:"content_type" yaml:"content_type"`
+	// Content 知识内容，根据content_type可以是文本内容或URL地址。
+	Content string `json:"content,omitempty" yaml:"content,omitempty"`
+	// ContentUrl 知识内容的外部URL地址。
+	ContentUrl string `json:"content_url,omitempty" yaml:"content_url,omitempty"`
+	// Priority 知识项优先级，用于排序显示以及模型推理时选择。
+	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
+	// LastUpdated 最后更新时间。
+	LastUpdated time.Time `json:"last_updated,omitempty" yaml:"last_updated,omitempty"`
+	// Tags 知识项标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+}
+
+// Validate 验证KnowledgeConfigV1是否符合schema定义
+func (s *KnowledgeConfigV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取KnowledgeConfigV1的类型标识
+func (s *KnowledgeConfigV1) GetKind() string {
+	return "knowledge_config"
 }
 
 // FieldSpecV1 represents field_spec
@@ -454,166 +548,101 @@ func (s *FieldSpecV1) GetKind() string {
 	return "field_spec"
 }
 
-// ParameterConfigV1 represents parameter_config
-type ParameterConfigV1 struct {
-	// Name 参数名称。
+// AutomationConfigV1 represents automation_config
+type AutomationConfigV1 struct {
+	// Name 自动化项名称，在同一个RunbookSet中必须唯一。
 	Name string `json:"name" yaml:"name"`
-	// DisplayName 参数显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description 参数描述信息。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// Type 参数类型。
-	Type string `json:"type" yaml:"type"`
-	// Required 是否为必填参数。
-	Required bool `json:"required,omitempty" yaml:"required,omitempty"`
-	// Default 参数默认值。
-	Default string `json:"default,omitempty" yaml:"default,omitempty"`
-}
-
-// Validate 验证ParameterConfigV1是否符合schema定义
-func (s *ParameterConfigV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ParameterConfigV1的类型标识
-func (s *ParameterConfigV1) GetKind() string {
-	return "parameter_config"
-}
-
-// LinkV1 represents link
-type LinkV1 struct {
-	// Src 源 Set 的标识。值不能为空。
-	Src *LinkV1Src `json:"src,omitempty" yaml:"src,omitempty"`
-	// Dest 目标 Set 的标识。值不能为空。
-	Dest *LinkV1Dest `json:"dest,omitempty" yaml:"dest,omitempty"`
-	// FilterByEntity 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
-	FilterByEntity string `json:"filter_by_entity,omitempty" yaml:"filter_by_entity,omitempty"`
-	// Priority Link 的优先级。值可以为空。默认值为5。
-	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
-}
-
-// Validate 验证LinkV1是否符合schema定义
-func (s *LinkV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取LinkV1的类型标识
-func (s *LinkV1) GetKind() string {
-	return "link"
-}
-
-// SchemaV1 represents schema
-type SchemaV1 struct {
-	// Url Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
-	Url string `json:"url" yaml:"url"`
-	// Version Schema 的版本。命名格式为 "v1.2.3"。
-	Version string `json:"version" yaml:"version"`
-}
-
-// Validate 验证SchemaV1是否符合schema定义
-func (s *SchemaV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取SchemaV1的类型标识
-func (s *SchemaV1) GetKind() string {
-	return "schema"
-}
-
-// ModelBindingV1 represents model_binding
-type ModelBindingV1 struct {
-	// Domain 模型所属域，对应目标 Set 的 metadata.domain。
-	Domain string `json:"domain" yaml:"domain"`
-	// Kind 模型类型，如 log_set、metric_set、event_set、entity_set。
-	Kind string `json:"kind" yaml:"kind"`
-	// Name 模型名称，对应目标 Set 的 metadata.name。
-	Name string `json:"name" yaml:"name"`
-}
-
-// Validate 验证ModelBindingV1是否符合schema定义
-func (s *ModelBindingV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ModelBindingV1的类型标识
-func (s *ModelBindingV1) GetKind() string {
-	return "model_binding"
-}
-
-// SkillConfigV1 represents skill_config
-type SkillConfigV1 struct {
-	// Name 技能名称（唯一标识），仅支持小写字母、数字和连字符，不能以连字符开头或结尾，不能包含连续连字符。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 技能显示名称。
+	// DisplayName 自动化项显示名称。
 	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
-	// Description 技能描述，说明技能的功能和使用场景，帮助 Agent 识别何时使用该技能。
-	Description *SemanticStringV1 `json:"description" yaml:"description"`
-	// License 技能的许可证信息。
-	License string `json:"license,omitempty" yaml:"license,omitempty"`
-	// Compatibility 技能的环境兼容性要求，如依赖的系统包、网络访问需求等。
-	Compatibility string `json:"compatibility,omitempty" yaml:"compatibility,omitempty"`
-	// AllowedTools 预授权工具列表，空格分隔的工具标识符。
-	AllowedTools string `json:"allowed_tools,omitempty" yaml:"allowed_tools,omitempty"`
-	// Metadata 技能的额外元数据，如作者、版本等。
-	Metadata map[string]string `json:"metadata,omitempty" yaml:"metadata,omitempty"`
-	// Tags 技能标签，用于分类和检索。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-	// Files 技能文件列表，包含 SKILL.md 及其他辅助文件（如 scripts/、references/、assets/ 下的文件）。
-	Files []*SkillConfigV1FilesItem `json:"files,omitempty" yaml:"files,omitempty"`
-	// SkillUrl 技能包的外部URL地址（如OSS地址），与files字段二选一。当使用URL时，技能文件从该地址加载。
-	SkillUrl string `json:"skill_url,omitempty" yaml:"skill_url,omitempty"`
-	// Priority 技能优先级，用于排序和选择。值越小优先级越高。
-	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
-	// LastUpdated 最后更新时间。
-	LastUpdated time.Time `json:"last_updated,omitempty" yaml:"last_updated,omitempty"`
-}
-
-// Validate 验证SkillConfigV1是否符合schema定义
-func (s *SkillConfigV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取SkillConfigV1的类型标识
-func (s *SkillConfigV1) GetKind() string {
-	return "skill_config"
-}
-
-// ToolkitV1 represents toolkit
-type ToolkitV1 struct {
-	// Name 工具箱名称，在同一个 RunbookSet 内必须唯一。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 工具箱显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
-	// ShortDescription 工具箱简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-	// Description 工具箱详细描述信息。
+	// ShortDescription 自动化项简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description" yaml:"short_description"`
+	// Description 自动化项详细描述信息。
 	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ToolkitType 工具箱类型，如 mcp、pop_api、api_call、script、webhook 等。
-	ToolkitType string `json:"toolkit_type" yaml:"toolkit_type"`
-	// Configs 运行时配置，如连接信息、认证、超时等，Toolkit 内所有 Tool 继承使用。
-	Configs map[string]interface{} `json:"configs,omitempty" yaml:"configs,omitempty"`
-	// Properties 扩展元数据，描述性属性，自由扩展的 k-v。
+	// AutomationType 自动化类型，如action、script、webhook等。
+	AutomationType string `json:"automation_type" yaml:"automation_type"`
+	// Trigger 触发条件配置。
+	Trigger *AutomationConfigV1Trigger `json:"trigger" yaml:"trigger"`
+	// Properties 自动化项属性配置。
 	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Tags 共享标签。
+	// Tags 自动化项标签。
 	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-	// Tools 工具列表。
-	Tools []*ToolV1 `json:"tools" yaml:"tools"`
 }
 
-// Validate 验证ToolkitV1是否符合schema定义
-func (s *ToolkitV1) Validate() error {
+// Validate 验证AutomationConfigV1是否符合schema定义
+func (s *AutomationConfigV1) Validate() error {
 	// TODO: 实现验证逻辑
 	return nil
 }
 
-// GetKind 获取ToolkitV1的类型标识
-func (s *ToolkitV1) GetKind() string {
-	return "toolkit"
+// GetKind 获取AutomationConfigV1的类型标识
+func (s *AutomationConfigV1) GetKind() string {
+	return "automation_config"
+}
+
+// ActionConfigV1 represents action_config
+type ActionConfigV1 struct {
+	// Name 操作名称，在同一个RunbookSet中必须唯一。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 操作显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
+	// ShortDescription 操作简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// Description 操作详细描述信息。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ActionType 操作类型，例如pop_api、mcp、api_call、script、webhook等。
+	ActionType string `json:"action_type" yaml:"action_type"`
+	// Inputs 操作参数配置列表。
+	Inputs []*ParameterConfigV1 `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	// Outputs 操作输出配置列表。
+	Outputs []*ParameterConfigV1 `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	// ConfirmationRequired 是否需要确认才能执行操作。
+	ConfirmationRequired bool `json:"confirmation_required,omitempty" yaml:"confirmation_required,omitempty"`
+	// RiskLevel 操作的风险等级。
+	RiskLevel string `json:"risk_level,omitempty" yaml:"risk_level,omitempty"`
+	// Properties 详细配置信息，用于配置不同类型操作的详细信息
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// Tags 操作标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+}
+
+// Validate 验证ActionConfigV1是否符合schema定义
+func (s *ActionConfigV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ActionConfigV1的类型标识
+func (s *ActionConfigV1) GetKind() string {
+	return "action_config"
+}
+
+// TermV1 represents term
+type TermV1 struct {
+	// Name 术语名称，在同一个 RunbookSet 内必须唯一。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 术语显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description 术语的详细描述，说明其含义与适用场景。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ShortDescription 简短描述，便于 LLM 或用户快速判断术语含义。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// Aliases 术语别名，只记录真实出现过或强约定的别名。
+	Aliases []string `json:"aliases,omitempty" yaml:"aliases,omitempty"`
+	// Confidence 术语语义置信度。
+	Confidence *ConfidenceV1 `json:"confidence,omitempty" yaml:"confidence,omitempty"`
+	// ModelBindings 术语关联的模型或 Set 引用列表，指明术语出现在哪些 LogSet、MetricSet、EventSet 或 EntitySet 上。
+	ModelBindings []*ModelBindingV1 `json:"model_bindings,omitempty" yaml:"model_bindings,omitempty"`
+}
+
+// Validate 验证TermV1是否符合schema定义
+func (s *TermV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取TermV1的类型标识
+func (s *TermV1) GetKind() string {
+	return "term"
 }
 
 // ToolV1 represents tool
@@ -651,35 +680,6 @@ func (s *ToolV1) Validate() error {
 // GetKind 获取ToolV1的类型标识
 func (s *ToolV1) GetKind() string {
 	return "tool"
-}
-
-// TermV1 represents term
-type TermV1 struct {
-	// Name 术语名称，在同一个 RunbookSet 内必须唯一。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 术语显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description 术语的详细描述，说明其含义与适用场景。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ShortDescription 简短描述，便于 LLM 或用户快速判断术语含义。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-	// Aliases 术语别名，只记录真实出现过或强约定的别名。
-	Aliases []string `json:"aliases,omitempty" yaml:"aliases,omitempty"`
-	// Confidence 术语语义置信度。
-	Confidence *ConfidenceV1 `json:"confidence,omitempty" yaml:"confidence,omitempty"`
-	// ModelBindings 术语关联的模型或 Set 引用列表，指明术语出现在哪些 LogSet、MetricSet、EventSet 或 EntitySet 上。
-	ModelBindings []*ModelBindingV1 `json:"model_bindings,omitempty" yaml:"model_bindings,omitempty"`
-}
-
-// Validate 验证TermV1是否符合schema定义
-func (s *TermV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取TermV1的类型标识
-func (s *TermV1) GetKind() string {
-	return "term"
 }
 
 // ConstraintTypeV1Enum 枚举值列表
@@ -764,44 +764,16 @@ func (s *ConstraintTypeV1Advanced) Validate() error {
 	return nil
 }
 
-// KnowledgeConfigV1ApplyPolicy 知识如何应用的配置。
-type KnowledgeConfigV1ApplyPolicy struct {
-	// ApplyType 应用策略，如auto（自动）、manual（手动）、always（总是）、custom（自定义）等。
-	ApplyType string `json:"apply_type" yaml:"apply_type"`
-	// Properties 应用相关属性配置，根据 custom 类型自由扩展。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+// SkillConfigV1FilesItem inline struct
+type SkillConfigV1FilesItem struct {
+	// Name 文件名称，包含相对路径（如 SKILL.md、scripts/extract.py、references/REFERENCE.md）。
+	Name string `json:"name" yaml:"name"`
+	// Content 文件内容。
+	Content string `json:"content" yaml:"content"`
 }
 
-// Validate 验证KnowledgeConfigV1ApplyPolicy是否符合schema定义
-func (s *KnowledgeConfigV1ApplyPolicy) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// MetadataV1CommonSchemaInfo 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
-type MetadataV1CommonSchemaInfo struct {
-	// Group CommonSchema的Group信息
-	Group string `json:"group,omitempty" yaml:"group,omitempty"`
-	// Version CommonSchema的版本号
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-}
-
-// Validate 验证MetadataV1CommonSchemaInfo是否符合schema定义
-func (s *MetadataV1CommonSchemaInfo) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// AutomationConfigV1Trigger 触发条件配置。
-type AutomationConfigV1Trigger struct {
-	// TriggerType 触发条件类型，如 scheduled（定期触发）、event（事件触发）、custom（自定义触发）等。
-	TriggerType string `json:"trigger_type" yaml:"trigger_type"`
-	// Properties 触发条件相关属性配置，根据type类型自由扩展。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-}
-
-// Validate 验证AutomationConfigV1Trigger是否符合schema定义
-func (s *AutomationConfigV1Trigger) Validate() error {
+// Validate 验证SkillConfigV1FilesItem是否符合schema定义
+func (s *SkillConfigV1FilesItem) Validate() error {
 	// TODO: 实现验证逻辑
 	return nil
 }
@@ -850,6 +822,20 @@ func (s *ObservationV1ConclusionsItem) Validate() error {
 	return nil
 }
 
+// MetadataV1CommonSchemaInfo 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
+type MetadataV1CommonSchemaInfo struct {
+	// Group CommonSchema的Group信息
+	Group string `json:"group,omitempty" yaml:"group,omitempty"`
+	// Version CommonSchema的版本号
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+// Validate 验证MetadataV1CommonSchemaInfo是否符合schema定义
+func (s *MetadataV1CommonSchemaInfo) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
 // LinkV1Src 源 Set 的标识。值不能为空。
 type LinkV1Src struct {
 	// Domain 源 Set 的域。
@@ -884,16 +870,30 @@ func (s *LinkV1Dest) Validate() error {
 	return nil
 }
 
-// SkillConfigV1FilesItem inline struct
-type SkillConfigV1FilesItem struct {
-	// Name 文件名称，包含相对路径（如 SKILL.md、scripts/extract.py、references/REFERENCE.md）。
-	Name string `json:"name" yaml:"name"`
-	// Content 文件内容。
-	Content string `json:"content" yaml:"content"`
+// KnowledgeConfigV1ApplyPolicy 知识如何应用的配置。
+type KnowledgeConfigV1ApplyPolicy struct {
+	// ApplyType 应用策略，如auto（自动）、manual（手动）、always（总是）、custom（自定义）等。
+	ApplyType string `json:"apply_type" yaml:"apply_type"`
+	// Properties 应用相关属性配置，根据 custom 类型自由扩展。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
 }
 
-// Validate 验证SkillConfigV1FilesItem是否符合schema定义
-func (s *SkillConfigV1FilesItem) Validate() error {
+// Validate 验证KnowledgeConfigV1ApplyPolicy是否符合schema定义
+func (s *KnowledgeConfigV1ApplyPolicy) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// AutomationConfigV1Trigger 触发条件配置。
+type AutomationConfigV1Trigger struct {
+	// TriggerType 触发条件类型，如 scheduled（定期触发）、event（事件触发）、custom（自定义触发）等。
+	TriggerType string `json:"trigger_type" yaml:"trigger_type"`
+	// Properties 触发条件相关属性配置，根据type类型自由扩展。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+}
+
+// Validate 验证AutomationConfigV1Trigger是否符合schema定义
+func (s *AutomationConfigV1Trigger) Validate() error {
 	// TODO: 实现验证逻辑
 	return nil
 }

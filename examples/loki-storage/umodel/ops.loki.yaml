@@ -1,0 +1,18 @@
+kind: loki
+schema:
+  url: umodel.aliyun.com
+  version: v1.0.0
+metadata:
+  name: ops.loki
+  domain: ops
+  display_name:
+    en_us: Loki
+    zh_cn: Loki
+spec:
+  endpoint: http://localhost:3100
+  api_prefix: /loki/api/v1
+  default_query_type: range
+  default_step: 30s
+  default_size: 100
+  max_size: 1000
+  tls_verify: true

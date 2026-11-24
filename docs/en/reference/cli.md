@@ -145,6 +145,8 @@ go run ./cmd/umctl --addr http://localhost:8080 agent tool demo query_spl_exampl
 
 Pass SPL as one quoted argument when preserving whitespace matters. If SPL is passed as multiple shell arguments, `umctl` joins them with a single space.
 
+`query run` accepts `--from` and `--to` (RFC3339 with time zone), `--limit`, `--entity-data` (EntityData JSON), and `--plan-format agent`. The first four values are sent in `QueryRequest`; `--plan-format agent` requests a top-level plan object. Use these flags when generating Loki plans; see [Loki Storage](../guides/loki-storage.md).
+
 Reference: [Query Service Guide](../guides/query-service.md).
 
 ## Agent

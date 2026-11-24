@@ -55,28 +55,12 @@ class ConstraintTypeV1Advanced:
     expression: Optional['ConstraintTypeV1AdvancedExpression'] = None
 
 @dataclass
-class KnowledgeConfigV1ApplyPolicy:
-    """知识如何应用的配置。"""
-    # 应用策略，如auto（自动）、manual（手动）、always（总是）、custom（自定义）等。
-    apply_type: Optional[str] = None
-    # 应用相关属性配置，根据 custom 类型自由扩展。
-    properties: Optional[Dict[str, str]] = None
-
-@dataclass
-class MetadataV1CommonSchemaInfo:
-    """背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外..."""
-    # CommonSchema的Group信息
-    group: Optional[str] = None
-    # CommonSchema的版本号
-    version: Optional[str] = None
-
-@dataclass
-class AutomationConfigV1Trigger:
-    """触发条件配置。"""
-    # 触发条件类型，如 scheduled（定期触发）、event（事件触发）、custom（自定义触发）等。
-    trigger_type: Optional[str] = None
-    # 触发条件相关属性配置，根据type类型自由扩展。
-    properties: Optional[Dict[str, str]] = None
+class SkillConfigV1FilesItem:
+    """SkillConfigV1FilesItem inline class"""
+    # 文件名称，包含相对路径（如 SKILL.md、scripts/extract.py、references/REFERENCE.md）。
+    name: Optional[str] = None
+    # 文件内容。
+    content: Optional[str] = None
 
 @dataclass
 class ObservationV1Phenomenon:
@@ -111,6 +95,14 @@ class ObservationV1ConclusionsItem:
     properties: Optional[Dict[str, str]] = None
 
 @dataclass
+class MetadataV1CommonSchemaInfo:
+    """背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外..."""
+    # CommonSchema的Group信息
+    group: Optional[str] = None
+    # CommonSchema的版本号
+    version: Optional[str] = None
+
+@dataclass
 class LinkV1Src:
     """源 Set 的标识。值不能为空。"""
     # 源 Set 的域。
@@ -133,12 +125,20 @@ class LinkV1Dest:
     name: Optional[str] = None
 
 @dataclass
-class SkillConfigV1FilesItem:
-    """SkillConfigV1FilesItem inline class"""
-    # 文件名称，包含相对路径（如 SKILL.md、scripts/extract.py、references/REFERENCE.md）。
-    name: Optional[str] = None
-    # 文件内容。
-    content: Optional[str] = None
+class KnowledgeConfigV1ApplyPolicy:
+    """知识如何应用的配置。"""
+    # 应用策略，如auto（自动）、manual（手动）、always（总是）、custom（自定义）等。
+    apply_type: Optional[str] = None
+    # 应用相关属性配置，根据 custom 类型自由扩展。
+    properties: Optional[Dict[str, str]] = None
+
+@dataclass
+class AutomationConfigV1Trigger:
+    """触发条件配置。"""
+    # 触发条件类型，如 scheduled（定期触发）、event（事件触发）、custom（自定义触发）等。
+    trigger_type: Optional[str] = None
+    # 触发条件相关属性配置，根据type类型自由扩展。
+    properties: Optional[Dict[str, str]] = None
 
 
 if TYPE_CHECKING:
@@ -185,6 +185,87 @@ class ConstraintTypeV1(UModelObject):
         return 'constraint_type'
 
 @dataclass
+class ModelBindingV1(UModelObject):
+    """model_binding class"""
+    # 模型所属域，对应目标 Set 的 metadata.domain。
+    domain: Optional[str] = None
+    # 模型类型，如 log_set、metric_set、event_set、entity_set。
+    kind: Optional[str] = None
+    # 模型名称，对应目标 Set 的 metadata.name。
+    name: Optional[str] = None
+
+    def get_kind(self) -> str:
+        return 'model_binding'
+
+@dataclass
+class ConfidenceV1(UModelObject):
+    """confidence class"""
+    # 语义置信度分数，范围 0-100。
+    score: Optional[int] = None
+    # 语义定义的应用状态，按优先级从高到低依次为人工确认应用、系统自动应用和尚未应用。
+    status: Optional[str] = None
+    # 置信度来源。
+    source: Optional[str] = None
+    # 形成该置信度所依据的主要证据类型，只记录类别，不记录证据明细。
+    basis: Optional[List[Optional[str]]] = None
+    # 简短说明为什么给出该置信度。
+    reason: Optional[str] = None
+
+    def get_kind(self) -> str:
+        return 'confidence'
+
+@dataclass
+class ValueMappingV1(UModelObject):
+    """value_mapping class"""
+    # 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+    name: Optional[str] = None
+    # 在 UModel 系统中的显示名称。值不能为空。
+    display_name: Optional['SemanticStringV1'] = None
+    # 在 UModel 系统中的描述。
+    description: Optional['SemanticStringV1'] = None
+    # 在 UModel 系统中的简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+
+    def get_kind(self) -> str:
+        return 'value_mapping'
+
+@dataclass
+class ToolkitV1(UModelObject):
+    """toolkit class"""
+    # 工具箱名称，在同一个 RunbookSet 内必须唯一。
+    name: Optional[str] = None
+    # 工具箱显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 工具箱简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 工具箱详细描述信息。
+    description: Optional['SemanticStringV1'] = None
+    # 工具箱类型，如 mcp、pop_api、api_call、script、webhook 等。
+    toolkit_type: Optional[str] = None
+    # 运行时配置，如连接信息、认证、超时等，Toolkit 内所有 Tool 继承使用。
+    configs: Optional[Dict[str, Any]] = None
+    # 扩展元数据，描述性属性，自由扩展的 k-v。
+    properties: Optional[Dict[str, str]] = None
+    # 共享标签。
+    tags: Optional[Dict[str, str]] = None
+    # 工具列表。
+    tools: Optional[List[Optional['ToolV1']]] = None
+
+    def get_kind(self) -> str:
+        return 'toolkit'
+
+@dataclass
+class ToolParameterConfigV1(UModelObject):
+    """tool_parameter_config class"""
+    # 参数属性定义，键为参数名称，值为参数定义对象。
+    properties: Optional[Dict[str, Any]] = None
+    # 必填参数名称列表。
+    required: Optional[List[str]] = None
+
+    def get_kind(self) -> str:
+        return 'tool_parameter_config'
+
+@dataclass
 class TelemetryDataV1(UModelObject):
     """telemetry_data class"""
     # 可观测数据的字段列表。
@@ -208,114 +289,65 @@ class TelemetryDataV1(UModelObject):
         return 'telemetry_data'
 
 @dataclass
-class ActionConfigV1(UModelObject):
-    """action_config class"""
-    # 操作名称，在同一个RunbookSet中必须唯一。
+class SkillConfigV1(UModelObject):
+    """skill_config class"""
+    # 技能名称（唯一标识），仅支持小写字母、数字和连字符，不能以连字符开头或结尾，不能包含连续连字符。
     name: Optional[str] = None
-    # 操作显示名称。
+    # 技能显示名称。
     display_name: Optional['SemanticStringV1'] = None
-    # 操作简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 操作详细描述信息。
+    # 技能描述，说明技能的功能和使用场景，帮助 Agent 识别何时使用该技能。
     description: Optional['SemanticStringV1'] = None
-    # 操作类型，例如pop_api、mcp、api_call、script、webhook等。
-    action_type: Optional[str] = None
-    # 操作参数配置列表。
-    inputs: Optional[List[Optional['ParameterConfigV1']]] = None
-    # 操作输出配置列表。
-    outputs: Optional[List[Optional['ParameterConfigV1']]] = None
-    # 是否需要确认才能执行操作。
-    confirmation_required: Optional[bool] = None
-    # 操作的风险等级。
-    risk_level: Optional[str] = None
-    # 详细配置信息，用于配置不同类型操作的详细信息
-    properties: Optional[Dict[str, str]] = None
-    # 操作标签。
+    # 技能的许可证信息。
+    license: Optional[str] = None
+    # 技能的环境兼容性要求，如依赖的系统包、网络访问需求等。
+    compatibility: Optional[str] = None
+    # 预授权工具列表，空格分隔的工具标识符。
+    allowed_tools: Optional[str] = None
+    # 技能的额外元数据，如作者、版本等。
+    metadata: Optional[Dict[str, str]] = None
+    # 技能标签，用于分类和检索。
     tags: Optional[Dict[str, str]] = None
-
-    def get_kind(self) -> str:
-        return 'action_config'
-
-@dataclass
-class KnowledgeConfigV1(UModelObject):
-    """knowledge_config class"""
-    # 知识项名称，在同一个RunbookSet中必须唯一。
-    name: Optional[str] = None
-    # 知识项显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 知识项简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 知识项详细描述信息。
-    description: Optional['SemanticStringV1'] = None
-    # 知识如何应用的配置。
-    apply_policy: Optional['KnowledgeConfigV1ApplyPolicy'] = None
-    # 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
-    content_type: Optional[str] = None
-    # 知识内容，根据content_type可以是文本内容或URL地址。
-    content: Optional[str] = None
-    # 知识内容的外部URL地址。
-    content_url: Optional[str] = None
-    # 知识项优先级，用于排序显示以及模型推理时选择。
+    # 技能文件列表，包含 SKILL.md 及其他辅助文件（如 scripts/、references/、assets/ 下的文件）。
+    files: Optional[List[Optional['SkillConfigV1FilesItem']]] = None
+    # 技能包的外部URL地址（如OSS地址），与files字段二选一。当使用URL时，技能文件从该地址加载。
+    skill_url: Optional[str] = None
+    # 技能优先级，用于排序和选择。值越小优先级越高。
     priority: Optional[int] = None
     # 最后更新时间。
     last_updated: Optional[datetime] = None
-    # 知识项标签。
-    tags: Optional[Dict[str, str]] = None
 
     def get_kind(self) -> str:
-        return 'knowledge_config'
+        return 'skill_config'
 
 @dataclass
-class MetadataV1(UModelObject):
-    """metadata class"""
-    # 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-    name: Optional[str] = None
-    # 元素在 UModel 系统中的显示名称。值不能为空。
-    display_name: Optional['SemanticStringV1'] = None
-    # 元素在 UModel 系统中的描述。
-    description: Optional['SemanticStringV1'] = None
-    # 元素在 UModel系统中的简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 域。值格式为'domain.domain'。可以以点连接。
-    domain: Optional[str] = None
-    # 元素的发布阶段。默认值为 preview。
-    launch_stage: Optional[str] = None
-    # 元素在UModel系统中的图标。值格式为'url'。
-    icon: Optional[str] = None
-    # 用于表示该元素唯一标识。
-    uri: Optional[str] = None
-    # 用于表示该元素的标签。
-    tags: Optional[Dict[str, str]] = None
-    # 用于表示该元素的附加属性。
-    properties: Optional[Dict[str, str]] = None
-    # 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
-    common_schema_info: Optional['MetadataV1CommonSchemaInfo'] = None
+class SchemaV1(UModelObject):
+    """schema class"""
+    # Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
+    url: Optional[str] = None
+    # Schema 的版本。命名格式为 "v1.2.3"。
+    version: Optional[str] = None
 
     def get_kind(self) -> str:
-        return 'metadata'
+        return 'schema'
 
 @dataclass
-class AutomationConfigV1(UModelObject):
-    """automation_config class"""
-    # 自动化项名称，在同一个RunbookSet中必须唯一。
+class ParameterConfigV1(UModelObject):
+    """parameter_config class"""
+    # 参数名称。
     name: Optional[str] = None
-    # 自动化项显示名称。
+    # 参数显示名称。
     display_name: Optional['SemanticStringV1'] = None
-    # 自动化项简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-    # 自动化项详细描述信息。
+    # 参数描述信息。
     description: Optional['SemanticStringV1'] = None
-    # 自动化类型，如action、script、webhook等。
-    automation_type: Optional[str] = None
-    # 触发条件配置。
-    trigger: Optional['AutomationConfigV1Trigger'] = None
-    # 自动化项属性配置。
-    properties: Optional[Dict[str, str]] = None
-    # 自动化项标签。
-    tags: Optional[Dict[str, str]] = None
+    # 参数类型。
+    type: Optional[str] = None
+    # 是否为必填参数。
+    required: Optional[bool] = None
+    # 参数默认值。
+    default: Optional[str] = None
 
     def get_kind(self) -> str:
-        return 'automation_config'
+        return 'parameter_config'
 
 @dataclass
 class ObservationV1(UModelObject):
@@ -339,38 +371,6 @@ class ObservationV1(UModelObject):
 
     def get_kind(self) -> str:
         return 'observation'
-
-@dataclass
-class ValueMappingV1(UModelObject):
-    """value_mapping class"""
-    # 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-    name: Optional[str] = None
-    # 在 UModel 系统中的显示名称。值不能为空。
-    display_name: Optional['SemanticStringV1'] = None
-    # 在 UModel 系统中的描述。
-    description: Optional['SemanticStringV1'] = None
-    # 在 UModel 系统中的简短描述。
-    short_description: Optional['SemanticStringV1'] = None
-
-    def get_kind(self) -> str:
-        return 'value_mapping'
-
-@dataclass
-class ConfidenceV1(UModelObject):
-    """confidence class"""
-    # 语义置信度分数，范围 0-100。
-    score: Optional[int] = None
-    # 语义定义的应用状态，按优先级从高到低依次为人工确认应用、系统自动应用和尚未应用。
-    status: Optional[str] = None
-    # 置信度来源。
-    source: Optional[str] = None
-    # 形成该置信度所依据的主要证据类型，只记录类别，不记录证据明细。
-    basis: Optional[List[Optional[str]]] = None
-    # 简短说明为什么给出该置信度。
-    reason: Optional[str] = None
-
-    def get_kind(self) -> str:
-        return 'confidence'
 
 @dataclass
 class MetricV1(UModelObject):
@@ -426,15 +426,77 @@ class MetricV1(UModelObject):
         return 'metric'
 
 @dataclass
-class ToolParameterConfigV1(UModelObject):
-    """tool_parameter_config class"""
-    # 参数属性定义，键为参数名称，值为参数定义对象。
-    properties: Optional[Dict[str, Any]] = None
-    # 必填参数名称列表。
-    required: Optional[List[str]] = None
+class MetadataV1(UModelObject):
+    """metadata class"""
+    # 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+    name: Optional[str] = None
+    # 元素在 UModel 系统中的显示名称。值不能为空。
+    display_name: Optional['SemanticStringV1'] = None
+    # 元素在 UModel 系统中的描述。
+    description: Optional['SemanticStringV1'] = None
+    # 元素在 UModel系统中的简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 域。值格式为'domain.domain'。可以以点连接。
+    domain: Optional[str] = None
+    # 元素的发布阶段。默认值为 preview。
+    launch_stage: Optional[str] = None
+    # 元素在UModel系统中的图标。值格式为'url'。
+    icon: Optional[str] = None
+    # 用于表示该元素唯一标识。
+    uri: Optional[str] = None
+    # 用于表示该元素的标签。
+    tags: Optional[Dict[str, str]] = None
+    # 用于表示该元素的附加属性。
+    properties: Optional[Dict[str, str]] = None
+    # 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
+    common_schema_info: Optional['MetadataV1CommonSchemaInfo'] = None
 
     def get_kind(self) -> str:
-        return 'tool_parameter_config'
+        return 'metadata'
+
+@dataclass
+class LinkV1(UModelObject):
+    """link class"""
+    # 源 Set 的标识。值不能为空。
+    src: Optional['LinkV1Src'] = None
+    # 目标 Set 的标识。值不能为空。
+    dest: Optional['LinkV1Dest'] = None
+    # 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
+    filter_by_entity: Optional[str] = None
+    # Link 的优先级。值可以为空。默认值为5。
+    priority: Optional[int] = None
+
+    def get_kind(self) -> str:
+        return 'link'
+
+@dataclass
+class KnowledgeConfigV1(UModelObject):
+    """knowledge_config class"""
+    # 知识项名称，在同一个RunbookSet中必须唯一。
+    name: Optional[str] = None
+    # 知识项显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 知识项简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 知识项详细描述信息。
+    description: Optional['SemanticStringV1'] = None
+    # 知识如何应用的配置。
+    apply_policy: Optional['KnowledgeConfigV1ApplyPolicy'] = None
+    # 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
+    content_type: Optional[str] = None
+    # 知识内容，根据content_type可以是文本内容或URL地址。
+    content: Optional[str] = None
+    # 知识内容的外部URL地址。
+    content_url: Optional[str] = None
+    # 知识项优先级，用于排序显示以及模型推理时选择。
+    priority: Optional[int] = None
+    # 最后更新时间。
+    last_updated: Optional[datetime] = None
+    # 知识项标签。
+    tags: Optional[Dict[str, str]] = None
+
+    def get_kind(self) -> str:
+        return 'knowledge_config'
 
 @dataclass
 class FieldSpecV1(UModelObject):
@@ -490,118 +552,77 @@ class FieldSpecV1(UModelObject):
         return 'field_spec'
 
 @dataclass
-class ParameterConfigV1(UModelObject):
-    """parameter_config class"""
-    # 参数名称。
+class AutomationConfigV1(UModelObject):
+    """automation_config class"""
+    # 自动化项名称，在同一个RunbookSet中必须唯一。
     name: Optional[str] = None
-    # 参数显示名称。
+    # 自动化项显示名称。
     display_name: Optional['SemanticStringV1'] = None
-    # 参数描述信息。
-    description: Optional['SemanticStringV1'] = None
-    # 参数类型。
-    type: Optional[str] = None
-    # 是否为必填参数。
-    required: Optional[bool] = None
-    # 参数默认值。
-    default: Optional[str] = None
-
-    def get_kind(self) -> str:
-        return 'parameter_config'
-
-@dataclass
-class LinkV1(UModelObject):
-    """link class"""
-    # 源 Set 的标识。值不能为空。
-    src: Optional['LinkV1Src'] = None
-    # 目标 Set 的标识。值不能为空。
-    dest: Optional['LinkV1Dest'] = None
-    # 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
-    filter_by_entity: Optional[str] = None
-    # Link 的优先级。值可以为空。默认值为5。
-    priority: Optional[int] = None
-
-    def get_kind(self) -> str:
-        return 'link'
-
-@dataclass
-class SchemaV1(UModelObject):
-    """schema class"""
-    # Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
-    url: Optional[str] = None
-    # Schema 的版本。命名格式为 "v1.2.3"。
-    version: Optional[str] = None
-
-    def get_kind(self) -> str:
-        return 'schema'
-
-@dataclass
-class ModelBindingV1(UModelObject):
-    """model_binding class"""
-    # 模型所属域，对应目标 Set 的 metadata.domain。
-    domain: Optional[str] = None
-    # 模型类型，如 log_set、metric_set、event_set、entity_set。
-    kind: Optional[str] = None
-    # 模型名称，对应目标 Set 的 metadata.name。
-    name: Optional[str] = None
-
-    def get_kind(self) -> str:
-        return 'model_binding'
-
-@dataclass
-class SkillConfigV1(UModelObject):
-    """skill_config class"""
-    # 技能名称（唯一标识），仅支持小写字母、数字和连字符，不能以连字符开头或结尾，不能包含连续连字符。
-    name: Optional[str] = None
-    # 技能显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 技能描述，说明技能的功能和使用场景，帮助 Agent 识别何时使用该技能。
-    description: Optional['SemanticStringV1'] = None
-    # 技能的许可证信息。
-    license: Optional[str] = None
-    # 技能的环境兼容性要求，如依赖的系统包、网络访问需求等。
-    compatibility: Optional[str] = None
-    # 预授权工具列表，空格分隔的工具标识符。
-    allowed_tools: Optional[str] = None
-    # 技能的额外元数据，如作者、版本等。
-    metadata: Optional[Dict[str, str]] = None
-    # 技能标签，用于分类和检索。
-    tags: Optional[Dict[str, str]] = None
-    # 技能文件列表，包含 SKILL.md 及其他辅助文件（如 scripts/、references/、assets/ 下的文件）。
-    files: Optional[List[Optional['SkillConfigV1FilesItem']]] = None
-    # 技能包的外部URL地址（如OSS地址），与files字段二选一。当使用URL时，技能文件从该地址加载。
-    skill_url: Optional[str] = None
-    # 技能优先级，用于排序和选择。值越小优先级越高。
-    priority: Optional[int] = None
-    # 最后更新时间。
-    last_updated: Optional[datetime] = None
-
-    def get_kind(self) -> str:
-        return 'skill_config'
-
-@dataclass
-class ToolkitV1(UModelObject):
-    """toolkit class"""
-    # 工具箱名称，在同一个 RunbookSet 内必须唯一。
-    name: Optional[str] = None
-    # 工具箱显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 工具箱简短描述。
+    # 自动化项简短描述。
     short_description: Optional['SemanticStringV1'] = None
-    # 工具箱详细描述信息。
+    # 自动化项详细描述信息。
     description: Optional['SemanticStringV1'] = None
-    # 工具箱类型，如 mcp、pop_api、api_call、script、webhook 等。
-    toolkit_type: Optional[str] = None
-    # 运行时配置，如连接信息、认证、超时等，Toolkit 内所有 Tool 继承使用。
-    configs: Optional[Dict[str, Any]] = None
-    # 扩展元数据，描述性属性，自由扩展的 k-v。
+    # 自动化类型，如action、script、webhook等。
+    automation_type: Optional[str] = None
+    # 触发条件配置。
+    trigger: Optional['AutomationConfigV1Trigger'] = None
+    # 自动化项属性配置。
     properties: Optional[Dict[str, str]] = None
-    # 共享标签。
+    # 自动化项标签。
     tags: Optional[Dict[str, str]] = None
-    # 工具列表。
-    tools: Optional[List[Optional['ToolV1']]] = None
 
     def get_kind(self) -> str:
-        return 'toolkit'
+        return 'automation_config'
+
+@dataclass
+class ActionConfigV1(UModelObject):
+    """action_config class"""
+    # 操作名称，在同一个RunbookSet中必须唯一。
+    name: Optional[str] = None
+    # 操作显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 操作简短描述。
+    short_description: Optional['SemanticStringV1'] = None
+    # 操作详细描述信息。
+    description: Optional['SemanticStringV1'] = None
+    # 操作类型，例如pop_api、mcp、api_call、script、webhook等。
+    action_type: Optional[str] = None
+    # 操作参数配置列表。
+    inputs: Optional[List[Optional['ParameterConfigV1']]] = None
+    # 操作输出配置列表。
+    outputs: Optional[List[Optional['ParameterConfigV1']]] = None
+    # 是否需要确认才能执行操作。
+    confirmation_required: Optional[bool] = None
+    # 操作的风险等级。
+    risk_level: Optional[str] = None
+    # 详细配置信息，用于配置不同类型操作的详细信息
+    properties: Optional[Dict[str, str]] = None
+    # 操作标签。
+    tags: Optional[Dict[str, str]] = None
+
+    def get_kind(self) -> str:
+        return 'action_config'
+
+@dataclass
+class TermV1(UModelObject):
+    """term class"""
+    # 术语名称，在同一个 RunbookSet 内必须唯一。
+    name: Optional[str] = None
+    # 术语显示名称。
+    display_name: Optional['SemanticStringV1'] = None
+    # 术语的详细描述，说明其含义与适用场景。
+    description: Optional['SemanticStringV1'] = None
+    # 简短描述，便于 LLM 或用户快速判断术语含义。
+    short_description: Optional['SemanticStringV1'] = None
+    # 术语别名，只记录真实出现过或强约定的别名。
+    aliases: Optional[List[str]] = None
+    # 术语语义置信度。
+    confidence: Optional['ConfidenceV1'] = None
+    # 术语关联的模型或 Set 引用列表，指明术语出现在哪些 LogSet、MetricSet、EventSet 或 EntitySet 上。
+    model_bindings: Optional[List[Optional['ModelBindingV1']]] = None
+
+    def get_kind(self) -> str:
+        return 'term'
 
 @dataclass
 class ToolV1(UModelObject):
@@ -631,24 +652,3 @@ class ToolV1(UModelObject):
 
     def get_kind(self) -> str:
         return 'tool'
-
-@dataclass
-class TermV1(UModelObject):
-    """term class"""
-    # 术语名称，在同一个 RunbookSet 内必须唯一。
-    name: Optional[str] = None
-    # 术语显示名称。
-    display_name: Optional['SemanticStringV1'] = None
-    # 术语的详细描述，说明其含义与适用场景。
-    description: Optional['SemanticStringV1'] = None
-    # 简短描述，便于 LLM 或用户快速判断术语含义。
-    short_description: Optional['SemanticStringV1'] = None
-    # 术语别名，只记录真实出现过或强约定的别名。
-    aliases: Optional[List[str]] = None
-    # 术语语义置信度。
-    confidence: Optional['ConfidenceV1'] = None
-    # 术语关联的模型或 Set 引用列表，指明术语出现在哪些 LogSet、MetricSet、EventSet 或 EntitySet 上。
-    model_bindings: Optional[List[Optional['ModelBindingV1']]] = None
-
-    def get_kind(self) -> str:
-        return 'term'

@@ -404,6 +404,36 @@ public class TestParsingIntegrationTest {
     }
 
     @Test
+    public void testLokiJsonParsing() {
+        String json = "{\"kind\":\"loki\",\"schema\":{\"url\":\"umodel.aliyun.com\",\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_loki\",\"display_name\":{\"zh_cn\":\"测试loki\",\"en_us\":\"Test loki\"},\"domain\":\"test.domain\",\"launch_stage\":\"ga\",\"tags\":{\"category\":\"test\"}},\"spec\":{\"_data\":\"placeholder\"}}";
+
+        UModelCoreObject obj = UModel.parseUModelJson(json);
+        assertNotNull(obj);
+        assertTrue(obj instanceof LokiV100);
+        assertEquals("loki", obj.getKind());
+
+        LokiV100 typed = (LokiV100) obj;
+        SchemaV1 schema = typed.getSchema();
+        assertNotNull(schema);
+        assertEquals("umodel.aliyun.com", schema.getUrl());
+        assertEquals("v1.0.0", schema.getVersion());
+
+        MetadataV1 metadata = typed.getMetadata();
+        assertNotNull(metadata);
+        assertEquals("test_loki", metadata.getName());
+        assertEquals("test.domain", metadata.getDomain());
+        assertEquals("ga", metadata.getLaunchStage());
+
+        SemanticStringV1 displayName = metadata.getDisplayName();
+        assertNotNull(displayName);
+        assertEquals("Test loki", displayName.getEnUs());
+
+        Map<String, String> tags = metadata.getTags();
+        assertNotNull(tags);
+        assertEquals("test", tags.get("category"));
+    }
+
+    @Test
     public void testMetricSetJsonParsing() {
         String json = "{\"kind\":\"metric_set\",\"schema\":{\"url\":\"umodel.aliyun.com\",\"version\":\"v1.0.0\"},\"metadata\":{\"name\":\"test_metric_set\",\"display_name\":{\"zh_cn\":\"测试metric_set\",\"en_us\":\"Test metric_set\"},\"domain\":\"test.domain\",\"launch_stage\":\"ga\",\"tags\":{\"category\":\"test\"}},\"spec\":{\"_data\":\"placeholder\"}}";
 

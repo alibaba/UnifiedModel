@@ -42,6 +42,8 @@ type Request struct {
 	QueryType          string           // get_metrics only
 	Step               string           // get_metrics only
 	Limit              int
+	LimitExplicit      bool
+	TimeRange          model.TimeRange
 }
 
 // Renderer renders one storage family's native query block. Renderers are pure

@@ -1,0 +1,21 @@
+kind: metric_set
+schema:
+  url: umodel.aliyun.com
+  version: v1.0.0
+metadata:
+  name: ops.node.metrics
+  domain: ops
+  display_name:
+    en_us: Node Log Metrics
+    zh_cn: 节点日志指标
+spec:
+  query_type: logql
+  metrics:
+    - name: error_rate
+      display_name:
+        en_us: Error Rate
+        zh_cn: 错误速率
+      unit: count
+      type: gauge
+      query_mode: range
+      generator: 'sum(rate({host="$host",env="$env"} |= "ERROR" [5m]))'

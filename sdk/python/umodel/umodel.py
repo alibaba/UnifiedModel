@@ -116,6 +116,13 @@ def _register_types():
     except (ImportError, AttributeError) as e:
         pass  # 模块 log_set 导入失败: {e}
 
+    # 注册 loki 相关类型
+    try:
+        from . import loki
+        TYPE_REGISTRY["loki:v1.0.0"] = getattr(loki, "LokiV100", None)
+    except (ImportError, AttributeError) as e:
+        pass  # 模块 loki 导入失败: {e}
+
     # 注册 metric_set 相关类型
     try:
         from . import metric_set

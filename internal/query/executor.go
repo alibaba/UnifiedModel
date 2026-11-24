@@ -391,7 +391,11 @@ func (e *Executor) executeEntitySetGetLogs(ctx context.Context, workspace string
 		})
 	}
 
-	queryPlan, err := e.logQueryPlan(plan, dataLink, logSet, bindings[0])
+	binding, err := selectStorageBinding(bindings, plan.EntityCall.Parameters)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	queryPlan, err := e.logQueryPlan(plan, dataLink, logSet, binding)
 	if err != nil {
 		return model.QueryResult{}, err
 	}
@@ -427,7 +431,11 @@ func (e *Executor) executeEntitySetGetMetrics(ctx context.Context, workspace str
 		return model.QueryResult{}, err
 	}
 
-	queryPlan, err := e.metricQueryPlan(plan, dataLink, metricSet, bindings[0], metrics)
+	binding, err := selectStorageBinding(bindings, plan.EntityCall.Parameters)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	queryPlan, err := e.metricQueryPlan(plan, dataLink, metricSet, binding, metrics)
 	if err != nil {
 		return model.QueryResult{}, err
 	}
@@ -655,7 +663,7 @@ func methodInfoGetMetrics() entityCallMethodInfo {
 				DisplayName: "Query expression for metric labels",
 				Description: "Basic SPL where syntax, for example service_id = 'service_a' and environment = 'prod'.",
 			},
-			{Key: "query_type", Type: "varchar", DisplayName: "Prometheus query type", Description: "range or instant. Defaults to the MetricSet/storage preference."},
+			{Key: "query_type", Type: "varchar", DisplayName: "Metric query type", Description: "range or instant for Prometheus and Loki. Defaults to the MetricSet/storage preference."},
 			{Key: "step", Type: "varchar", DisplayName: "Range query step", Description: "Range query step, for example 1m."},
 			{Key: "aggregate", Type: "boolean", DisplayName: "Aggregate time series", Description: "Whether to aggregate the time series.", Default: true},
 			{Key: "storage_domain", Type: "varchar", DisplayName: "Storage Domain", Description: "Optional storage domain used to select a specific StorageLink target."},
@@ -988,6 +996,28 @@ func storageBindingsForDataSet(elements []model.UModelElement, dataSet model.UMo
 	return out
 }
 
+func selectStorageBinding(bindings []storageBinding, params map[string]any) (storageBinding, error) {
+	domain := stringFilter(params["storage_domain"])
+	name := stringFilter(params["storage_name"])
+	kind := stringFilter(params["storage_kind"])
+	if domain == "" && name == "" && kind == "" {
+		return bindings[0], nil // retain the existing default selection
+	}
+	var matches []storageBinding
+	for _, binding := range bindings {
+		storage := binding.Storage
+		if (domain == "" || storage.Domain == domain) && (name == "" || storage.Name == name) && (kind == "" || storage.Kind == kind) {
+			matches = append(matches, binding)
+		}
+	}
+	if len(matches) != 1 {
+		return storageBinding{}, apperrors.WithDetails(apperrors.CodeQueryPlanError,
+			"storage selector must match exactly one StorageLink target",
+			map[string]string{"storage_domain": domain, "storage_name": name, "storage_kind": kind, "matches": strconv.Itoa(len(matches))})
+	}
+	return matches[0], nil
+}
+
 func (e *Executor) logQueryPlan(plan model.QueryPlan, dataLink model.UModelElement, logSet model.UModelElement, binding storageBinding) (map[string]any, error) {
 	dataLinkMapping := mapValue(dataLink.Spec["fields_mapping"])
 	storageLinkMapping := mapValue(binding.Link.Spec["fields_mapping"])
@@ -1002,7 +1032,7 @@ func (e *Executor) logQueryPlan(plan model.QueryPlan, dataLink model.UModelEleme
 		version = "v1.1"
 	}
 
-	query, err := e.buildLogStorageQuery(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit)
+	query, err := e.buildLogStorageQueryWithOptions(logSet, binding.Storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, plan.Limit, plan.LimitExplicit, plan.TimeRange)
 	if err != nil {
 		return nil, err
 	}
@@ -1046,7 +1076,7 @@ func (e *Executor) metricQueryPlan(plan model.QueryPlan, dataLink model.UModelEl
 		version = "v1.1"
 	}
 
-	query, err := e.buildMetricStorageQuery(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit)
+	query, err := e.buildMetricStorageQueryWithOptions(metricSet, binding.Storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, plan.EntityData, queryType, step, plan.Limit, plan.TimeRange)
 	if err != nil {
 		return nil, err
 	}
@@ -1171,6 +1201,10 @@ func selectedMetricSpecs(metricSet model.UModelElement, metricName string) ([]ma
 }
 
 func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int) (map[string]any, error) {
+	return e.buildMetricStorageQueryWithOptions(metricSet, storage, dataLinkMapping, storageLinkMapping, metrics, entityIDs, entityQuery, dataFilter, methodQuery, entityData, queryType, step, limit, model.TimeRange{})
+}
+
+func (e *Executor) buildMetricStorageQueryWithOptions(metricSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, metrics []map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, queryType, step string, limit int, timeRange model.TimeRange) (map[string]any, error) {
 	family := firstNonEmpty(stringValue(storage.Spec["family"]), defaultFamilyForKind(storage.Kind))
 	if r, ok := e.registry.Find(family, planrender.MethodGetMetrics); ok {
 		out, err := r.Render(planrender.Request{
@@ -1188,6 +1222,7 @@ func (e *Executor) buildMetricStorageQuery(metricSet model.UModelElement, storag
 			QueryType:          queryType,
 			Step:               step,
 			Limit:              limit,
+			TimeRange:          timeRange,
 		})
 		if err != nil {
 			// A matched renderer that fails must surface the error, not fall back
@@ -1486,6 +1521,10 @@ func escapePromQLStringContent(value string) string {
 }
 
 func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int) (map[string]any, error) {
+	return e.buildLogStorageQueryWithOptions(logSet, storage, dataLinkMapping, storageLinkMapping, entityIDs, entityQuery, dataFilter, methodQuery, entityData, limit, true, model.TimeRange{})
+}
+
+func (e *Executor) buildLogStorageQueryWithOptions(logSet model.UModelElement, storage model.UModelElement, dataLinkMapping, storageLinkMapping map[string]any, entityIDs []string, entityQuery, dataFilter, methodQuery string, entityData *model.EntityData, limit int, limitExplicit bool, timeRange model.TimeRange) (map[string]any, error) {
 	family := firstNonEmpty(stringValue(storage.Spec["family"]), defaultFamilyForKind(storage.Kind))
 	if r, ok := e.registry.Find(family, planrender.MethodGetLogs); ok {
 		out, err := r.Render(planrender.Request{
@@ -1500,6 +1539,8 @@ func (e *Executor) buildLogStorageQuery(logSet model.UModelElement, storage mode
 			MethodQuery:        methodQuery,
 			EntityData:         entityData,
 			Limit:              limit,
+			LimitExplicit:      limitExplicit,
+			TimeRange:          timeRange,
 		})
 		if err != nil {
 			// A matched renderer that fails must surface the error, not fall back

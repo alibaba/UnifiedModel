@@ -107,6 +107,8 @@ output[6]: ".umodel with(kind='entity_set') | project domain,name,kind | sort do
 
 写工具默认关闭，使 MCP client 从安全的 read-oriented 姿态开始。
 
+对 `.entity_set` 的 `get_logs` 或 `get_metrics` 调用，`query_spl_execute` 可携带 `time_range`、`entity_data` 和 `limit`。Loki StorageLink 返回 `loki_logql` 计划，由客户端访问 Loki 执行。参见 [Loki Storage 指南](../guides/loki-storage.md)。
+
 ## Resources
 
 | Resource | URI template | 描述 |

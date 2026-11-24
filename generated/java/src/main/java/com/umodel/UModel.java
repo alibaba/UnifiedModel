@@ -33,6 +33,7 @@ public class UModel {
         TYPE_REGISTRY.put("explorer_link:v1.0.0", ExplorerLinkV100::new);
         TYPE_REGISTRY.put("external_storage:v1.0.0", ExternalStorageV100::new);
         TYPE_REGISTRY.put("log_set:v1.0.0", LogSetV100::new);
+        TYPE_REGISTRY.put("loki:v1.0.0", LokiV100::new);
         TYPE_REGISTRY.put("metric_set:v1.0.0", MetricSetV100::new);
         TYPE_REGISTRY.put("mysql:v1.0.0", MysqlV100::new);
         TYPE_REGISTRY.put("profile_set:v1.0.0", ProfileSetV100::new);

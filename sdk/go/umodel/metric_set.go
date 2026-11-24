@@ -67,7 +67,7 @@ type MetricSetV100Spec struct {
 	LabelKeys []*FieldSpecV1 `json:"label_keys,omitempty" yaml:"label_keys,omitempty"`
 	// Metrics 详细的指标列表。
 	Metrics []*MetricV1 `json:"metrics,omitempty" yaml:"metrics,omitempty"`
-	// QueryType 指标的查询语法，取值包括：prom、spl、cms 。
+	// QueryType 指标的查询语法，取值包括 prom、spl、cms 和 logql。
 	QueryType string `json:"query_type,omitempty" yaml:"query_type,omitempty"`
 	// NeedsProcessing 是否需要二次处理，即该 MetricSet 中指标是否需要二次处理才能被使用。例如 Prometheus 中的 counter/summary/histogram 等指标需要二次处理才能被使用。
 	NeedsProcessing bool `json:"needs_processing,omitempty" yaml:"needs_processing,omitempty"`

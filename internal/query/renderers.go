@@ -45,6 +45,8 @@ func defaultFamilyForKind(kind string) string {
 		return "label-timeseries"
 	case "elasticsearch":
 		return "document-search"
+	case "loki":
+		return "logql"
 	default:
 		return ""
 	}
@@ -56,6 +58,7 @@ func newDefaultRegistry() *planrender.Registry {
 	r := planrender.NewRegistry()
 	r.Register(labelTimeseriesRenderer{})
 	r.Register(documentSearchRenderer{})
+	r.Register(lokiRenderer{})
 	r.Register(sqlTableRenderer{})
 	return r
 }

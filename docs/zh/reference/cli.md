@@ -146,6 +146,8 @@ go run ./cmd/umctl --addr http://localhost:8080 agent tool demo query_spl_exampl
 
 如果需要保留 SPL 中的空白，建议把 SPL 作为一个带引号的参数传入。如果拆成多个 shell 参数，`umctl` 会用单个空格把它们拼接起来。
 
+`query run` 支持 `--from`、`--to`（含时区的 RFC3339）、`--limit`、`--entity-data`（EntityData JSON）以及 `--plan-format agent`。前四项写入 `QueryRequest`；`--plan-format agent` 请求顶层计划对象。生成 Loki 计划时使用这些参数，参见 [Loki Storage 指南](../guides/loki-storage.md)。
+
 参考：[Query Service 指南](../guides/query-service.md)。
 
 ## Agent
