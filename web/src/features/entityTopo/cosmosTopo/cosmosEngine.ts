@@ -584,13 +584,11 @@ export class CosmosEngine {
   highlightNode(nodeId: string | null): void {
     if (!this.graph) return
     if (!nodeId) {
-      this.graph.unselectPoints()
       this.graph.setConfig({ focusedPointIndex: undefined })
       return
     }
     const idx = this.nodeIdToIndex.get(nodeId)
     if (idx === undefined) return
-    this.graph.unselectPoints()
     this.graph.setConfig({ focusedPointIndex: undefined })
   }
 
@@ -936,7 +934,6 @@ export class CosmosEngine {
     this.hover.lockedLinkIndex = linkIndex
     this.hover.hoveredLinkIndex = linkIndex
     this.hover.hoverProgress = 1
-    this.graph?.unselectPoints()
     this.graph?.setConfig({ focusedPointIndex: undefined })
     this.applyLinkFocus(linkIndex, 1)
     this.callbacks.onHoverChange?.(this.hover)
@@ -1243,7 +1240,6 @@ export class CosmosEngine {
       simulationCluster: 0,
       simulationCenter: SIM_DEFAULTS.center,
       simulationRepulsionTheta: 0.9,
-      useClassicQuadtree: true,
 
       pointDefaultColor: '#6366f1',
       pointDefaultSize: POINT_SIZE_BASE,
@@ -2971,7 +2967,6 @@ export class CosmosEngine {
   }
 
   private resetVisualState(): void {
-    this.graph?.unselectPoints()
     this.graph?.setConfig({ focusedPointIndex: undefined })
     this.graph?.setPointColors(this.pointColors)
     this.graph?.setLinkColors(this.linkColors)
@@ -3094,7 +3089,6 @@ export class CosmosEngine {
 
     this.graph.setPointColors(pc)
     if (sourceIndex !== undefined && targetIndex !== undefined) {
-      this.graph.unselectPoints()
       this.graph.setConfig({ focusedPointIndex: undefined })
     }
     this.graph.setLinkColors(lc)

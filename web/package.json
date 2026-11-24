@@ -12,7 +12,7 @@
     "test:e2e": "playwright test --reporter=list"
   },
   "dependencies": {
-    "@cosmos.gl/graph": "^3.4.1",
+    "@cosmos.gl/graph": "^3.4.2",
     "@hpcc-js/wasm-graphviz": "^1.29.1",
     "@monaco-editor/react": "^4.6.0",
     "@xyflow/react": "^12.11.6",
