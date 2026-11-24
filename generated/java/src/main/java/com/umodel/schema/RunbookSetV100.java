@@ -149,5 +149,19 @@ public class RunbookSetV100 implements UModelCoreObject {
             this.skills = skills;
         }
 
+        /**
+         * 术语定义列表，承载可复用、可被引用的业务或技术术语。
+         */
+        @JSONField(name = "terms")
+        private List<TermV1> terms;
+
+        public List<TermV1> getTerms() {
+            return terms;
+        }
+
+        public void setTerms(List<TermV1> terms) {
+            this.terms = terms;
+        }
+
     }
 }

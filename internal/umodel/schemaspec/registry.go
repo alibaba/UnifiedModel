@@ -229,6 +229,12 @@ func parseConstraint(raw map[string]any) (Constraint, error) {
 	if v, ok := intFromAny(raw["max_len"]); ok {
 		c.MaxLen = &v
 	}
+	if v, ok := floatFromAny(raw["min_value"]); ok {
+		c.MinValue = &v
+	}
+	if v, ok := floatFromAny(raw["max_value"]); ok {
+		c.MaxValue = &v
+	}
 	if v, present := raw["default_value"]; present {
 		c.DefaultValue = v
 	}
@@ -291,6 +297,20 @@ func intFromAny(v any) (int, bool) {
 		return int(x), true
 	case float64:
 		return int(x), true
+	}
+	return 0, false
+}
+
+func floatFromAny(v any) (float64, bool) {
+	switch x := v.(type) {
+	case int:
+		return float64(x), true
+	case int64:
+		return float64(x), true
+	case uint64:
+		return float64(x), true
+	case float64:
+		return x, true
 	}
 	return 0, false
 }

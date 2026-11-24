@@ -104,8 +104,12 @@ func (sqlTableRenderer) Render(req planrender.Request) (map[string]any, error) {
 	queries := []map[string]any{}
 	for _, metric := range req.Metrics {
 		name := stringValue(metric["name"])
+		aggregation, err := sqlAggregation(metric, qValueCol)
+		if err != nil {
+			return nil, err
+		}
 		item := metricQueryItem(metric)
-		item["sql"] = buildSQLMetricQuery(name, qFrom, qTimeCol, qValueCol, qMetricCol, where, queryType, interval, req.Limit)
+		item["sql"] = buildSQLMetricQuery(name, qFrom, qTimeCol, qValueCol, qMetricCol, aggregation, where, queryType, interval, req.Limit)
 		queries = append(queries, item)
 	}
 
@@ -129,9 +133,9 @@ func (sqlTableRenderer) Render(req planrender.Request) (map[string]any, error) {
 
 // buildSQLMetricQuery renders one metric's SQL from already-validated, quoted
 // identifiers and a validated INTERVAL operand. A range query downsamples with
-// toStartOfInterval + avg (ClickHouse idiom); an instant query takes the latest
-// point. {from} / {to} are filled by the caller from the plan's time_range.
-func buildSQLMetricQuery(metric, qFrom, qTimeCol, qValueCol, qMetricCol, where, queryType, interval string, limit int) string {
+// the MetricSet metric's aggregator. Without an aggregator, it returns raw
+// samples. {from} / {to} are filled by the caller from the plan's time_range.
+func buildSQLMetricQuery(metric, qFrom, qTimeCol, qValueCol, qMetricCol, aggregation, where, queryType, interval string, limit int) string {
 	predicates := []string{}
 	if where != "" {
 		predicates = append(predicates, where)
@@ -143,16 +147,51 @@ func buildSQLMetricQuery(metric, qFrom, qTimeCol, qValueCol, qMetricCol, where, 
 	whereClause := strings.Join(predicates, " AND ")
 
 	if queryType == "instant" {
-		return fmt.Sprintf("SELECT %s AS value FROM %s WHERE %s ORDER BY %s DESC LIMIT 1", qValueCol, qFrom, whereClause, qTimeCol)
+		if aggregation == "" {
+			return fmt.Sprintf("SELECT %s AS timestamp, %s AS value FROM %s WHERE %s ORDER BY %s DESC LIMIT 1", qTimeCol, qValueCol, qFrom, whereClause, qTimeCol)
+		}
+		return fmt.Sprintf(
+			"SELECT %s AS value FROM %s WHERE %s AND %s = (SELECT max(%s) FROM %s WHERE %s)",
+			aggregation, qFrom, whereClause, qTimeCol, qTimeCol, qFrom, whereClause,
+		)
+	}
+	if aggregation == "" {
+		sql := fmt.Sprintf("SELECT %s AS timestamp, %s AS value FROM %s WHERE %s ORDER BY %s", qTimeCol, qValueCol, qFrom, whereClause, qTimeCol)
+		if limit > 0 {
+			sql += fmt.Sprintf(" LIMIT %d", limit)
+		}
+		return sql
 	}
 	sql := fmt.Sprintf(
-		"SELECT toStartOfInterval(%s, INTERVAL %s) AS bucket, avg(%s) AS value FROM %s WHERE %s GROUP BY bucket ORDER BY bucket",
-		qTimeCol, interval, qValueCol, qFrom, whereClause,
+		"SELECT toStartOfInterval(%s, INTERVAL %s) AS bucket, %s AS value FROM %s WHERE %s GROUP BY bucket ORDER BY bucket",
+		qTimeCol, interval, aggregation, qFrom, whereClause,
 	)
 	if limit > 0 {
 		sql += fmt.Sprintf(" LIMIT %d", limit)
 	}
 	return sql
+}
+
+// sqlAggregation returns a ClickHouse expression for the MetricSet metric's
+// aggregation method. The function name is never interpolated directly from
+// model data, so a malformed model cannot inject SQL through aggregator.
+// A metric without an aggregator returns an empty expression so its query stays
+// unaggregated.
+func sqlAggregation(metric map[string]any, qValueCol string) (string, error) {
+	aggregator := strings.ToLower(strings.TrimSpace(stringValue(metric["aggregator"])))
+	if aggregator == "" {
+		return "", nil
+	}
+	switch aggregator {
+	case "sum", "avg", "min", "max", "count":
+		return aggregator + "(" + qValueCol + ")", nil
+	case "count_distinct":
+		return "count(DISTINCT " + qValueCol + ")", nil
+	default:
+		return "", apperrors.WithDetails(apperrors.CodeQueryPlanError,
+			"sql-table renderer rejected the metric aggregator",
+			map[string]string{"aggregator": aggregator, "reason": "must be sum, avg, min, max, count, or count_distinct"})
+	}
 }
 
 // constraintsToSQLWhere formats the IR as a SQL boolean expression. Field names

@@ -33,8 +33,8 @@ spec:
   table: service_metrics
 ```
 
-`get_metrics` 渲染为 SQL——`SELECT toStartOfInterval(ts, INTERVAL 1 MINUTE), avg(value) … WHERE … GROUP BY …`——
-其中 `{from}` / `{to}` 占位符由调用方用计划的时间范围填充。见 [`clickhouse.storage.yaml`](clickhouse.storage.yaml)。
+当指标的 `aggregator` 为 `sum` 时，`get_metrics` 渲染为 SQL——`SELECT toStartOfInterval(ts, INTERVAL 1 MINUTE), sum(value) … WHERE … GROUP BY …`。
+`sql-table` 渲染器支持 `sum`、`avg`、`min`、`max`、`count` 和 `count_distinct`；未配置 `aggregator` 时返回原始样本，不执行分组聚合。其中 `{from}` / `{to}` 占位符由调用方用计划的时间范围填充。见 [`clickhouse.storage.yaml`](clickhouse.storage.yaml)。
 
 `sql-table` 家族此后的每个后端都只是配置，与 `label-timeseries` 里的 VictoriaMetrics 一样。
 

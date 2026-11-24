@@ -180,7 +180,7 @@ func (s *Service) ListWorkspaces(ctx context.Context, req model.WorkspaceListReq
 			continue
 		}
 		if len(items) == limit {
-			next = id
+			next = items[len(items)-1].ID
 			break
 		}
 		items = append(items, metadata)

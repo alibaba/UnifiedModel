@@ -1,0 +1,66 @@
+description:
+  zh_cn: 置信度用于表达稳定语义定义当前有多可信，以及主要基于什么形成。
+  en_us: Confidence describes how trustworthy a stable semantic definition is and what it is mainly based on.
+name: confidence
+versions:
+  - name: v1
+    spec:
+      type: object
+      properties:
+        score:
+          type: integer
+          description:
+            zh_cn: 语义置信度分数，范围 0-100。
+            en_us: Semantic confidence score, from 0 to 100.
+          constraint:
+            min_value: 0
+            max_value: 100
+        status:
+          type: string
+          description:
+            zh_cn: 语义定义的应用状态，按优先级从高到低依次为人工确认应用、系统自动应用和尚未应用。
+            en_us: Application status of the semantic definition, ordered by priority from manually applied to automatically applied and not applied.
+          constraint:
+            enum:
+              values:
+                - manually_applied
+                - auto_applied
+                - not_applied
+        source:
+          type: string
+          description:
+            zh_cn: 置信度来源。
+            en_us: Source of the confidence.
+          constraint:
+            enum:
+              values:
+                - human
+                - llm
+                - system
+                - hybrid
+                - imported
+        basis:
+          type: array
+          description:
+            zh_cn: 形成该置信度所依据的主要证据类型，只记录类别，不记录证据明细。
+            en_us: Main evidence categories used to produce the confidence. Records categories only, not evidence details.
+          constraint:
+            array:
+              item:
+                type: string
+                constraint:
+                  enum:
+                    values:
+                      - schema
+                      - sample_data
+                      - query_history
+                      - dashboard
+                      - alert
+                      - lineage
+                      - documentation
+                      - human_review
+        reason:
+          type: string
+          description:
+            zh_cn: 简短说明为什么给出该置信度。
+            en_us: Short explanation for the confidence score.

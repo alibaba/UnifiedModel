@@ -89,6 +89,7 @@ make expand
 ```bash
 make verify
 make example-validate
+make public-links-check
 ```
 
 Generated SDK locations:
@@ -98,6 +99,8 @@ Generated SDK locations:
 - Java: `generated/java`
 
 Do not hand-edit generated SDK files unless you are changing generated output as part of a generator update.
+
+Keep schema descriptions and public documentation self-contained. Remove private DingTalk document references from source schemas before regenerating SDKs and documentation. `make public-links-check` scans source schemas, expanded and embedded schemas, SDKs, and public documentation; `make guard` and `make ci` run this check and reject private document links.
 
 ### Service, CLI, Query, Or MCP Changes
 

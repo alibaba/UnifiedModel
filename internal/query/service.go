@@ -103,7 +103,7 @@ func (s *Service) Execute(ctx context.Context, workspace string, req model.Query
 	req.Format = format
 	plan, caps, health, err := s.plan(ctx, workspace, req)
 	if err != nil {
-		return model.QueryResult{}, err
+		return model.QueryResult{}, asQueryTimeout(ctx, err)
 	}
 
 	// Bound execution by the active provider's declared timeout. The deadline is
@@ -178,7 +178,7 @@ func (s *Service) Explain(ctx context.Context, workspace string, req model.Query
 	req.Format = format
 	plan, caps, health, err := s.plan(ctx, workspace, req)
 	if err != nil {
-		return model.QueryExplain{}, err
+		return model.QueryExplain{}, asQueryTimeout(ctx, err)
 	}
 	explain := buildExplain(plan, caps, health)
 	if shouldRouteToSearch(plan) {

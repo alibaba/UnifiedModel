@@ -53,3 +53,5 @@ class RunbookSetV100Spec:
     automations: Optional[List[Optional['AutomationConfigV1']]] = None
     # 技能配置列表，遵循 Agent Skills 规范
     skills: Optional[List[Optional['SkillConfigV1']]] = None
+    # 术语定义列表，承载可复用、可被引用的业务或技术术语。
+    terms: Optional[List[Optional['TermV1']]] = None

@@ -46,15 +46,15 @@ func (s *EntitySetV100) GetMetadata() *MetadataV1 {
 // EntitySetV100Spec EntitySet 的核心配置部分，定义实体数据的结构和生命周期管理规则。
 type EntitySetV100Spec struct {
 	TelemetryDataV1 `yaml:",inline"` // 嵌入 telemetry_data:v1
-	// FirstObservedTimeField Entity 的首次被观测时间所在字段。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
+	// FirstObservedTimeField Entity 的首次被观测时间所在字段。
 	FirstObservedTimeField string `json:"first_observed_time_field,omitempty" yaml:"first_observed_time_field,omitempty"`
-	// LastObservedTimeField Entity 最近被观测时间所在字段。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
+	// LastObservedTimeField Entity 最近被观测时间所在字段。
 	LastObservedTimeField string `json:"last_observed_time_field,omitempty" yaml:"last_observed_time_field,omitempty"`
 	// PrimaryKeyFields Entity 的主键字段。值格式为唯一标识实体的字段名称列表。
 	PrimaryKeyFields []string `json:"primary_key_fields,omitempty" yaml:"primary_key_fields,omitempty"`
 	// IdGenerator Entity 的 ID 生成器。表示该 EntitySet 的ID如何通过PrimaryKeyFields 生成。该字段类型为 string，需要符合 SPL 的表达式语法，执行返回为 string。如果为空，则使用默认的生成方式： lower(to...
 	IdGenerator string `json:"id_generator,omitempty" yaml:"id_generator,omitempty"`
-	// KeepAliveSeconds 保持活跃的持续时间，在最后观测时间加上保活秒数后，Entity 将被视为消失。默认为3600秒（1小时）。参考：https://alidocs.dingtalk.com/i/nodes/XPwkYGxZV347LdvpHaABmZXgJAgozOKL
+	// KeepAliveSeconds 保持活跃的持续时间，在最后观测时间加上保活秒数后，Entity 将被视为消失。默认为3600秒（1小时）。
 	KeepAliveSeconds float64 `json:"keep_alive_seconds,omitempty" yaml:"keep_alive_seconds,omitempty"`
 	// Dynamic 是否为动态生成，默认为false。为true时表示该实体为动态实体，会绑定 Storage，每次实体的内容由Storage 处获取，而非存储在 EntityStore 中。
 	Dynamic bool `json:"dynamic,omitempty" yaml:"dynamic,omitempty"`

@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
+	"github.com/alibaba/UnifiedModel/tests/testutil"
 )
 
 func TestMCPBusinessFlowCoversDiscoveryResourcesAndToolPolicy(t *testing.T) {
@@ -20,9 +23,10 @@ func TestMCPBusinessFlowCoversDiscoveryResourcesAndToolPolicy(t *testing.T) {
 		`{"jsonrpc":"2.0","id":6,"method":"resources/read","params":{"workspace":"mcp-demo","uri":"umodel://workspace/mcp-demo/overview"}}`,
 		`{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"workspace":"mcp-demo","name":"entity_write","arguments":{"entities":[]}}}`,
 	}
-	cmd := exec.Command("go", "run", "./cmd/umodel-mcp", "--data", t.TempDir(), "--graphstore", "memory")
+	workspace := testutil.MCPWorkspace(t, "mcp-demo")
+	cmd := exec.Command("go", "run", "./cmd/umodel-mcp", "--data", t.TempDir(), "--graphstore", graphfixture.Provider())
 	cmd.Dir = root
-	cmd.Stdin = strings.NewReader(strings.Join(requests, "\n"))
+	cmd.Stdin = strings.NewReader(strings.ReplaceAll(strings.Join(requests, "\n"), "mcp-demo", workspace))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("umodel-mcp failed: %v\n%s", err, out)
@@ -61,7 +65,7 @@ func TestMCPBusinessFlowCoversDiscoveryResourcesAndToolPolicy(t *testing.T) {
 	}
 	overview := responseByID(t, responses, 6)
 	overviewBody := mustJSON(t, overview["result"])
-	if !bytes.Contains(overviewBody, []byte("/api/v1/query/mcp-demo/execute")) || bytes.Contains(overviewBody, []byte(`"rows"`)) {
+	if !bytes.Contains(overviewBody, []byte("/api/v1/query/"+workspace+"/execute")) || bytes.Contains(overviewBody, []byte(`"rows"`)) {
 		t.Fatalf("resource read should expose query entry points without runtime rows, got %s", overviewBody)
 	}
 	disabled := responseByID(t, responses, 7)
@@ -78,9 +82,10 @@ func TestMCPQueryToolDiscoversAndLoadsEntityLinkedSkill(t *testing.T) {
 		`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"workspace":"demo","name":"query_spl_execute","arguments":{"query":".entity_set with(domain='platform', name='platform.service') | entity-call list_skills(['platform@runbook_set@platform.service.ops@skills@incident-investigation'], true)"}}}`,
 		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"workspace":"demo","name":"query_spl_execute","arguments":{"query":".entity_set with(domain='platform', name='platform.service') | entity-call list_knowledge(['platform@runbook_set@platform.service.ops@knowledge@retry_storm_pattern'], true)"}}}`,
 	}
-	cmd := exec.Command("go", "run", "./cmd/umodel-mcp", "--quickstart", "--quickstart-sample", "examples/incident-investigation", "--graphstore", "memory", "--data", t.TempDir())
+	workspace := testutil.MCPWorkspace(t, "demo")
+	cmd := exec.Command("go", "run", "./cmd/umodel-mcp", "--quickstart", "--quickstart-workspace", workspace, "--quickstart-sample", "examples/incident-investigation", "--graphstore", graphfixture.Provider(), "--data", t.TempDir())
 	cmd.Dir = root
-	cmd.Stdin = strings.NewReader(strings.Join(requests, "\n"))
+	cmd.Stdin = strings.NewReader(strings.ReplaceAll(strings.Join(requests, "\n"), `"workspace":"demo"`, `"workspace":"`+workspace+`"`))
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()

@@ -46,6 +46,14 @@ go run ./cmd/umodel-mcp --data data --graphstore neo4j
 
 Connection defaults and deployment options: [GraphStore Providers](../graphstore-providers.md#neo4j).
 
+For Gremlin Server persistence, configure `GREMLIN_URI`, optional `GREMLIN_USERNAME`/`GREMLIN_PASSWORD`, and `GREMLIN_TRAVERSAL_SOURCE`, then run:
+
+```bash
+go run ./cmd/umodel-mcp --data data --graphstore gremlin
+```
+
+Use one writing provider instance per graph. If a separate REST server owns writes, keep MCP write tools disabled and do not use MCP `--quickstart`. Requirements and limits: [Gremlin provider](../graphstore-providers.md#gremlin).
+
 The same command supports `NEO4J_DIALECT=opencypher` with `NEO4J_DATABASE=''` and a direct Bolt endpoint. Compatibility mode permits one writing provider instance per database. When the REST server owns writes, keep write tools disabled in a separate MCP process and do not use MCP `--quickstart`, which imports data. See [openCypher compatibility mode](../graphstore-providers.md#opencypher-compatibility-mode).
 
 ## Methods

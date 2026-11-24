@@ -161,3 +161,39 @@ The ValueMapping module is used to define the value mapping relationship.
 | `display_name` | semantic_string (i18n) |  |  | The display name of the Element in UModel System. The value cannot be empty. |
 | `description` | semantic_string (i18n) |  |  | The description of the Element in UModel System. |
 | `short_description` | semantic_string (i18n) |  |  | The short description of the Element in UModel System. |
+
+## confidence
+
+Confidence describes how trustworthy a stable semantic definition is and what it is mainly based on.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `score` | `integer` |  |  | Semantic confidence score, from 0 to 100. |
+| `status` | enum: `manually_applied`, `auto_applied`, `not_applied` |  |  | Application status of the semantic definition, ordered by priority from manually applied to automatically applied and not applied. |
+| `source` | enum: `human`, `llm`, `system`, `hybrid`, `imported` |  |  | Source of the confidence. |
+| `basis` | array&lt;string&gt; |  |  | Main evidence categories used to produce the confidence. Records categories only, not evidence details. |
+| `reason` | `string` |  |  | Short explanation for the confidence score. |
+
+## model_binding
+
+ModelBinding references a model or Set (LogSet, MetricSet, EventSet, EntitySet, etc.), indicating which model a query or term runs against or is associated with. It mirrors the src/dest structure of link.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `domain` | `string` | yes |  | Domain of the model, matching the target Set's metadata.domain. |
+| `kind` | `string` | yes |  | Model kind, such as log_set, metric_set, event_set, or entity_set. |
+| `name` | `string` | yes |  | Model name, matching the target Set's metadata.name. |
+
+## term
+
+Term definition describing a reusable business or technical term referenceable by LLMs or rules.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `name` | `string` | yes |  | Term name, which must be unique within the same RunbookSet. |
+| `display_name` | semantic_string (i18n) |  |  | Term display name. |
+| `description` | semantic_string (i18n) |  |  | Detailed description of the term, its meaning, and applicable scenarios. |
+| `short_description` | semantic_string (i18n) |  |  | Short description for LLMs or users to quickly grasp the term. |
+| `aliases` | array&lt;string&gt; |  |  | Term aliases. Only observed or strongly conventional aliases should be recorded. |
+| `confidence` | [confidence](shared-types#confidence) |  |  | Semantic confidence of this term. |
+| `model_bindings` | array&lt;[model_binding](shared-types#model_binding)&gt; |  |  | List of model or Set references indicating which LogSets, MetricSets, EventSets, or EntitySets the term appears in. |

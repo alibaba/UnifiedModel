@@ -112,6 +112,17 @@ func TestQuickstartClientUsesPublicRESTContracts(t *testing.T) {
 	}
 }
 
+func TestQueryDecodesPublicMatrixEnvelope(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"code":"200","success":true,"data":{"header":["id","display_name"],"data":[["a","checkout"],["b",null]]}}`))
+	}))
+	defer server.Close()
+	result, err := NewClient(server.URL).Query(context.Background(), "demo", QueryRequest{Query: ".entity"})
+	if err != nil || len(result.Rows) != 2 || result.Rows[0]["display_name"] != "checkout" || result.Rows[1]["display_name"] != nil {
+		t.Fatalf("public response envelope lost rows: %+v %v", result, err)
+	}
+}
+
 func assertBodyField(t *testing.T, r *http.Request, key, want string) {
 	t.Helper()
 	var body map[string]any

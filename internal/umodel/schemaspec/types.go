@@ -22,6 +22,8 @@ type Constraint struct {
 	PatternStr   string
 	MinLen       *int
 	MaxLen       *int
+	MinValue     *float64
+	MaxValue     *float64
 	Array        *ArraySpec
 	Map          *MapSpec
 	DefaultValue any

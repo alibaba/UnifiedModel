@@ -95,3 +95,13 @@ versions:
                   item:
                     type_ref: skill_config:v1
               release_stage: experimental
+            terms:
+              type: array
+              description:
+                zh_cn: 术语定义列表，承载可复用、可被引用的业务或技术术语。
+                en_us: List of reusable, referenceable business or technical terms.
+              constraint:
+                array:
+                  item:
+                    type_ref: term:v1
+              release_stage: experimental

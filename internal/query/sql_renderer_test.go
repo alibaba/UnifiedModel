@@ -136,17 +136,116 @@ func TestSQLTableRendererGetMetrics(t *testing.T) {
 	sql, _ := queries[0]["sql"].(string)
 	// Identifiers are backtick-quoted; values stay single-quoted.
 	for _, want := range []string{
-		"toStartOfInterval(`timestamp`, INTERVAL 1 MINUTE)",
-		"avg(`val`) AS value",
+		"SELECT `timestamp` AS timestamp, `val` AS value",
 		"FROM `metrics`",
 		"`id` = 'id1'",
 		"`name` = 'request_latency'",
 		"`timestamp` BETWEEN {from} AND {to}",
-		"GROUP BY bucket",
+		"ORDER BY `timestamp`",
 	} {
 		if !strings.Contains(sql, want) {
 			t.Errorf("SQL missing %q:\n%s", want, sql)
 		}
+	}
+	if strings.Contains(sql, "GROUP BY") {
+		t.Errorf("unaggregated metric should not group rows:\n%s", sql)
+	}
+}
+
+func TestSQLTableRendererAggregatesLatestInstant(t *testing.T) {
+	out, err := (sqlTableRenderer{}).Render(planrender.Request{
+		Method:    planrender.MethodGetMetrics,
+		DataSet:   model.UModelElement{Kind: "metric_set", Name: "svc.metrics"},
+		Storage:   model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"table": "metrics"}},
+		Metrics:   []map[string]any{{"name": "m", "aggregator": "sum"}},
+		QueryType: "instant",
+		Step:      "1m",
+	})
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	queries, _ := out["queries"].([]map[string]any)
+	sql, _ := queries[0]["sql"].(string)
+	for _, want := range []string{
+		"SELECT sum(`value`) AS value",
+		"`timestamp` = (SELECT max(`timestamp`) FROM `metrics` WHERE",
+	} {
+		if !strings.Contains(sql, want) {
+			t.Errorf("SQL missing %q:\n%s", want, sql)
+		}
+	}
+}
+
+func TestSQLTableRendererLeavesUnaggregatedInstantRaw(t *testing.T) {
+	out, err := (sqlTableRenderer{}).Render(planrender.Request{
+		Method:    planrender.MethodGetMetrics,
+		DataSet:   model.UModelElement{Kind: "metric_set", Name: "svc.metrics"},
+		Storage:   model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"table": "metrics"}},
+		Metrics:   []map[string]any{{"name": "m"}},
+		QueryType: "instant",
+		Step:      "1m",
+	})
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	queries, _ := out["queries"].([]map[string]any)
+	sql, _ := queries[0]["sql"].(string)
+	for _, want := range []string{
+		"SELECT `timestamp` AS timestamp, `value` AS value",
+		"ORDER BY `timestamp` DESC LIMIT 1",
+	} {
+		if !strings.Contains(sql, want) {
+			t.Errorf("SQL missing %q:\n%s", want, sql)
+		}
+	}
+	if strings.Contains(sql, "max(`timestamp`)") {
+		t.Errorf("unaggregated instant metric should not aggregate rows:\n%s", sql)
+	}
+}
+
+func TestSQLTableRendererUsesMetricAggregator(t *testing.T) {
+	for aggregator, want := range map[string]string{
+		"sum":            "sum(`value`) AS value",
+		"avg":            "avg(`value`) AS value",
+		"min":            "min(`value`) AS value",
+		"max":            "max(`value`) AS value",
+		"count":          "count(`value`) AS value",
+		"count_distinct": "count(DISTINCT `value`) AS value",
+	} {
+		t.Run(aggregator, func(t *testing.T) {
+			out, err := (sqlTableRenderer{}).Render(planrender.Request{
+				Method:    planrender.MethodGetMetrics,
+				DataSet:   model.UModelElement{Kind: "metric_set", Name: "svc.metrics"},
+				Storage:   model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"table": "metrics"}},
+				Metrics:   []map[string]any{{"name": "m", "aggregator": aggregator}},
+				QueryType: "range",
+				Step:      "1m",
+			})
+			if err != nil {
+				t.Fatalf("render: %v", err)
+			}
+			queries, _ := out["queries"].([]map[string]any)
+			sql, _ := queries[0]["sql"].(string)
+			if !strings.Contains(sql, want) {
+				t.Errorf("SQL missing %q:\n%s", want, sql)
+			}
+		})
+	}
+}
+
+func TestSQLTableRendererRejectsUnknownMetricAggregator(t *testing.T) {
+	_, err := (sqlTableRenderer{}).Render(planrender.Request{
+		Method:  planrender.MethodGetMetrics,
+		DataSet: model.UModelElement{Kind: "metric_set", Name: "svc.metrics"},
+		Storage: model.UModelElement{Kind: "clickhouse", Spec: map[string]any{"table": "metrics"}},
+		Metrics: []map[string]any{{"name": "m", "aggregator": "median"}},
+		Step:    "1m",
+	})
+	if err == nil {
+		t.Fatal("expected unknown metric aggregator to be rejected")
+	}
+	if !apperrors.IsCode(err, apperrors.CodeQueryPlanError) {
+		t.Fatalf("expected CodeQueryPlanError, got %v", err)
 	}
 }
 

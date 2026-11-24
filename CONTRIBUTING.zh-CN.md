@@ -50,7 +50,7 @@ make stop-all
 make test-service
 ```
 
-运行架构检查：
+运行架构与公开链接检查：
 
 ```bash
 make guard
@@ -77,6 +77,7 @@ make verify
 - 模型、示例数据和文档要在同一个 PR 中保持一致。
 - 新增文档或实质修改文档时，同时更新英文和中文版本。
 - 业务模块不得直接依赖 GraphStore provider 实现包。
+- Schema 描述和公开文档应包含完整说明。先从源 Schema 中移除内部钉钉文档引用，再生成 SDK 和文档。`make public-links-check` 检查源 Schema、展开与嵌入 Schema、SDK 和公开文档；`make guard` 与 `make ci` 会执行该检查，发现内部文档链接时失败。
 
 ## 文档
 

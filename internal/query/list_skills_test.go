@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	apperrors "github.com/alibaba/UnifiedModel/pkg/errors"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 func TestListSkillsPlannerNormalizesArguments(t *testing.T) {
@@ -264,7 +264,7 @@ func TestListSkillsDiscoveryAppliesFilterByEntity(t *testing.T) {
 
 func listSkillsTestService(t *testing.T, elements []model.UModelElement) *Service {
 	t.Helper()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(context.Background(), model.UModelElementBatch{Workspace: "demo", Elements: elements}); err != nil {
 		t.Fatalf("put list-skills fixture: %v", err)
 	}

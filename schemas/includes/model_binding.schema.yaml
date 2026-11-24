@@ -1,0 +1,32 @@
+description:
+  zh_cn: ModelBinding 用于引用一个模型或 Set（LogSet、MetricSet、EventSet、EntitySet 等），指明查询或术语运行或关联在哪个模型上。结构与 link 的 src/dest 一致。
+  en_us: ModelBinding references a model or Set (LogSet, MetricSet, EventSet, EntitySet, etc.), indicating which model a query or term runs against or is associated with. It mirrors the src/dest structure of link.
+name: model_binding
+versions:
+  - name: v1
+    spec:
+      type: object
+      properties:
+        domain:
+          description:
+            zh_cn: 模型所属域，对应目标 Set 的 metadata.domain。
+            en_us: Domain of the model, matching the target Set's metadata.domain.
+          type: string
+          constraint:
+            required: true
+        kind:
+          description:
+            zh_cn: 模型类型，如 log_set、metric_set、event_set、entity_set。
+            en_us: Model kind, such as log_set, metric_set, event_set, or entity_set.
+          type: string
+          constraint:
+            required: true
+        name:
+          description:
+            zh_cn: 模型名称，对应目标 Set 的 metadata.name。
+            en_us: Model name, matching the target Set's metadata.name.
+          type: string
+          constraint:
+            required: true
+            min_len: 1
+            max_len: 255

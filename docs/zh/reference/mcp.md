@@ -47,6 +47,14 @@ go run ./cmd/umodel-mcp --data data --graphstore neo4j
 
 连接默认值与部署选项：[GraphStore Providers](../graphstore-providers.md#neo4j)。
 
+使用 Gremlin Server 持久化时，先配置 `GREMLIN_URI`、可选的 `GREMLIN_USERNAME`/`GREMLIN_PASSWORD` 和 `GREMLIN_TRAVERSAL_SOURCE`，再运行：
+
+```bash
+go run ./cmd/umodel-mcp --data data --graphstore gremlin
+```
+
+每个图数据库只允许一个写入 provider 实例。独立 REST 服务承担写入时，MCP 应保持写工具关闭，不使用 MCP `--quickstart`。要求与限制：[Gremlin provider](../graphstore-providers.md#gremlin)。
+
 相同命令支持 `NEO4J_DIALECT=opencypher`，配合 `NEO4J_DATABASE=''` 和 Bolt 直连地址。兼容模式下每个数据库只允许一个可写 provider 实例。REST 服务承担写入时，独立 MCP 进程应保持写工具关闭，也不要使用会导入数据的 MCP `--quickstart`。详见 [openCypher 兼容模式](../graphstore-providers.md#opencypher-兼容模式)。
 
 ## Methods

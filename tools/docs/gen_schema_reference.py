@@ -54,6 +54,9 @@ SHARED_TYPES = [
     "metric",
     "observation",
     "value_mapping",
+    "confidence",
+    "model_binding",
+    "term",
 ]
 
 # Property names whose array items are a well-known shared type -> link instead of inline.

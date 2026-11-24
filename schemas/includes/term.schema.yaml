@@ -1,0 +1,57 @@
+description:
+  zh_cn: 术语定义，描述一条可复用、可被 LLM 或规则引用的业务或技术术语。
+  en_us: Term definition describing a reusable business or technical term referenceable by LLMs or rules.
+name: term
+versions:
+  - name: v1
+    spec:
+      type: object
+      properties:
+        name:
+          description:
+            zh_cn: 术语名称，在同一个 RunbookSet 内必须唯一。
+            en_us: Term name, which must be unique within the same RunbookSet.
+          type: string
+          constraint:
+            required: true
+            pattern: '^[a-zA-Z0-9_][a-zA-Z0-9-_\.]{0,127}$'
+            min_len: 1
+            max_len: 128
+        display_name:
+          description:
+            zh_cn: 术语显示名称。
+            en_us: Term display name.
+          type: semantic_string
+        description:
+          description:
+            zh_cn: 术语的详细描述，说明其含义与适用场景。
+            en_us: Detailed description of the term, its meaning, and applicable scenarios.
+          type: semantic_string
+        short_description:
+          description:
+            zh_cn: 简短描述，便于 LLM 或用户快速判断术语含义。
+            en_us: Short description for LLMs or users to quickly grasp the term.
+          type: semantic_string
+        aliases:
+          description:
+            zh_cn: 术语别名，只记录真实出现过或强约定的别名。
+            en_us: Term aliases. Only observed or strongly conventional aliases should be recorded.
+          type: array
+          constraint:
+            array:
+              item:
+                type: string
+        confidence:
+          description:
+            zh_cn: 术语语义置信度。
+            en_us: Semantic confidence of this term.
+          type_ref: confidence:v1
+        model_bindings:
+          description:
+            zh_cn: 术语关联的模型或 Set 引用列表，指明术语出现在哪些 LogSet、MetricSet、EventSet 或 EntitySet 上。
+            en_us: List of model or Set references indicating which LogSets, MetricSets, EventSets, or EntitySets the term appears in.
+          type: array
+          constraint:
+            array:
+              item:
+                type_ref: model_binding:v1

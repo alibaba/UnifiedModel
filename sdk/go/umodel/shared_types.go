@@ -61,6 +61,148 @@ func (s *ConstraintTypeV1) GetKind() string {
 	return "constraint_type"
 }
 
+// TelemetryDataV1 represents telemetry_data
+type TelemetryDataV1 struct {
+	// Fields 可观测数据的字段列表。
+	Fields []*FieldSpecV1 `json:"fields,omitempty" yaml:"fields,omitempty"`
+	// TimeField 可观测数据的时间字段。一般要求时间字段为时间戳类型，支持秒、毫秒、微秒、纳秒。
+	TimeField string `json:"time_field,omitempty" yaml:"time_field,omitempty"`
+	// DisplayField 注意：定位和 `name_fields` 有一定重叠，字段已废弃，请使用 `name_fields` 字段第一个值替代。可观测数据的显示字段。即默认展示的字段。
+	DisplayField string `json:"display_field,omitempty" yaml:"display_field,omitempty"`
+	// NameFields 可观测数据的显示字段。建议按照显示重要性配置先后顺序，前端、算法等在各类场景会根据特点自由选择，例如极窄/引用场景下只取name_fields的第一个值。 例如：服务操作实体，建议取值为 ["operation_name", "service_nam...
+	NameFields []string `json:"name_fields,omitempty" yaml:"name_fields,omitempty"`
+	// HiddenFields 可观测数据的隐藏字段。即不用作展示的字段。
+	HiddenFields []string `json:"hidden_fields,omitempty" yaml:"hidden_fields,omitempty"`
+	// TagFields 可观测数据的标签字段。标签字段默认聚合在一起显示和分析。
+	TagFields []string `json:"tag_fields,omitempty" yaml:"tag_fields,omitempty"`
+	// OrderedFields 可观测数据的排序字段。即当前数据集的排序字段。
+	OrderedFields []string `json:"ordered_fields,omitempty" yaml:"ordered_fields,omitempty"`
+	// DefaultOrder 可观测数据的默认排序。默认值为 asc。
+	DefaultOrder string `json:"default_order,omitempty" yaml:"default_order,omitempty"`
+}
+
+// Validate 验证TelemetryDataV1是否符合schema定义
+func (s *TelemetryDataV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取TelemetryDataV1的类型标识
+func (s *TelemetryDataV1) GetKind() string {
+	return "telemetry_data"
+}
+
+// ActionConfigV1 represents action_config
+type ActionConfigV1 struct {
+	// Name 操作名称，在同一个RunbookSet中必须唯一。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 操作显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
+	// ShortDescription 操作简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// Description 操作详细描述信息。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ActionType 操作类型，例如pop_api、mcp、api_call、script、webhook等。
+	ActionType string `json:"action_type" yaml:"action_type"`
+	// Inputs 操作参数配置列表。
+	Inputs []*ParameterConfigV1 `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	// Outputs 操作输出配置列表。
+	Outputs []*ParameterConfigV1 `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	// ConfirmationRequired 是否需要确认才能执行操作。
+	ConfirmationRequired bool `json:"confirmation_required,omitempty" yaml:"confirmation_required,omitempty"`
+	// RiskLevel 操作的风险等级。
+	RiskLevel string `json:"risk_level,omitempty" yaml:"risk_level,omitempty"`
+	// Properties 详细配置信息，用于配置不同类型操作的详细信息
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// Tags 操作标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+}
+
+// Validate 验证ActionConfigV1是否符合schema定义
+func (s *ActionConfigV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ActionConfigV1的类型标识
+func (s *ActionConfigV1) GetKind() string {
+	return "action_config"
+}
+
+// KnowledgeConfigV1 represents knowledge_config
+type KnowledgeConfigV1 struct {
+	// Name 知识项名称，在同一个RunbookSet中必须唯一。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 知识项显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
+	// ShortDescription 知识项简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description" yaml:"short_description"`
+	// Description 知识项详细描述信息。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ApplyPolicy 知识如何应用的配置。
+	ApplyPolicy *KnowledgeConfigV1ApplyPolicy `json:"apply_policy" yaml:"apply_policy"`
+	// ContentType 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
+	ContentType string `json:"content_type" yaml:"content_type"`
+	// Content 知识内容，根据content_type可以是文本内容或URL地址。
+	Content string `json:"content,omitempty" yaml:"content,omitempty"`
+	// ContentUrl 知识内容的外部URL地址。
+	ContentUrl string `json:"content_url,omitempty" yaml:"content_url,omitempty"`
+	// Priority 知识项优先级，用于排序显示以及模型推理时选择。
+	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
+	// LastUpdated 最后更新时间。
+	LastUpdated time.Time `json:"last_updated,omitempty" yaml:"last_updated,omitempty"`
+	// Tags 知识项标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+}
+
+// Validate 验证KnowledgeConfigV1是否符合schema定义
+func (s *KnowledgeConfigV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取KnowledgeConfigV1的类型标识
+func (s *KnowledgeConfigV1) GetKind() string {
+	return "knowledge_config"
+}
+
+// MetadataV1 represents metadata
+type MetadataV1 struct {
+	// Name 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 元素在 UModel 系统中的显示名称。值不能为空。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description 元素在 UModel 系统中的描述。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ShortDescription 元素在 UModel系统中的简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// Domain 域。值格式为'domain.domain'。可以以点连接。
+	Domain string `json:"domain" yaml:"domain"`
+	// LaunchStage 元素的发布阶段。默认值为 preview。
+	LaunchStage string `json:"launch_stage,omitempty" yaml:"launch_stage,omitempty"`
+	// Icon 元素在UModel系统中的图标。值格式为'url'。
+	Icon string `json:"icon,omitempty" yaml:"icon,omitempty"`
+	// Uri 用于表示该元素唯一标识。
+	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
+	// Tags 用于表示该元素的标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+	// Properties 用于表示该元素的附加属性。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// CommonSchemaInfo 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
+	CommonSchemaInfo *MetadataV1CommonSchemaInfo `json:"common_schema_info,omitempty" yaml:"common_schema_info,omitempty"`
+}
+
+// Validate 验证MetadataV1是否符合schema定义
+func (s *MetadataV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取MetadataV1的类型标识
+func (s *MetadataV1) GetKind() string {
+	return "metadata"
+}
+
 // AutomationConfigV1 represents automation_config
 type AutomationConfigV1 struct {
 	// Name 自动化项名称，在同一个RunbookSet中必须唯一。
@@ -90,6 +232,316 @@ func (s *AutomationConfigV1) Validate() error {
 // GetKind 获取AutomationConfigV1的类型标识
 func (s *AutomationConfigV1) GetKind() string {
 	return "automation_config"
+}
+
+// ObservationV1 represents observation
+type ObservationV1 struct {
+	// Name 观察名称，在同一个RunbookSet中必须唯一。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 观察显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
+	// ShortDescription 观察简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description" yaml:"short_description"`
+	// Description 观察详细描述信息。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// Phenomenon 现象定义，描述要观察什么以及如何观察。
+	Phenomenon *ObservationV1Phenomenon `json:"phenomenon" yaml:"phenomenon"`
+	// Conclusions 结论配置列表，根据现象观察结果进行判断。
+	Conclusions []*ObservationV1ConclusionsItem `json:"conclusions" yaml:"conclusions"`
+	// Properties 观察属性配置。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// Tags 观察标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+}
+
+// Validate 验证ObservationV1是否符合schema定义
+func (s *ObservationV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ObservationV1的类型标识
+func (s *ObservationV1) GetKind() string {
+	return "observation"
+}
+
+// ValueMappingV1 represents value_mapping
+type ValueMappingV1 struct {
+	// Name 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 在 UModel 系统中的显示名称。值不能为空。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description 在 UModel 系统中的描述。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ShortDescription 在 UModel 系统中的简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+}
+
+// Validate 验证ValueMappingV1是否符合schema定义
+func (s *ValueMappingV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ValueMappingV1的类型标识
+func (s *ValueMappingV1) GetKind() string {
+	return "value_mapping"
+}
+
+// ConfidenceV1 represents confidence
+type ConfidenceV1 struct {
+	// Score 语义置信度分数，范围 0-100。
+	Score int64 `json:"score,omitempty" yaml:"score,omitempty"`
+	// Status 语义定义的应用状态，按优先级从高到低依次为人工确认应用、系统自动应用和尚未应用。
+	Status string `json:"status,omitempty" yaml:"status,omitempty"`
+	// Source 置信度来源。
+	Source string `json:"source,omitempty" yaml:"source,omitempty"`
+	// Basis 形成该置信度所依据的主要证据类型，只记录类别，不记录证据明细。
+	Basis []string `json:"basis,omitempty" yaml:"basis,omitempty"`
+	// Reason 简短说明为什么给出该置信度。
+	Reason string `json:"reason,omitempty" yaml:"reason,omitempty"`
+}
+
+// Validate 验证ConfidenceV1是否符合schema定义
+func (s *ConfidenceV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ConfidenceV1的类型标识
+func (s *ConfidenceV1) GetKind() string {
+	return "confidence"
+}
+
+// MetricV1 represents metric
+type MetricV1 struct {
+	// Name 指标的名称。值不能为空。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 指标的显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description 指标的描述。值格式为语义字符串。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ShortDescription 指标的简短描述。值格式为语义字符串。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// LaunchStage 元素的发布阶段。默认值为 preview。
+	LaunchStage string `json:"launch_stage,omitempty" yaml:"launch_stage,omitempty"`
+	// Unit 指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format 即可满足需求，unit 填写为空即可。 若不满...
+	Unit string `json:"unit,omitempty" yaml:"unit,omitempty"`
+	// DataFormat 指标的格式化方式，值格式为字符串。支持的格式化选项： 数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000 存储格式化： - byte: 处理为字节格式，样例：B/KB...
+	DataFormat string `json:"data_format,omitempty" yaml:"data_format,omitempty"`
+	// MaxValue 字段的最大值。值可以为空。仅适用于整数和浮点类型。
+	MaxValue float64 `json:"max_value,omitempty" yaml:"max_value,omitempty"`
+	// MinValue 字段的最小值。值可以为空。仅适用于整数和浮点类型。
+	MinValue float64 `json:"min_value,omitempty" yaml:"min_value,omitempty"`
+	// DefaultValue 字段的默认值。值可以为空。
+	DefaultValue interface{} `json:"default_value,omitempty" yaml:"default_value,omitempty"`
+	// Icon 用于表示该指标的图标。
+	Icon string `json:"icon,omitempty" yaml:"icon,omitempty"`
+	// Labels 用于表示该指标自身额外的标签。即在 MetricSet 的标签基础上，该指标还具有的额外标签。
+	Labels []*FieldSpecV1 `json:"labels,omitempty" yaml:"labels,omitempty"`
+	// GoldenMetric 是否为黄金指标。
+	GoldenMetric bool `json:"golden_metric,omitempty" yaml:"golden_metric,omitempty"`
+	// Generator 指标的生成方式，如果是 PromMode，该字段为 PromQL语句，能够执行并得到一个可直接使用的 Measure 类型指标。 例如：rate(request_count{}[1m])，在一些场景下结合 aggregator 字段，能够计算出聚合维...
+	Generator string `json:"generator,omitempty" yaml:"generator,omitempty"`
+	// Aggregator 指标的聚合方式。如果指标本身是聚合的，且聚合方式在多种维度组合下均一致，则不需要配置次字段，其他情况需要配置。一些示例场景如下： 1. Prometheus指标和Metric从时间线维度相同 1.1 rate(cpu_usage_seconds_to...
+	Aggregator string `json:"aggregator,omitempty" yaml:"aggregator,omitempty"`
+	// IntervalUs 指标的间隔，值格式为整数或整数数组，单位为微秒。 - 当为单个整数时：表示固定的采集间隔 - 当为整数数组时：表示多个采集间隔，用于支持不同精度的数据采集
+	IntervalUs interface{} `json:"interval_us,omitempty" yaml:"interval_us,omitempty"`
+	// Type 指标的类型。对于无需二次处理的指标，该字段应固定为 gauge。
+	Type string `json:"type,omitempty" yaml:"type,omitempty"`
+	// QueryMode 指标期望的查询模式。值必须是以下之一：range, instant, both。
+	QueryMode string `json:"query_mode,omitempty" yaml:"query_mode,omitempty"`
+	// DisplayType 指标的显示类型。当前未使用。
+	DisplayType string `json:"display_type,omitempty" yaml:"display_type,omitempty"`
+	// Statistics 生成该指标时的统计方式，即该指标有多种生成方式。当前仅在基础云监控场景下使用。
+	Statistics []string `json:"statistics,omitempty" yaml:"statistics,omitempty"`
+	// Tags 用于表示该指标的标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+	// Properties 用于表示该指标的附加属性。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// DefaultFillPolicy 指标的默认填充策略。 值可以是 null, 0, last, next。
+	DefaultFillPolicy string `json:"default_fill_policy,omitempty" yaml:"default_fill_policy,omitempty"`
+}
+
+// Validate 验证MetricV1是否符合schema定义
+func (s *MetricV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取MetricV1的类型标识
+func (s *MetricV1) GetKind() string {
+	return "metric"
+}
+
+// ToolParameterConfigV1 represents tool_parameter_config
+type ToolParameterConfigV1 struct {
+	// Properties 参数属性定义，键为参数名称，值为参数定义对象。
+	Properties map[string]interface{} `json:"properties,omitempty" yaml:"properties,omitempty"`
+	// Required 必填参数名称列表。
+	Required []string `json:"required,omitempty" yaml:"required,omitempty"`
+}
+
+// Validate 验证ToolParameterConfigV1是否符合schema定义
+func (s *ToolParameterConfigV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ToolParameterConfigV1的类型标识
+func (s *ToolParameterConfigV1) GetKind() string {
+	return "tool_parameter_config"
+}
+
+// FieldSpecV1 represents field_spec
+type FieldSpecV1 struct {
+	// Name Field 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName Field 在 UModel 系统中的显示名称。值不能为空。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description Field 在 UModel 系统中的描述。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ShortDescription Field 在 UModel 系统中的简短描述。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// LaunchStage 元素的发布阶段。默认值为 preview。
+	LaunchStage string `json:"launch_stage,omitempty" yaml:"launch_stage,omitempty"`
+	// Type 字段的类型。值必须是以下之一：string、integer、float、boolean、time、json_object、json_array。值不能为空。
+	Type string `json:"type" yaml:"type"`
+	// ValueMapping 对于枚举值的映射和解释，为了更好的展示映射值含义，对于 mapping 的 value 字段单独定义，value 包含4个字段："name"、"display_name"、"description"和"short_description"。例如，"s...
+	ValueMapping map[string]*ValueMappingV1 `json:"value_mapping,omitempty" yaml:"value_mapping,omitempty"`
+	// Unit 指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format 即可满足需求，unit 填写为空即可。 若不满...
+	Unit string `json:"unit,omitempty" yaml:"unit,omitempty"`
+	// DataFormat 指标的格式化方式，值格式为字符串。支持的格式化选项： 数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000 存储格式化： - byte: 处理为字节格式，样例：B/KB...
+	DataFormat string `json:"data_format,omitempty" yaml:"data_format,omitempty"`
+	// Analysable 用于表示字段是否可分析，即作为Group By的列。默认值为false。
+	Analysable bool `json:"analysable,omitempty" yaml:"analysable,omitempty"`
+	// Filterable 用于表示字段是否可过滤，即支持索引过滤。默认值为false。
+	Filterable bool `json:"filterable,omitempty" yaml:"filterable,omitempty"`
+	// Orderable 用于表示字段是否可排序。默认值为false。
+	Orderable bool `json:"orderable,omitempty" yaml:"orderable,omitempty"`
+	// DefaultOrder 用于表示字段的默认排序顺序。值必须是以下之一：asc、desc。默认值为asc。
+	DefaultOrder string `json:"default_order,omitempty" yaml:"default_order,omitempty"`
+	// Pattern 正则表达式，用于定义字段的值范围（字符串）。
+	Pattern string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
+	// MaxLength 字符串值的最大长度。仅适用于字符串类型。
+	MaxLength int64 `json:"max_length,omitempty" yaml:"max_length,omitempty"`
+	// Example 字段值的示例。值可以为空。
+	Example interface{} `json:"example,omitempty" yaml:"example,omitempty"`
+	// MaxValue 字段的最大值。值可以为空。仅适用于整数和浮点类型。
+	MaxValue float64 `json:"max_value,omitempty" yaml:"max_value,omitempty"`
+	// MinValue 字段的最小值。值可以为空。仅适用于整数和浮点类型。
+	MinValue float64 `json:"min_value,omitempty" yaml:"min_value,omitempty"`
+	// DefaultValue 字段的默认值。值可以为空。
+	DefaultValue interface{} `json:"default_value,omitempty" yaml:"default_value,omitempty"`
+	// Icon Field 在 UModel 系统中的图标。值格式为'url'。
+	Icon string `json:"icon,omitempty" yaml:"icon,omitempty"`
+	// Uri 用于表示该字段唯一标识。
+	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
+	// Tags 用于表示该 Field 的标签。
+	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+	// Properties 用于表示该 Field 的附加属性。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+}
+
+// Validate 验证FieldSpecV1是否符合schema定义
+func (s *FieldSpecV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取FieldSpecV1的类型标识
+func (s *FieldSpecV1) GetKind() string {
+	return "field_spec"
+}
+
+// ParameterConfigV1 represents parameter_config
+type ParameterConfigV1 struct {
+	// Name 参数名称。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 参数显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description 参数描述信息。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// Type 参数类型。
+	Type string `json:"type" yaml:"type"`
+	// Required 是否为必填参数。
+	Required bool `json:"required,omitempty" yaml:"required,omitempty"`
+	// Default 参数默认值。
+	Default string `json:"default,omitempty" yaml:"default,omitempty"`
+}
+
+// Validate 验证ParameterConfigV1是否符合schema定义
+func (s *ParameterConfigV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ParameterConfigV1的类型标识
+func (s *ParameterConfigV1) GetKind() string {
+	return "parameter_config"
+}
+
+// LinkV1 represents link
+type LinkV1 struct {
+	// Src 源 Set 的标识。值不能为空。
+	Src *LinkV1Src `json:"src,omitempty" yaml:"src,omitempty"`
+	// Dest 目标 Set 的标识。值不能为空。
+	Dest *LinkV1Dest `json:"dest,omitempty" yaml:"dest,omitempty"`
+	// FilterByEntity 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
+	FilterByEntity string `json:"filter_by_entity,omitempty" yaml:"filter_by_entity,omitempty"`
+	// Priority Link 的优先级。值可以为空。默认值为5。
+	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
+}
+
+// Validate 验证LinkV1是否符合schema定义
+func (s *LinkV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取LinkV1的类型标识
+func (s *LinkV1) GetKind() string {
+	return "link"
+}
+
+// SchemaV1 represents schema
+type SchemaV1 struct {
+	// Url Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
+	Url string `json:"url" yaml:"url"`
+	// Version Schema 的版本。命名格式为 "v1.2.3"。
+	Version string `json:"version" yaml:"version"`
+}
+
+// Validate 验证SchemaV1是否符合schema定义
+func (s *SchemaV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取SchemaV1的类型标识
+func (s *SchemaV1) GetKind() string {
+	return "schema"
+}
+
+// ModelBindingV1 represents model_binding
+type ModelBindingV1 struct {
+	// Domain 模型所属域，对应目标 Set 的 metadata.domain。
+	Domain string `json:"domain" yaml:"domain"`
+	// Kind 模型类型，如 log_set、metric_set、event_set、entity_set。
+	Kind string `json:"kind" yaml:"kind"`
+	// Name 模型名称，对应目标 Set 的 metadata.name。
+	Name string `json:"name" yaml:"name"`
+}
+
+// Validate 验证ModelBindingV1是否符合schema定义
+func (s *ModelBindingV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取ModelBindingV1的类型标识
+func (s *ModelBindingV1) GetKind() string {
+	return "model_binding"
 }
 
 // SkillConfigV1 represents skill_config
@@ -164,412 +616,6 @@ func (s *ToolkitV1) GetKind() string {
 	return "toolkit"
 }
 
-// FieldSpecV1 represents field_spec
-type FieldSpecV1 struct {
-	// Name Field 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName Field 在 UModel 系统中的显示名称。值不能为空。
-	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description Field 在 UModel 系统中的描述。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ShortDescription Field 在 UModel 系统中的简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-	// LaunchStage 元素的发布阶段。默认值为 preview。
-	LaunchStage string `json:"launch_stage,omitempty" yaml:"launch_stage,omitempty"`
-	// Type 字段的类型。值必须是以下之一：string、integer、float、boolean、time、json_object、json_array。值不能为空。
-	Type string `json:"type" yaml:"type"`
-	// ValueMapping 对于枚举值的映射和解释，为了更好的展示映射值含义，对于 mapping 的 value 字段单独定义，value 包含4个字段："name"、"display_name"、"description"和"short_description"。例如，"s...
-	ValueMapping map[string]*ValueMappingV1 `json:"value_mapping,omitempty" yaml:"value_mapping,omitempty"`
-	// Unit 指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format 即可满足需求，unit 填写为空即可。 若不满...
-	Unit string `json:"unit,omitempty" yaml:"unit,omitempty"`
-	// DataFormat 指标的格式化方式，值格式为字符串。支持的格式化选项： 数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000 存储格式化： - byte: 处理为字节格式，样例：B/KB...
-	DataFormat string `json:"data_format,omitempty" yaml:"data_format,omitempty"`
-	// Analysable 用于表示字段是否可分析，即作为Group By的列。默认值为false。
-	Analysable bool `json:"analysable,omitempty" yaml:"analysable,omitempty"`
-	// Filterable 用于表示字段是否可过滤，即支持索引过滤。默认值为false。
-	Filterable bool `json:"filterable,omitempty" yaml:"filterable,omitempty"`
-	// Orderable 用于表示字段是否可排序。默认值为false。
-	Orderable bool `json:"orderable,omitempty" yaml:"orderable,omitempty"`
-	// DefaultOrder 用于表示字段的默认排序顺序。值必须是以下之一：asc、desc。默认值为asc。
-	DefaultOrder string `json:"default_order,omitempty" yaml:"default_order,omitempty"`
-	// Pattern 正则表达式，用于定义字段的值范围（字符串）。
-	Pattern string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
-	// MaxLength 字符串值的最大长度。仅适用于字符串类型。
-	MaxLength int64 `json:"max_length,omitempty" yaml:"max_length,omitempty"`
-	// Example 字段值的示例。值可以为空。
-	Example interface{} `json:"example,omitempty" yaml:"example,omitempty"`
-	// MaxValue 字段的最大值。值可以为空。仅适用于整数和浮点类型。
-	MaxValue float64 `json:"max_value,omitempty" yaml:"max_value,omitempty"`
-	// MinValue 字段的最小值。值可以为空。仅适用于整数和浮点类型。
-	MinValue float64 `json:"min_value,omitempty" yaml:"min_value,omitempty"`
-	// DefaultValue 字段的默认值。值可以为空。
-	DefaultValue interface{} `json:"default_value,omitempty" yaml:"default_value,omitempty"`
-	// Icon Field 在 UModel 系统中的图标。值格式为'url'。
-	Icon string `json:"icon,omitempty" yaml:"icon,omitempty"`
-	// Uri 用于表示该字段唯一标识。
-	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
-	// Tags 用于表示该 Field 的标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-	// Properties 用于表示该 Field 的附加属性。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-}
-
-// Validate 验证FieldSpecV1是否符合schema定义
-func (s *FieldSpecV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取FieldSpecV1的类型标识
-func (s *FieldSpecV1) GetKind() string {
-	return "field_spec"
-}
-
-// LinkV1 represents link
-type LinkV1 struct {
-	// Src 源 Set 的标识。值不能为空。
-	Src *LinkV1Src `json:"src,omitempty" yaml:"src,omitempty"`
-	// Dest 目标 Set 的标识。值不能为空。
-	Dest *LinkV1Dest `json:"dest,omitempty" yaml:"dest,omitempty"`
-	// FilterByEntity 在部分Entity具备的Link中，用于标识这部分Entity的过滤条件。
-	FilterByEntity string `json:"filter_by_entity,omitempty" yaml:"filter_by_entity,omitempty"`
-	// Priority Link 的优先级。值可以为空。默认值为5。
-	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
-}
-
-// Validate 验证LinkV1是否符合schema定义
-func (s *LinkV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取LinkV1的类型标识
-func (s *LinkV1) GetKind() string {
-	return "link"
-}
-
-// ValueMappingV1 represents value_mapping
-type ValueMappingV1 struct {
-	// Name 在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 在 UModel 系统中的显示名称。值不能为空。
-	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description 在 UModel 系统中的描述。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ShortDescription 在 UModel 系统中的简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-}
-
-// Validate 验证ValueMappingV1是否符合schema定义
-func (s *ValueMappingV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ValueMappingV1的类型标识
-func (s *ValueMappingV1) GetKind() string {
-	return "value_mapping"
-}
-
-// KnowledgeConfigV1 represents knowledge_config
-type KnowledgeConfigV1 struct {
-	// Name 知识项名称，在同一个RunbookSet中必须唯一。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 知识项显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
-	// ShortDescription 知识项简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description" yaml:"short_description"`
-	// Description 知识项详细描述信息。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ApplyPolicy 知识如何应用的配置。
-	ApplyPolicy *KnowledgeConfigV1ApplyPolicy `json:"apply_policy" yaml:"apply_policy"`
-	// ContentType 内容类型，支持markdown、html、url、pdf等。UModel 内置支持的类型为 markdown。
-	ContentType string `json:"content_type" yaml:"content_type"`
-	// Content 知识内容，根据content_type可以是文本内容或URL地址。
-	Content string `json:"content,omitempty" yaml:"content,omitempty"`
-	// ContentUrl 知识内容的外部URL地址。
-	ContentUrl string `json:"content_url,omitempty" yaml:"content_url,omitempty"`
-	// Priority 知识项优先级，用于排序显示以及模型推理时选择。
-	Priority int64 `json:"priority,omitempty" yaml:"priority,omitempty"`
-	// LastUpdated 最后更新时间。
-	LastUpdated time.Time `json:"last_updated,omitempty" yaml:"last_updated,omitempty"`
-	// Tags 知识项标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-}
-
-// Validate 验证KnowledgeConfigV1是否符合schema定义
-func (s *KnowledgeConfigV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取KnowledgeConfigV1的类型标识
-func (s *KnowledgeConfigV1) GetKind() string {
-	return "knowledge_config"
-}
-
-// ActionConfigV1 represents action_config
-type ActionConfigV1 struct {
-	// Name 操作名称，在同一个RunbookSet中必须唯一。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 操作显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
-	// ShortDescription 操作简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-	// Description 操作详细描述信息。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ActionType 操作类型，例如pop_api、mcp、api_call、script、webhook等。
-	ActionType string `json:"action_type" yaml:"action_type"`
-	// Inputs 操作参数配置列表。
-	Inputs []*ParameterConfigV1 `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	// Outputs 操作输出配置列表。
-	Outputs []*ParameterConfigV1 `json:"outputs,omitempty" yaml:"outputs,omitempty"`
-	// ConfirmationRequired 是否需要确认才能执行操作。
-	ConfirmationRequired bool `json:"confirmation_required,omitempty" yaml:"confirmation_required,omitempty"`
-	// RiskLevel 操作的风险等级。
-	RiskLevel string `json:"risk_level,omitempty" yaml:"risk_level,omitempty"`
-	// Properties 详细配置信息，用于配置不同类型操作的详细信息
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Tags 操作标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-}
-
-// Validate 验证ActionConfigV1是否符合schema定义
-func (s *ActionConfigV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ActionConfigV1的类型标识
-func (s *ActionConfigV1) GetKind() string {
-	return "action_config"
-}
-
-// ToolParameterConfigV1 represents tool_parameter_config
-type ToolParameterConfigV1 struct {
-	// Properties 参数属性定义，键为参数名称，值为参数定义对象。
-	Properties map[string]interface{} `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Required 必填参数名称列表。
-	Required []string `json:"required,omitempty" yaml:"required,omitempty"`
-}
-
-// Validate 验证ToolParameterConfigV1是否符合schema定义
-func (s *ToolParameterConfigV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ToolParameterConfigV1的类型标识
-func (s *ToolParameterConfigV1) GetKind() string {
-	return "tool_parameter_config"
-}
-
-// ParameterConfigV1 represents parameter_config
-type ParameterConfigV1 struct {
-	// Name 参数名称。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 参数显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description 参数描述信息。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// Type 参数类型。
-	Type string `json:"type" yaml:"type"`
-	// Required 是否为必填参数。
-	Required bool `json:"required,omitempty" yaml:"required,omitempty"`
-	// Default 参数默认值。
-	Default string `json:"default,omitempty" yaml:"default,omitempty"`
-}
-
-// Validate 验证ParameterConfigV1是否符合schema定义
-func (s *ParameterConfigV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ParameterConfigV1的类型标识
-func (s *ParameterConfigV1) GetKind() string {
-	return "parameter_config"
-}
-
-// MetricV1 represents metric
-type MetricV1 struct {
-	// Name 指标的名称。值不能为空。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 指标的显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description 指标的描述。值格式为语义字符串。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ShortDescription 指标的简短描述。值格式为语义字符串。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-	// LaunchStage 元素的发布阶段。默认值为 preview。
-	LaunchStage string `json:"launch_stage,omitempty" yaml:"launch_stage,omitempty"`
-	// Unit 指标的单位，值格式为字符串。 注意：单位仅用于展示，不会进行格式转换，例如 ms 不会自动根据大小转换为 s。 最佳实践：首先配置 data_format ，在大部分可观测场景下，data_format 即可满足需求，unit 填写为空即可。 若不满...
-	Unit string `json:"unit,omitempty" yaml:"unit,omitempty"`
-	// DataFormat 指标的格式化方式，值格式为字符串。支持的格式化选项： 数值格式化： - KMB: 千、百万、十亿格式化，样例：K,Mil,Bil - milli: 处理为毫秒格式，样例：1,000,000 存储格式化： - byte: 处理为字节格式，样例：B/KB...
-	DataFormat string `json:"data_format,omitempty" yaml:"data_format,omitempty"`
-	// MaxValue 字段的最大值。值可以为空。仅适用于整数和浮点类型。
-	MaxValue float64 `json:"max_value,omitempty" yaml:"max_value,omitempty"`
-	// MinValue 字段的最小值。值可以为空。仅适用于整数和浮点类型。
-	MinValue float64 `json:"min_value,omitempty" yaml:"min_value,omitempty"`
-	// DefaultValue 字段的默认值。值可以为空。
-	DefaultValue interface{} `json:"default_value,omitempty" yaml:"default_value,omitempty"`
-	// Icon 用于表示该指标的图标。
-	Icon string `json:"icon,omitempty" yaml:"icon,omitempty"`
-	// Labels 用于表示该指标自身额外的标签。即在 MetricSet 的标签基础上，该指标还具有的额外标签。
-	Labels []*FieldSpecV1 `json:"labels,omitempty" yaml:"labels,omitempty"`
-	// GoldenMetric 是否为黄金指标。
-	GoldenMetric bool `json:"golden_metric,omitempty" yaml:"golden_metric,omitempty"`
-	// Generator 指标的生成方式，如果是 PromMode，该字段为 PromQL语句，能够执行并得到一个可直接使用的 Measure 类型指标。 例如：rate(request_count{}[1m])，在一些场景下结合 aggregator 字段，能够计算出聚合维...
-	Generator string `json:"generator,omitempty" yaml:"generator,omitempty"`
-	// Aggregator 指标的聚合方式。如果指标本身是聚合的，且聚合方式在多种维度组合下均一致，则不需要配置次字段，其他情况需要配置。一些示例场景如下： 1. Prometheus指标和Metric从时间线维度相同 1.1 rate(cpu_usage_seconds_to...
-	Aggregator string `json:"aggregator,omitempty" yaml:"aggregator,omitempty"`
-	// IntervalUs 指标的间隔，值格式为整数或整数数组，单位为微秒。 - 当为单个整数时：表示固定的采集间隔 - 当为整数数组时：表示多个采集间隔，用于支持不同精度的数据采集
-	IntervalUs interface{} `json:"interval_us,omitempty" yaml:"interval_us,omitempty"`
-	// Type 指标的类型。对于无需二次处理的指标，该字段应固定为 gauge。
-	Type string `json:"type,omitempty" yaml:"type,omitempty"`
-	// QueryMode 指标期望的查询模式。值必须是以下之一：range, instant, both。
-	QueryMode string `json:"query_mode,omitempty" yaml:"query_mode,omitempty"`
-	// DisplayType 指标的显示类型。当前未使用。
-	DisplayType string `json:"display_type,omitempty" yaml:"display_type,omitempty"`
-	// Statistics 生成该指标时的统计方式，即该指标有多种生成方式。当前仅在基础云监控场景下使用。
-	Statistics []string `json:"statistics,omitempty" yaml:"statistics,omitempty"`
-	// Tags 用于表示该指标的标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-	// Properties 用于表示该指标的附加属性。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// DefaultFillPolicy 指标的默认填充策略。 值可以是 null, 0, last, next。
-	DefaultFillPolicy string `json:"default_fill_policy,omitempty" yaml:"default_fill_policy,omitempty"`
-}
-
-// Validate 验证MetricV1是否符合schema定义
-func (s *MetricV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取MetricV1的类型标识
-func (s *MetricV1) GetKind() string {
-	return "metric"
-}
-
-// ObservationV1 represents observation
-type ObservationV1 struct {
-	// Name 观察名称，在同一个RunbookSet中必须唯一。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 观察显示名称。
-	DisplayName *SemanticStringV1 `json:"display_name" yaml:"display_name"`
-	// ShortDescription 观察简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description" yaml:"short_description"`
-	// Description 观察详细描述信息。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// Phenomenon 现象定义，描述要观察什么以及如何观察。
-	Phenomenon *ObservationV1Phenomenon `json:"phenomenon" yaml:"phenomenon"`
-	// Conclusions 结论配置列表，根据现象观察结果进行判断。
-	Conclusions []*ObservationV1ConclusionsItem `json:"conclusions" yaml:"conclusions"`
-	// Properties 观察属性配置。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// Tags 观察标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-}
-
-// Validate 验证ObservationV1是否符合schema定义
-func (s *ObservationV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取ObservationV1的类型标识
-func (s *ObservationV1) GetKind() string {
-	return "observation"
-}
-
-// MetadataV1 represents metadata
-type MetadataV1 struct {
-	// Name 元素在 UModel 系统中的名称。值不能为空。值格式为小写字母数字字符。
-	Name string `json:"name" yaml:"name"`
-	// DisplayName 元素在 UModel 系统中的显示名称。值不能为空。
-	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
-	// Description 元素在 UModel 系统中的描述。
-	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
-	// ShortDescription 元素在 UModel系统中的简短描述。
-	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
-	// Domain 域。值格式为'domain.domain'。可以以点连接。
-	Domain string `json:"domain" yaml:"domain"`
-	// LaunchStage 元素的发布阶段。默认值为 preview。
-	LaunchStage string `json:"launch_stage,omitempty" yaml:"launch_stage,omitempty"`
-	// Icon 元素在UModel系统中的图标。值格式为'url'。
-	Icon string `json:"icon,omitempty" yaml:"icon,omitempty"`
-	// Uri 用于表示该元素唯一标识。
-	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
-	// Tags 用于表示该元素的标签。
-	Tags map[string]string `json:"tags,omitempty" yaml:"tags,omitempty"`
-	// Properties 用于表示该元素的附加属性。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-	// CommonSchemaInfo 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
-	CommonSchemaInfo *MetadataV1CommonSchemaInfo `json:"common_schema_info,omitempty" yaml:"common_schema_info,omitempty"`
-}
-
-// Validate 验证MetadataV1是否符合schema定义
-func (s *MetadataV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取MetadataV1的类型标识
-func (s *MetadataV1) GetKind() string {
-	return "metadata"
-}
-
-// SchemaV1 represents schema
-type SchemaV1 struct {
-	// Url Schema 的 URL。Core 部分都为 "umodel.aliyun.com"
-	Url string `json:"url" yaml:"url"`
-	// Version Schema 的版本。命名格式为 "v1.2.3"。
-	Version string `json:"version" yaml:"version"`
-}
-
-// Validate 验证SchemaV1是否符合schema定义
-func (s *SchemaV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取SchemaV1的类型标识
-func (s *SchemaV1) GetKind() string {
-	return "schema"
-}
-
-// TelemetryDataV1 represents telemetry_data
-type TelemetryDataV1 struct {
-	// Fields 可观测数据的字段列表。
-	Fields []*FieldSpecV1 `json:"fields,omitempty" yaml:"fields,omitempty"`
-	// TimeField 可观测数据的时间字段。一般要求时间字段为时间戳类型，支持秒、毫秒、微秒、纳秒。
-	TimeField string `json:"time_field,omitempty" yaml:"time_field,omitempty"`
-	// DisplayField 注意：定位和 `name_fields` 有一定重叠，字段已废弃，请使用 `name_fields` 字段第一个值替代。可观测数据的显示字段。即默认展示的字段。
-	DisplayField string `json:"display_field,omitempty" yaml:"display_field,omitempty"`
-	// NameFields 可观测数据的显示字段。建议按照显示重要性配置先后顺序，前端、算法等在各类场景会根据特点自由选择，例如极窄/引用场景下只取name_fields的第一个值。 例如：服务操作实体，建议取值为 ["operation_name", "service_nam...
-	NameFields []string `json:"name_fields,omitempty" yaml:"name_fields,omitempty"`
-	// HiddenFields 可观测数据的隐藏字段。即不用作展示的字段。
-	HiddenFields []string `json:"hidden_fields,omitempty" yaml:"hidden_fields,omitempty"`
-	// TagFields 可观测数据的标签字段。标签字段默认聚合在一起显示和分析。
-	TagFields []string `json:"tag_fields,omitempty" yaml:"tag_fields,omitempty"`
-	// OrderedFields 可观测数据的排序字段。即当前数据集的排序字段。
-	OrderedFields []string `json:"ordered_fields,omitempty" yaml:"ordered_fields,omitempty"`
-	// DefaultOrder 可观测数据的默认排序。默认值为 asc。
-	DefaultOrder string `json:"default_order,omitempty" yaml:"default_order,omitempty"`
-}
-
-// Validate 验证TelemetryDataV1是否符合schema定义
-func (s *TelemetryDataV1) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// GetKind 获取TelemetryDataV1的类型标识
-func (s *TelemetryDataV1) GetKind() string {
-	return "telemetry_data"
-}
-
 // ToolV1 represents tool
 type ToolV1 struct {
 	// Name 工具名称，在同一个 Toolkit 内必须唯一。
@@ -605,6 +651,35 @@ func (s *ToolV1) Validate() error {
 // GetKind 获取ToolV1的类型标识
 func (s *ToolV1) GetKind() string {
 	return "tool"
+}
+
+// TermV1 represents term
+type TermV1 struct {
+	// Name 术语名称，在同一个 RunbookSet 内必须唯一。
+	Name string `json:"name" yaml:"name"`
+	// DisplayName 术语显示名称。
+	DisplayName *SemanticStringV1 `json:"display_name,omitempty" yaml:"display_name,omitempty"`
+	// Description 术语的详细描述，说明其含义与适用场景。
+	Description *SemanticStringV1 `json:"description,omitempty" yaml:"description,omitempty"`
+	// ShortDescription 简短描述，便于 LLM 或用户快速判断术语含义。
+	ShortDescription *SemanticStringV1 `json:"short_description,omitempty" yaml:"short_description,omitempty"`
+	// Aliases 术语别名，只记录真实出现过或强约定的别名。
+	Aliases []string `json:"aliases,omitempty" yaml:"aliases,omitempty"`
+	// Confidence 术语语义置信度。
+	Confidence *ConfidenceV1 `json:"confidence,omitempty" yaml:"confidence,omitempty"`
+	// ModelBindings 术语关联的模型或 Set 引用列表，指明术语出现在哪些 LogSet、MetricSet、EventSet 或 EntitySet 上。
+	ModelBindings []*ModelBindingV1 `json:"model_bindings,omitempty" yaml:"model_bindings,omitempty"`
+}
+
+// Validate 验证TermV1是否符合schema定义
+func (s *TermV1) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// GetKind 获取TermV1的类型标识
+func (s *TermV1) GetKind() string {
+	return "term"
 }
 
 // ConstraintTypeV1Enum 枚举值列表
@@ -689,68 +764,6 @@ func (s *ConstraintTypeV1Advanced) Validate() error {
 	return nil
 }
 
-// AutomationConfigV1Trigger 触发条件配置。
-type AutomationConfigV1Trigger struct {
-	// TriggerType 触发条件类型，如 scheduled（定期触发）、event（事件触发）、custom（自定义触发）等。
-	TriggerType string `json:"trigger_type" yaml:"trigger_type"`
-	// Properties 触发条件相关属性配置，根据type类型自由扩展。
-	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
-}
-
-// Validate 验证AutomationConfigV1Trigger是否符合schema定义
-func (s *AutomationConfigV1Trigger) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// SkillConfigV1FilesItem inline struct
-type SkillConfigV1FilesItem struct {
-	// Name 文件名称，包含相对路径（如 SKILL.md、scripts/extract.py、references/REFERENCE.md）。
-	Name string `json:"name" yaml:"name"`
-	// Content 文件内容。
-	Content string `json:"content" yaml:"content"`
-}
-
-// Validate 验证SkillConfigV1FilesItem是否符合schema定义
-func (s *SkillConfigV1FilesItem) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// LinkV1Src 源 Set 的标识。值不能为空。
-type LinkV1Src struct {
-	// Domain 源 Set 的域。
-	Domain string `json:"domain" yaml:"domain"`
-	// Kind 源 Set 的类型。值不能为空。
-	Kind string `json:"kind" yaml:"kind"`
-	// Name 源 Set 的名称。值不能为空。
-	Name string `json:"name" yaml:"name"`
-	// Filter 对于源 Set 的过滤器，用于部分 Link 的场景，例如 EntitySet 中只有"region=cn-beijing"的实体存在此关联。该方式已废弃，请使用 filter_by_entity 替代。
-	Filter string `json:"filter,omitempty" yaml:"filter,omitempty"`
-}
-
-// Validate 验证LinkV1Src是否符合schema定义
-func (s *LinkV1Src) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
-// LinkV1Dest 目标 Set 的标识。值不能为空。
-type LinkV1Dest struct {
-	// Domain 目标 Set 的域。
-	Domain string `json:"domain" yaml:"domain"`
-	// Kind 目标 Set 的类型。值不能为空。
-	Kind string `json:"kind" yaml:"kind"`
-	// Name 目标 Set 的名称。值不能为空。
-	Name string `json:"name" yaml:"name"`
-}
-
-// Validate 验证LinkV1Dest是否符合schema定义
-func (s *LinkV1Dest) Validate() error {
-	// TODO: 实现验证逻辑
-	return nil
-}
-
 // KnowledgeConfigV1ApplyPolicy 知识如何应用的配置。
 type KnowledgeConfigV1ApplyPolicy struct {
 	// ApplyType 应用策略，如auto（自动）、manual（手动）、always（总是）、custom（自定义）等。
@@ -761,6 +774,34 @@ type KnowledgeConfigV1ApplyPolicy struct {
 
 // Validate 验证KnowledgeConfigV1ApplyPolicy是否符合schema定义
 func (s *KnowledgeConfigV1ApplyPolicy) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// MetadataV1CommonSchemaInfo 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
+type MetadataV1CommonSchemaInfo struct {
+	// Group CommonSchema的Group信息
+	Group string `json:"group,omitempty" yaml:"group,omitempty"`
+	// Version CommonSchema的版本号
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+// Validate 验证MetadataV1CommonSchemaInfo是否符合schema定义
+func (s *MetadataV1CommonSchemaInfo) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// AutomationConfigV1Trigger 触发条件配置。
+type AutomationConfigV1Trigger struct {
+	// TriggerType 触发条件类型，如 scheduled（定期触发）、event（事件触发）、custom（自定义触发）等。
+	TriggerType string `json:"trigger_type" yaml:"trigger_type"`
+	// Properties 触发条件相关属性配置，根据type类型自由扩展。
+	Properties map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
+}
+
+// Validate 验证AutomationConfigV1Trigger是否符合schema定义
+func (s *AutomationConfigV1Trigger) Validate() error {
 	// TODO: 实现验证逻辑
 	return nil
 }
@@ -809,16 +850,50 @@ func (s *ObservationV1ConclusionsItem) Validate() error {
 	return nil
 }
 
-// MetadataV1CommonSchemaInfo 背景：在阿里云可观测业务使用中，内置的UModel数据会作为公共UModel（CommonSchema）默认存在，公共UModel数据以引用方式（CommonSchemaRef）配置在UModel，在查询时动态生成UModel实例并附加该字段作为额外...
-type MetadataV1CommonSchemaInfo struct {
-	// Group CommonSchema的Group信息
-	Group string `json:"group,omitempty" yaml:"group,omitempty"`
-	// Version CommonSchema的版本号
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+// LinkV1Src 源 Set 的标识。值不能为空。
+type LinkV1Src struct {
+	// Domain 源 Set 的域。
+	Domain string `json:"domain" yaml:"domain"`
+	// Kind 源 Set 的类型。值不能为空。
+	Kind string `json:"kind" yaml:"kind"`
+	// Name 源 Set 的名称。值不能为空。
+	Name string `json:"name" yaml:"name"`
+	// Filter 对于源 Set 的过滤器，用于部分 Link 的场景，例如 EntitySet 中只有"region=cn-beijing"的实体存在此关联。该方式已废弃，请使用 filter_by_entity 替代。
+	Filter string `json:"filter,omitempty" yaml:"filter,omitempty"`
 }
 
-// Validate 验证MetadataV1CommonSchemaInfo是否符合schema定义
-func (s *MetadataV1CommonSchemaInfo) Validate() error {
+// Validate 验证LinkV1Src是否符合schema定义
+func (s *LinkV1Src) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// LinkV1Dest 目标 Set 的标识。值不能为空。
+type LinkV1Dest struct {
+	// Domain 目标 Set 的域。
+	Domain string `json:"domain" yaml:"domain"`
+	// Kind 目标 Set 的类型。值不能为空。
+	Kind string `json:"kind" yaml:"kind"`
+	// Name 目标 Set 的名称。值不能为空。
+	Name string `json:"name" yaml:"name"`
+}
+
+// Validate 验证LinkV1Dest是否符合schema定义
+func (s *LinkV1Dest) Validate() error {
+	// TODO: 实现验证逻辑
+	return nil
+}
+
+// SkillConfigV1FilesItem inline struct
+type SkillConfigV1FilesItem struct {
+	// Name 文件名称，包含相对路径（如 SKILL.md、scripts/extract.py、references/REFERENCE.md）。
+	Name string `json:"name" yaml:"name"`
+	// Content 文件内容。
+	Content string `json:"content" yaml:"content"`
+}
+
+// Validate 验证SkillConfigV1FilesItem是否符合schema定义
+func (s *SkillConfigV1FilesItem) Validate() error {
 	// TODO: 实现验证逻辑
 	return nil
 }

@@ -21,6 +21,7 @@ When `--graphstore` is omitted, Go entrypoints use `local.ladybug`. Builds witho
 | `memory` | In-memory provider for fast local verification; data is lost on process exit. |
 | `file.memory` | In-memory querying plus JSON file persistence under `<--data>/graphstore/file-memory/`. |
 | `local.ladybug` | Ladybug-backed provider; requires `-tags ladybug` and a local Ladybug runtime. |
+| `gremlin` | TinkerPop Gremlin Server over WebSocket; configured by `GREMLIN_*`, with shared Go query evaluation. |
 
 Examples:
 

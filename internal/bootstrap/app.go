@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -14,6 +15,7 @@ import (
 	"github.com/alibaba/UnifiedModel/internal/agentgateway"
 	"github.com/alibaba/UnifiedModel/internal/entitystore"
 	"github.com/alibaba/UnifiedModel/internal/graphstore"
+	_ "github.com/alibaba/UnifiedModel/internal/graphstore/provider/gremlin"
 	_ "github.com/alibaba/UnifiedModel/internal/graphstore/provider/ladybug"
 	_ "github.com/alibaba/UnifiedModel/internal/graphstore/provider/neo4j"
 	"github.com/alibaba/UnifiedModel/internal/query"
@@ -89,7 +91,7 @@ func NewAppWithGraphStore(dataRoot string, config graphstore.ProviderConfig, opt
 		config.Type = providerType
 	}
 	workspaceSvc := workspace.NewService(dataRoot, nil)
-	if providerType == graphstore.ProviderTypeFileMemory || providerType == graphstore.ProviderTypeLadybug || providerType == graphstore.ProviderTypeNeo4j {
+	if providerType == graphstore.ProviderTypeFileMemory || providerType == graphstore.ProviderTypeLadybug || providerType == graphstore.ProviderTypeNeo4j || providerType == graphstore.ProviderTypeGremlin {
 		var err error
 		workspaceSvc, err = workspace.NewPersistentServiceForProvider(dataRoot, nil, providerType)
 		if err != nil {
@@ -111,7 +113,7 @@ func NewAppWithGraphStore(dataRoot string, config graphstore.ProviderConfig, opt
 	querySvc := query.NewServiceWithSearch(graph, searchSvc)
 	agentSvc := agentgateway.NewService(querySvc, agentgateway.WithWriteServices(umodelSvc, entitySvc))
 
-	return &App{
+	app := &App{
 		Workspace:    workspaceSvc,
 		GraphStore:   graph,
 		UModel:       umodelSvc,
@@ -120,7 +122,14 @@ func NewAppWithGraphStore(dataRoot string, config graphstore.ProviderConfig, opt
 		Query:        querySvc,
 		Search:       searchSvc,
 		AgentGateway: agentSvc,
-	}, nil
+	}
+	if providerType == graphstore.ProviderTypeGremlin || providerType == graphstore.ProviderTypeNeo4j || providerType == graphstore.ProviderTypeFileMemory {
+		if err := restoreDerivedIndexes(context.Background(), app); err != nil {
+			_ = app.Close()
+			return nil, fmt.Errorf("restore persisted search and schema indexes: %w", err)
+		}
+	}
+	return app, nil
 }
 
 // Close releases provider connections when an embedded app or MCP session ends.

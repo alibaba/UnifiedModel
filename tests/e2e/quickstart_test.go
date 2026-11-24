@@ -10,11 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/bootstrap"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
+	"github.com/alibaba/UnifiedModel/tests/testutil"
 )
 
 func TestQuickstartWithUMCtl(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir()).Handler())
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir()).Handler())
 	defer server.Close()
 	root := filepath.Join("..", "..")
 	tmp := t.TempDir()
@@ -66,7 +67,7 @@ func TestQuickstartWithUMCtl(t *testing.T) {
 		t.Fatalf("expected topo query output to include calls, got %s", topoOut)
 	}
 	explain := runUMCtl(t, root, server.URL, "query", "explain", "demo", ".entity with(domain='devops', name='devops.service') | limit 5")
-	if !bytes.Contains(explain, []byte("memory")) {
+	if !bytes.Contains(explain, []byte(graphfixture.Provider())) {
 		t.Fatalf("expected query explain to include storage provider, got %s", explain)
 	}
 
@@ -95,14 +96,15 @@ func TestQuickstartWithUMCtl(t *testing.T) {
 
 func TestMCPStdioToolsAndResources(t *testing.T) {
 	root := filepath.Join("..", "..")
-	cmd := exec.Command("go", "run", "./cmd/umodel-mcp", "--data", t.TempDir(), "--graphstore", "memory")
+	workspace := testutil.MCPWorkspace(t, "demo")
+	cmd := exec.Command("go", "run", "./cmd/umodel-mcp", "--data", t.TempDir(), "--graphstore", graphfixture.Provider())
 	cmd.Dir = root
-	cmd.Stdin = strings.NewReader(strings.Join([]string{
+	cmd.Stdin = strings.NewReader(strings.ReplaceAll(strings.Join([]string{
 		`{"id":1,"method":"tools/list","params":{"workspace":"demo"}}`,
 		`{"id":2,"method":"tools/call","params":{"workspace":"demo","name":"query_spl_examples","arguments":{}}}`,
 		`{"id":3,"method":"resources/list","params":{"workspace":"demo"}}`,
 		`{"id":4,"method":"resources/read","params":{"workspace":"demo","uri":"umodel://workspace/demo/query-templates"}}`,
-	}, "\n"))
+	}, "\n"), "demo", workspace))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("umodel-mcp failed: %v\n%s", err, out)

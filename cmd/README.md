@@ -19,6 +19,7 @@ Entry Layer — 二进制入口点。
 | `memory` | 纯内存，适合本地快速验证，进程退出后数据丢失；通过纯 Go 引擎支持 Ladybug 兼容只读 Cypher。 |
 | `file.memory` | 内存查询 + JSON 文件持久化，默认按 workspace 和数据类型保存到 `<--data>/graphstore/file-memory/`；通过纯 Go 引擎支持 Ladybug 兼容只读 Cypher。 |
 | `local.ladybug` | Ladybug-backed provider；开启 graph-match 和 Cypher 透传，真实实现需要 `-tags ladybug` 和本地 Ladybug 运行时。 |
+| `gremlin` | 通过 WebSocket 连接 TinkerPop Gremlin Server；使用 `GREMLIN_*` 配置，查询使用共享 Go 引擎。 |
 
 示例：
 

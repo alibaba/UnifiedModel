@@ -15,6 +15,64 @@ UModel 通过 `GraphStore` 接口保存和查询 UModel elements、CMS 2.0 实�
 | `file.memory` | `--data` 下的 JSON 文件 | 本地开发和文档演示的默认选择，重启后数据保留。 |
 | `local.ladybug` | Ladybug 数据库文件 | Ladybug-backed 环境，需要 `-tags ladybug` 和本地 Ladybug runtime。 |
 | `neo4j` | 远程 Neo4j 数据库 | 通过 Bolt 持久化节点和拓扑边，受控只读 Cypher 使用共享 Go 引擎，无需 build tag 或本地原生运行库。 |
+| `gremlin` | 远程 TinkerPop 图数据库 | 通过 Gremlin Server 的 WebSocket 持久化顶点和拓扑边，查询使用共享 Go 引擎，无需 build tag 或本地原生运行库。 |
+
+## `gremlin`
+
+`umodel-server` 和 `umodel-mcp` 均支持 `--graphstore gremlin`。Provider 使用同步 WebSocket 请求和 GraphSON 3，保留 Go 1.22 构建基线。端点必须支持 `application/vnd.gremlin-v3.0+json`、带参数绑定的 `gremlin-groovy` 脚本以及图遍历源。`wss://` 会验证 TLS 证书；可选的用户名和密码使用 SASL PLAIN 认证。测试夹具另外通过 Apache TinkerPop 官方 Go driver 的 GraphBinary 协议检查和清理数据。
+
+```bash
+export GREMLIN_URI=ws://localhost:8182/gremlin
+export GREMLIN_TRAVERSAL_SOURCE=g
+go run ./cmd/umodel-server --addr :8080 --data data --graphstore gremlin
+```
+
+| 环境变量 | `ProviderConfig.Options` key | 默认值 |
+|---|---|---|
+| `GREMLIN_URI` | `uri` | `ws://localhost:8182/gremlin` |
+| `GREMLIN_USERNAME` | `username` | 空；须与密码一起配置 |
+| `GREMLIN_PASSWORD` | `password` | 空；须与用户名一起配置 |
+| `GREMLIN_TRAVERSAL_SOURCE` | `traversal_source` | `g` |
+| `GREMLIN_CA_FILE` | `ca_file` | 空，使用系统根证书；可为 `wss://` 提供 PEM CA 文件 |
+| `GREMLIN_TIMEOUT` | `timeout` | 整个操作 `10s`，包括排队；范围为 `1ms` 到 `24h` |
+
+代码中的 options 优先于环境变量，显式空凭据也会覆盖环境变量。凭据应放在 username/password 配置中，而非 URI。连接或遍历源失败会阻止启动。账号需要图数据读写权限；后端专用的索引和约束由运维管理。
+
+请求限制为 1 MiB；服务端的 `maxContentLength` 应相应配置，写入批次应低于两端限制。每个请求使用单个 WebSocket frame，分批返回的结果会收集到完成为止。仓库测试服务器配置使用 1 MiB。
+
+Provider 按 `(workspace, key)` 保存 `UModelElement` 和 `UModelEntity` 顶点，在实体顶点之间保存 `UMODEL_RELATION` 边。JSON 属性保留嵌套数据和整数精度。关系可以先于实体写入，占位端点不会作为实体返回。`Create`、`Update`、`Expire`、`Delete` 和历史可见性使用与 `memory` 相同的 evaluator。
+
+**每个图数据库只运行一个写入 provider 实例。** 实例内部的操作串行执行，并拒绝重复记录。独立的 REST/MCP 写入进程或外部写入者无法通过通用 Gremlin 协调。每个接受的批次会先完整序列化，再提交一个带参数绑定的写入脚本。服务端回滚依赖后端事务能力和 Gremlin Server 配置；非事务图在服务端失败后可能保留部分写入。返回错误时不会报告已接受的记录，也不会自动重试。执行中的请求被取消后，provider 会关闭；应重启应用并检查远程状态，再重试提交结果不确定的写入。
+
+Query Service 仍接收 SPL 和受控只读 Cypher。Provider 获取工作区的数据集合后，在 Go 中执行查询，不开放用户任意 Gremlin，不下推过滤和遍历。读取成本和应用内存占用随工作区集合大小增长。
+
+工作区元数据仍保存在 `<data-root>/workspaces.json`。应用重启时保留 `--data`，并将其与远程图数据一起备份。启动时会从持久化记录恢复派生的 schema 和搜索索引，覆盖 `.runbook_set` 及 keyword/vector/hyper 搜索路由。默认 embedder 为 `noop`，这些测试验证路由和持久化，不验证 embedding 质量。数据库重启后的持久化须在后端配置；Gremlin Server 默认的 TinkerGraph 示例使用内存。
+
+启动隔离的本地测试服务器，运行合约和应用重启测试：
+
+```bash
+docker run -d --name umodel-gremlin-e2e -p 127.0.0.1:18182:8182 \
+  -v "$PWD/tests/fixtures/gremlin:/test:ro" \
+  --entrypoint /opt/gremlin-server/bin/gremlin-server.sh tinkerpop/gremlin-server:3.7.3 /test/server.yaml
+docker logs umodel-gremlin-e2e
+# 等待 Gremlin Server 报告已开始监听：
+GREMLIN_URI=ws://localhost:18182/gremlin UMODEL_TEST_GREMLIN=1 make test-gremlin
+docker rm -f umodel-gremlin-e2e
+```
+
+启用后，测试集会在 Gremlin 上运行现有 Query Service、REST 集成、CLI、MCP stdio/HTTP、golden、GraphStore 合约、SDK 示例和应用重启场景。每个测试隔离工作区 ID，仅清理自身记录，各测试 package 串行执行。本 provider 不声明支持 `graph-match`，测试会检查其 `PROVIDER_UNSUPPORTED` 响应。常规 `make test-service` 不需要 Gremlin Server。
+
+运行完整验收矩阵，分别启动普通、TLS/认证、持久化和支持事务的服务器：
+
+```bash
+make test-gremlin-matrix
+# 使用 Podman：
+UMODEL_CONTAINER_RUNTIME=podman make test-gremlin-matrix
+```
+
+脚本生成临时 TLS 证书和凭据图，验证错误凭据、不可信证书、超大批次、服务端异常后的回滚、服务断连及数据库重启后的搜索恢复，仅清理自身容器和临时文件。CI 在官方 Gremlin Server 3.7.3 镜像上运行此矩阵。事务回滚使用 TinkerTransactionGraph 验证，非事务的 TinkerGraph 仍有上述限制。协议详情：[Apache TinkerPop provider protocol](https://tinkerpop.apache.org/docs/3.7.3/dev/provider/)。
+
+此前的合约和应用重启测试也已在独立 Gremlin Server 3.8.1 + TinkerGraph 上通过，使用的是 ArcadeDB 26.9.1 镜像中捆绑的 TinkerPop 库。托管服务及其他图后端仍需各自验证兼容性。
 
 ## `neo4j`
 

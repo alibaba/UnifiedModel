@@ -16,3 +16,4 @@ RunbookSet is used to define a collection of operational runbooks for entities a
 | `knowledge` | array&lt;object&gt; |  |  | List of knowledge base configurations |
 | `automations` | array&lt;object&gt; |  |  | List of automation configurations |
 | `skills` | array&lt;object&gt; |  |  | List of skill configurations following Agent Skills specification |
+| `terms` | array&lt;[term](../../shared-types#term)&gt; |  |  | List of reusable, referenceable business or technical terms. |

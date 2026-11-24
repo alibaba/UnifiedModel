@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 // TestPlanV1EnvelopeForGetMetrics verifies that the get_metrics plan carries
@@ -16,7 +16,7 @@ import (
 // docs/en/guides/agent-integration.md.
 func TestPlanV1EnvelopeForGetMetrics(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -64,7 +64,7 @@ func TestPlanV1EnvelopeForGetMetrics(t *testing.T) {
 // TestPlanV1EnvelopeForGetLogs verifies the same envelope for get_logs.
 func TestPlanV1EnvelopeForGetLogs(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  logQueryPlanElements(),
@@ -101,13 +101,13 @@ func TestPlanV1EnvelopeForGetLogs(t *testing.T) {
 // a parameter the caller never set.
 func TestEchoParamsStripsEmptyAndNil(t *testing.T) {
 	in := map[string]any{
-		"keep_string":  "yes",
-		"keep_bool":    true,
-		"keep_number":  int64(7),
-		"drop_empty":   "",
-		"drop_nil":     nil,
-		"keep_zero":    0,
-		"keep_false":   false,
+		"keep_string": "yes",
+		"keep_bool":   true,
+		"keep_number": int64(7),
+		"drop_empty":  "",
+		"drop_nil":    nil,
+		"keep_zero":   0,
+		"keep_false":  false,
 	}
 	out := echoParams(in)
 
@@ -128,7 +128,7 @@ func TestEchoParamsStripsEmptyAndNil(t *testing.T) {
 // next_action hint, and an echo of the original SPL source query.
 func TestPlanV1AgentFriendlyFieldsForGetMetrics(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -164,7 +164,7 @@ func TestPlanV1AgentFriendlyFieldsForGetMetrics(t *testing.T) {
 // TestPlanV1AgentFriendlyFieldsForGetLogs verifies the same for logs.
 func TestPlanV1AgentFriendlyFieldsForGetLogs(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  logQueryPlanElements(),

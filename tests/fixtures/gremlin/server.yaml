@@ -1,0 +1,17 @@
+host: 0.0.0.0
+port: 8182
+evaluationTimeout: 30000
+maxContentLength: 1048576
+channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer
+graphs:
+  graph: /test/graph.properties
+scriptEngines:
+  gremlin-groovy:
+    plugins:
+      org.apache.tinkerpop.gremlin.server.jsr223.GremlinServerGremlinPlugin: {}
+      org.apache.tinkerpop.gremlin.tinkergraph.jsr223.TinkerGraphGremlinPlugin: {}
+      org.apache.tinkerpop.gremlin.jsr223.ScriptFileGremlinPlugin:
+        files: [/test/server.groovy]
+serializers:
+  - className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+  - className: org.apache.tinkerpop.gremlin.util.ser.GraphSONMessageSerializerV3

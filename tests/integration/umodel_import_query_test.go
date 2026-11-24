@@ -7,11 +7,12 @@ import (
 
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/testutil"
 )
 
 func TestImportQuickstartExamplesAndQueryUModel(t *testing.T) {
 	ctx := context.Background()
-	app := bootstrap.NewMemoryApp(t.TempDir(), bootstrap.WithImportRoot("/"))
+	app := testutil.ProviderApp(t, t.TempDir(), bootstrap.WithImportRoot("/"))
 	examples := filepath.Join("..", "..", "examples", "quickstart-multidomain")
 
 	result, err := app.UModel.Import(ctx, "demo", model.UModelImportRequest{Path: examples})

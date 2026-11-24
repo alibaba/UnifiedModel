@@ -12,6 +12,7 @@ const (
 	ProviderTypeFileMemory = "file.memory"
 	ProviderTypeLadybug    = "local.ladybug"
 	ProviderTypeNeo4j      = "neo4j"
+	ProviderTypeGremlin    = "gremlin"
 	DefaultProviderType    = ProviderTypeLadybug
 )
 

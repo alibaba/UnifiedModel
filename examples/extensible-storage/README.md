@@ -37,7 +37,7 @@ spec:
   table: service_metrics
 ```
 
-`get_metrics` renders to SQL — `SELECT toStartOfInterval(ts, INTERVAL 1 MINUTE), avg(value) … WHERE … GROUP BY …` — with `{from}` / `{to}` placeholders the caller fills from the plan's time range. See [`clickhouse.storage.yaml`](clickhouse.storage.yaml).
+`get_metrics` renders to SQL — `SELECT toStartOfInterval(ts, INTERVAL 1 MINUTE), sum(value) … WHERE … GROUP BY …` for a metric whose `aggregator` is `sum`. The `sql-table` renderer supports `sum`, `avg`, `min`, `max`, `count`, and `count_distinct`; without an `aggregator`, it returns raw samples without grouping. `{from}` / `{to}` placeholders are filled from the plan's time range. See [`clickhouse.storage.yaml`](clickhouse.storage.yaml).
 
 Every backend in the `sql-table` family after the first is configuration only,
 exactly like VictoriaMetrics in `label-timeseries`.

@@ -12,10 +12,12 @@ import (
 	"time"
 
 	"github.com/alibaba/UnifiedModel/internal/bootstrap"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
+	"github.com/alibaba/UnifiedModel/tests/testutil"
 )
 
 func TestRESTBusinessFlowCoversCoreScenarios(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir(), bootstrap.WithImportRoot("/")).Handler())
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir(), bootstrap.WithImportRoot("/")).Handler())
 	defer server.Close()
 
 	created := e2ePost(t, server.URL+"/api/v1/workspaces", map[string]any{
@@ -151,7 +153,7 @@ func TestRESTBusinessFlowCoversCoreScenarios(t *testing.T) {
 	explain := e2ePost(t, server.URL+"/api/v1/query/demo/explain", map[string]any{
 		"query": ".topo | graph-call getNeighborNodes('full', 2, [(:\"devops@devops.service\" {__entity_id__: '10000000000000000000000000000101'})]) | limit 10",
 	})
-	if explain["source"] != ".topo" || explain["provider"] != "memory" || explain["depth"] != float64(2) {
+	if explain["source"] != ".topo" || explain["provider"] != graphfixture.Provider() || explain["depth"] != float64(2) {
 		t.Fatalf("unexpected topo explain: %+v", explain)
 	}
 

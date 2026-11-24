@@ -5,11 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/bootstrap"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
+	"github.com/alibaba/UnifiedModel/tests/testutil"
 )
 
 func TestCapabilityGate(t *testing.T) {
-	server := httptest.NewServer(bootstrap.NewMemoryApp(t.TempDir()).Handler())
+	server := httptest.NewServer(testutil.ProviderApp(t, t.TempDir()).Handler())
 	defer server.Close()
 
 	post(t, server.URL+"/api/v1/workspaces", map[string]any{"id": "demo"})
@@ -253,7 +254,7 @@ func TestCapabilityGate(t *testing.T) {
 		if explain["source"] != ".entity" {
 			t.Fatalf("expected .entity source in explain: %+v", explain)
 		}
-		if explain["provider"] != "memory" {
+		if explain["provider"] != graphfixture.Provider() {
 			t.Fatalf("expected memory provider in explain: %+v", explain)
 		}
 

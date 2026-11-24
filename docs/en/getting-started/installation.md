@@ -126,6 +126,12 @@ Neo4j (configure the connection using [NEO4J_* variables](../graphstore-provider
 go run ./cmd/umodel-server --addr :8080 --data data --graphstore neo4j
 ```
 
+Gremlin Server (configure the connection using [GREMLIN_* variables](../graphstore-providers.md#gremlin)):
+
+```bash
+go run ./cmd/umodel-server --addr :8080 --data data --graphstore gremlin
+```
+
 ## Verify The Checkout
 
 ```bash

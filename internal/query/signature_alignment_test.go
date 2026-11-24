@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/UnifiedModel/internal/graphstore"
 	"github.com/alibaba/UnifiedModel/pkg/model"
+	"github.com/alibaba/UnifiedModel/tests/graphfixture"
 )
 
 // TestGetMetricsAcceptsAggregateAndStorageParams verifies that the parser
@@ -17,7 +17,7 @@ import (
 // params_echo so a downstream executor can act on them.
 func TestGetMetricsAcceptsAggregateAndStorageParams(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  metricQueryPlanElements(),
@@ -55,7 +55,7 @@ func TestGetMetricsAcceptsAggregateAndStorageParams(t *testing.T) {
 // TestGetLogsAcceptsStorageParams verifies the same alignment for get_logs.
 func TestGetLogsAcceptsStorageParams(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements:  logQueryPlanElements(),
@@ -92,7 +92,7 @@ func TestGetLogsAcceptsStorageParams(t *testing.T) {
 // MCP, SDK) discover them through the canonical metadata path.
 func TestListMethodReportsAlignedSignatures(t *testing.T) {
 	ctx := context.Background()
-	store := graphstore.NewMemoryStore()
+	store := graphfixture.New(t)
 	if _, err := store.PutUModelElements(ctx, model.UModelElementBatch{
 		Workspace: "demo",
 		Elements: []model.UModelElement{
