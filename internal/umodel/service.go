@@ -106,6 +106,7 @@ func (s *Service) Validate(ctx context.Context, workspace string, elements []mod
 			})
 			continue
 		}
+		hasSchemaErrors := len(res.Errors) > 0
 		for _, e := range res.Errors {
 			errors = append(errors, model.ErrorDetail{
 				Field:  fmt.Sprintf("elements[%d].%s", i, e.Path),
@@ -118,12 +119,62 @@ func (s *Service) Validate(ctx context.Context, workspace string, elements []mod
 				Reason: w.Reason,
 			})
 		}
+		if !hasSchemaErrors {
+			warnings = appendAuthoringWarnings(warnings, i, element)
+		}
 	}
 	return model.ValidationResult{
 		Valid:    len(errors) == 0,
 		Errors:   errors,
 		Warnings: warnings,
 	}, nil
+}
+
+func appendAuthoringWarnings(warnings []model.ErrorDetail, index int, element model.UModelElement) []model.ErrorDetail {
+	switch element.Kind {
+	case "entity_set":
+		fields, ok := element.Spec["fields"].([]any)
+		if !ok || len(fields) == 0 {
+			warnings = append(warnings, model.ErrorDetail{
+				Field:  fmt.Sprintf("elements[%d].spec.fields", index),
+				Reason: "entity_set has no fields; this may limit schema guidance for entity writes and filters",
+			})
+		}
+	case "metric_set":
+		metrics, ok := element.Spec["metrics"].([]any)
+		if !ok {
+			return warnings
+		}
+		for i, metric := range metrics {
+			spec, ok := metric.(map[string]any)
+			if !ok {
+				continue
+			}
+			unit, ok := spec["unit"].(string)
+			dataFormat, hasDataFormat := spec["data_format"].(string)
+			if (!ok || strings.TrimSpace(unit) == "") && (!hasDataFormat || strings.TrimSpace(dataFormat) == "") {
+				warnings = append(warnings, model.ErrorDetail{
+					Field:  fmt.Sprintf("elements[%d].spec.metrics[%d].unit", index, i),
+					Reason: "metric has no unit or data_format; define display formatting so query results are interpretable",
+				})
+			}
+		}
+	case "entity_set_link":
+		linkType, ok := element.Spec["entity_link_type"].(string)
+		if ok && weakEntityLinkType(linkType) {
+			warnings = append(warnings, model.ErrorDetail{
+				Field:  fmt.Sprintf("elements[%d].spec.entity_link_type", index),
+				Reason: "entity_link_type is weak or provisional; use explicit topology semantics for hard entity links",
+			})
+		}
+	}
+	return warnings
+}
+
+func weakEntityLinkType(value string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	return strings.HasPrefix(normalized, "candidate_") ||
+		strings.HasPrefix(normalized, "maybe_")
 }
 
 func (s *Service) PutElements(ctx context.Context, batch model.UModelElementBatch) (model.WriteResult, error) {

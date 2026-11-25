@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/alibaba/UnifiedModel/internal/graphstore"
@@ -35,6 +36,72 @@ func TestValidateAcceptsValidUModelElements(t *testing.T) {
 	}
 	if !result.Valid || len(result.Errors) != 0 {
 		t.Fatalf("expected valid result, got %+v", result)
+	}
+}
+
+func TestValidateReportsAuthoringWarnings(t *testing.T) {
+	svc := NewService(graphstore.NewMemoryStore(), WithImportRoot("/"))
+	result, err := svc.Validate(context.Background(), "demo", []model.UModelElement{
+		{
+			Kind:   "entity_set",
+			Domain: "devops",
+			Name:   "devops.service",
+			Spec:   map[string]any{},
+		},
+		{
+			Kind:   "metric_set",
+			Domain: "devops",
+			Name:   "devops.metric.service",
+			Spec: map[string]any{"metrics": []any{
+				map[string]any{"name": "request_count", "type": "counter", "generator": "sum(rate(http_requests_total[1m]))"},
+				map[string]any{"name": "latency_p99", "type": "gauge", "data_format": "ms", "generator": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[1m]))"},
+			}},
+		},
+		{
+			Kind:   "entity_set_link",
+			Domain: "devops",
+			Name:   "devops.service_candidate_related_to_devops.deployment",
+			Spec: map[string]any{
+				"src":              map[string]any{"domain": "devops", "kind": "entity_set", "name": "devops.service"},
+				"dest":             map[string]any{"domain": "devops", "kind": "entity_set", "name": "devops.deployment"},
+				"entity_link_type": "candidate_related_to",
+			},
+		},
+		{
+			Kind:   "entity_set_link",
+			Domain: "devops",
+			Name:   "devops.service_related_to_devops.deployment",
+			Spec: map[string]any{
+				"src":              map[string]any{"domain": "devops", "kind": "entity_set", "name": "devops.service"},
+				"dest":             map[string]any{"domain": "devops", "kind": "entity_set", "name": "devops.deployment"},
+				"entity_link_type": "related_to",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+	if !result.Valid || len(result.Errors) != 0 {
+		t.Fatalf("authoring warnings must not reject valid elements, got %+v", result)
+	}
+
+	want := map[string][]string{
+		"elements[0].spec.fields":           {"entity_set", "may limit"},
+		"elements[1].spec.metrics[0].unit":  {"metric", "unit", "data_format"},
+		"elements[2].spec.entity_link_type": {"provisional", "explicit"},
+	}
+	for field, parts := range want {
+		if !hasWarningContaining(result.Warnings, field, parts...) {
+			t.Fatalf("expected warning %s containing %v, got %+v", field, parts, result.Warnings)
+		}
+	}
+	for _, field := range []string{
+		"elements[1].spec.metrics[1].unit",
+		"elements[3].spec.entity_link_type",
+	} {
+		if hasWarningField(result.Warnings, field) {
+			t.Fatalf("unexpected warning for %s: %+v", field, result.Warnings)
+		}
 	}
 }
 
@@ -231,4 +298,28 @@ func writeFile(t *testing.T, path, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
+}
+
+func hasWarningContaining(warnings []model.ErrorDetail, field string, parts ...string) bool {
+	for _, warning := range warnings {
+		if warning.Field != field {
+			continue
+		}
+		for _, part := range parts {
+			if !strings.Contains(warning.Reason, part) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
+func hasWarningField(warnings []model.ErrorDetail, field string) bool {
+	for _, warning := range warnings {
+		if warning.Field == field {
+			return true
+		}
+	}
+	return false
 }
