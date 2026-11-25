@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/alibaba/UnifiedModel/cmd/umctl/pkg/hint"
 	"github.com/alibaba/UnifiedModel/cmd/umctl/pkg/registry"
 	"github.com/alibaba/UnifiedModel/cmd/umctl/pkg/response"
+	"github.com/alibaba/UnifiedModel/internal/umodel/payload"
 )
 
 var umodelCmd = &cobra.Command{
@@ -51,11 +53,7 @@ var umodelValidateCmd = &cobra.Command{
 			file = rest[0]
 		}
 		requireFile(file)
-		raw, err := readRawFile(file)
-		if err != nil {
-			hint.HandleInputError(err, file)
-		}
-		raw, err = wrapPayload(raw, "elements")
+		raw, err := readUModelValidatePayload(file)
 		if err != nil {
 			hint.HandleInputError(err, file)
 		}
@@ -135,7 +133,7 @@ func init() {
 	addWorkspaceFlag(umodelImportCmd, umodelValidateCmd, umodelPutCmd, umodelDeleteCmd, umodelExportCmd)
 
 	umodelImportCmd.Flags().String("path", "", "Path to YAML/JSON file or directory")
-	umodelValidateCmd.Flags().StringP("file", "f", "", "JSON file with UModel elements")
+	umodelValidateCmd.Flags().StringP("file", "f", "", "JSON elements payload or single UModel YAML file")
 	umodelPutCmd.Flags().StringP("file", "f", "", "JSON file with UModel elements")
 	umodelDeleteCmd.Flags().String("ids", "", "Comma-separated element IDs")
 	umodelExportCmd.Flags().Int("limit", 1000, "Maximum number of elements to export")
@@ -153,7 +151,7 @@ func init() {
 		Description: "Validate UModel elements",
 		Params: []registry.ParamMeta{
 			{Name: "workspace", Type: "string", Flag: "--workspace", Short: "-w", Description: "Target workspace", Required: true},
-			{Name: "file", Type: "string", Flag: "--file", Short: "-f", Description: "JSON file with elements", Required: true},
+			{Name: "file", Type: "string", Flag: "--file", Short: "-f", Description: "JSON elements payload or single UModel YAML file", Required: true},
 		},
 	})
 	registry.Global.Register(registry.CommandMeta{
@@ -199,6 +197,29 @@ func buildIDsPayload(ids, reason string) []byte {
 	return b
 }
 
+func readUModelValidatePayload(file string) ([]byte, error) {
+	raw, err := readRawFile(file)
+	if err != nil {
+		return nil, err
+	}
+	if !isYAMLPath(file) {
+		return wrapPayload(raw, "elements")
+	}
+	element, err := payload.ParseElementBytes(raw, filepath.Ext(file))
+	if err != nil {
+		return nil, err
+	}
+	return marshalJSONBytes(map[string]any{"elements": []any{element}})
+}
+
+func isYAMLPath(path string) bool {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".yaml", ".yml":
+		return true
+	default:
+		return false
+	}
+}
 func requireWorkspace(ws string) {
 	if ws == "" {
 		response.ExitWithError(response.ExitParam, "Missing --workspace / -w flag", "Specify the target workspace.")

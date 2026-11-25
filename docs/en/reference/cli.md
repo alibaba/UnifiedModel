@@ -110,13 +110,13 @@ go run ./cmd/umctl --addr http://localhost:8080 workspace delete demo
 ## UModel
 
 ```bash
-go run ./cmd/umctl --addr http://localhost:8080 umodel validate demo examples/quickstart-multidomain/devops/entity_set/devops.service.yaml
+go run ./cmd/umctl --addr http://localhost:8080 umodel validate demo examples/quickstart-multidomain/umodel/devops/entity_set/devops.service.yaml
 go run ./cmd/umctl --addr http://localhost:8080 umodel put demo '{"kind":"entity_set","domain":"devops","name":"devops.service"}'
 go run ./cmd/umctl --addr http://localhost:8080 umodel import demo examples/quickstart-multidomain
 go run ./cmd/umctl --addr http://localhost:8080 umodel export demo 100
 ```
 
-`umodel put` and `umodel validate` accept a JSON object, a JSON array, or a JSON payload with an `elements` field.
+`umodel validate` accepts a JSON object, JSON array, JSON payload with an `elements` field, or one UModel YAML source file. `umodel put` accepts JSON only: an object, array, or payload with an `elements` field.
 
 ## EntityStore
 

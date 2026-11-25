@@ -30,7 +30,7 @@ func NewNoopValidator() *Validator {
 // unknown to the registry; field-level problems are reported in Result.
 //
 // TODO(v2): also validate the kind/schema/metadata envelope (currently
-// elementFromPayload validates the minimum imperatively before the element
+// the UModel payload normalizer validates the minimum imperatively before the element
 // reaches this layer).
 func (v *Validator) Validate(element model.UModelElement) (Result, error) {
 	if v == nil || v.registry == nil {
